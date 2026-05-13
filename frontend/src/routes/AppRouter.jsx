@@ -19,6 +19,7 @@ import AccountStatusPage from "../pages/auth/AccountStatusPage";
 
 import Dashboard from "../pages/admin/Dashboard";
 
+import CashierPage from "../pages/cashier/CashierPage";
 import POSPage from "../pages/pos/POSPage";
 
 import KitchenPage from "../pages/kitchen/KitchenPage";
@@ -96,6 +97,14 @@ export default function AppRouter() {
                     element={
                         <ProtectedRoute>
                             <KitchenPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/cashier"
+                    element={
+                        <ProtectedRoute>
+                            <CashierPage />
                         </ProtectedRoute>
                     }
                 />

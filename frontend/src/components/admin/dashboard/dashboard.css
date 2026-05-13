@@ -1,0 +1,71 @@
+/* ==========================================
+   DASHBOARD LAYOUT
+========================================== */
+
+.dashboard-container {
+    min-height: 100vh;
+}
+
+
+/* ==========================================
+   SIDEBAR
+========================================== */
+
+.sidebar {
+    background-color: #212529;
+    min-height: 100vh;
+    color: white;
+
+    position: fixed;
+    left: 0;
+    top: 0;
+
+    width: 260px;
+
+    overflow-y: auto;
+
+    z-index: 1000;
+}
+
+
+/* ==========================================
+   MAIN CONTENT
+========================================== */
+
+.dashboard-content {
+    margin-left: 260px;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+
+/* ==========================================
+   SIDEBAR BUTTONS
+========================================== */
+
+.sidebar-button {
+    width: 100%;
+    text-align: left;
+}
+
+
+/* ==========================================
+   MOBILE RESPONSIVE
+========================================== */
+
+@media (max-width: 768px) {
+
+    .sidebar {
+
+        position: relative;
+        width: 100%;
+        min-height: auto;
+
+    }
+
+    .dashboard-content {
+
+        margin-left: 0;
+
+    }
+}

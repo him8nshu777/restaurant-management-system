@@ -5,7 +5,7 @@ import {
 } from "react-router-dom";
 
 
-// Redux hooks for state management
+// Redux hooks
 import {
   useSelector,
   useDispatch,
@@ -19,47 +19,37 @@ import {
 } from "react";
 
 
-// Redux action to update auth state
+// Redux auth action
 import {
   loginSuccess,
 } from "../../auth/authSlice";
 
 
-// API call to fetch latest user data
+// Fetch latest authenticated user
 import {
   getCurrentUser,
 } from "../../auth/authService";
 
 
 // ==========================================
-// HOME PAGE (PUBLIC LANDING PAGE)
+// HOME PAGE
 // ==========================================
-// This page is the entry point of the application.
-//
-// Responsibilities:
-// 1. Show landing page for guest users
-// 2. Detect if user is already logged in
-// 3. Fetch latest user data from backend
-// 4. Redirect user based on restaurant status
-//    - active   → dashboard
-//    - pending  → account status page
+// RESPONSIBILITIES:
+// 1. Public landing page
+// 2. Auto-login redirect
+// 3. Role-based routing
+// 4. Restaurant status checking
 // ==========================================
 export default function HomePage() {
 
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
-  // Controls loading state while
-  // checking authentication
-  const [
-    checkingAuth,
-    setCheckingAuth,
-  ] = useState(true);
+  const dispatch = useDispatch();
 
-  const dispatch =
-    useDispatch();
 
-  // Get auth state from Redux store
+  // ==========================================
+  // REDUX AUTH STATE
+  // ==========================================
   const {
     isAuthenticated,
     user,
@@ -69,52 +59,58 @@ export default function HomePage() {
 
 
   // ==========================================
-  // CHECK USER AUTH STATUS ON PAGE LOAD
+  // LOADING STATE
+  // ==========================================
+  const [
+    checkingAuth,
+    setCheckingAuth,
+  ] = useState(true);
+
+
+  // ==========================================
+  // FETCH CURRENT USER
   // ==========================================
   useEffect(() => {
 
-    const fetchUser =
-      async () => {
+    const fetchUser = async () => {
 
-        // If user is not logged in,
-        // stop checking immediately
-        if (!isAuthenticated) {
-          setCheckingAuth(false);
-          return;
-        }
+      // If not authenticated stop loading
+      if (!isAuthenticated) {
 
-        try {
+        setCheckingAuth(false);
 
-          // Fetch latest user data
-          // from backend (/auth/me/)
-          const user =
-            await getCurrentUser();
+        return;
+      }
 
-          // Update Redux store with fresh data
-          dispatch(
-            loginSuccess({
+      try {
 
-              access:
-                localStorage.getItem("access"),
+        // Fetch latest user details
+        const user =
+          await getCurrentUser();
 
-              refresh:
-                localStorage.getItem("refresh"),
+        // Update Redux store
+        dispatch(
+          loginSuccess({
 
-              user,
-            })
-          );
+            access:
+              localStorage.getItem("access"),
 
-        } catch (error) {
+            refresh:
+              localStorage.getItem("refresh"),
 
-          // If token is invalid or expired,
-          // user should be treated as logged out
-          console.log(error);
-        } finally {
+            user,
+          })
+        );
 
-          // Stop loading state
-          setCheckingAuth(false);
-        }
-      };
+      } catch (error) {
+
+        console.log(error);
+
+      } finally {
+
+        setCheckingAuth(false);
+      }
+    };
 
     fetchUser();
 
@@ -122,90 +118,206 @@ export default function HomePage() {
 
 
   // ==========================================
-  // LOADING STATE
+  // LOADING SCREEN
   // ==========================================
   if (checkingAuth) {
 
-    return <h1>Loading...</h1>;
-  }
-
-
-  // ==========================================
-  // REDIRECT LOGIC (AUTHENTICATED USERS)
-  // ==========================================
-  if (isAuthenticated) {
-
-    const status =
-      user?.restaurant_status;
-
-    // If restaurant is active → go dashboard
-    if (status === "active") {
-
-      return (
-        <Navigate to="/admin" />
-      );
-    }
-
-    // Otherwise go to status page
     return (
-      <Navigate
-        to="/account-status"
-        state={{
-          status,
-        }}
-      />
+
+      <div
+        className="
+          d-flex
+          justify-content-center
+          align-items-center
+          vh-100
+        "
+      >
+
+        <h3>
+          Loading...
+        </h3>
+
+      </div>
     );
   }
 
 
   // ==========================================
-  // GUEST LANDING PAGE UI
+  // AUTHENTICATED USER REDIRECT
+  // ==========================================
+  if (isAuthenticated) {
+
+    const restaurantStatus =
+      user?.restaurant_status;
+
+    const role =
+      user?.role;
+
+
+    // ==========================================
+    // BLOCKED RESTAURANT STATES
+    // ==========================================
+    if (
+      restaurantStatus === "pending" ||
+      restaurantStatus === "rejected" ||
+      restaurantStatus === "suspended"
+    ) {
+
+      return (
+
+        <Navigate
+          to="/account-status"
+          state={{
+            status: restaurantStatus,
+          }}
+        />
+      );
+    }
+
+
+    // ==========================================
+    // ACTIVE RESTAURANT
+    // ROLE-BASED ROUTING
+    // ==========================================
+    if (restaurantStatus === "active") {
+
+      switch (role) {
+
+        case "restaurant_admin":
+
+          return (
+            <Navigate to="/admin" />
+          );
+
+
+        case "cashier":
+
+          return (
+            <Navigate to="/cashier" />
+          );
+
+
+        case "manager":
+
+          return (
+            <Navigate to="/manager" />
+          );
+
+
+        case "waiter":
+
+          return (
+            <Navigate to="/waiter" />
+          );
+
+
+        case "kitchen":
+
+          return (
+            <Navigate to="/kitchen" />
+          );
+
+
+        case "delivery":
+
+          return (
+            <Navigate to="/delivery" />
+          );
+
+
+        default:
+
+          return (
+            <Navigate to="/login" />
+          );
+      }
+    }
+  }
+
+
+  // ==========================================
+  // PUBLIC LANDING PAGE
   // ==========================================
   return (
 
     <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent:
-          "center",
-        alignItems:
-          "center",
-        gap: "20px",
-      }}
+      className="
+        container-fluid
+        vh-100
+        d-flex
+        justify-content-center
+        align-items-center
+        bg-light
+      "
     >
 
-      <h1>
-        Restaurant Management System
-      </h1>
-
-      <p>
-        POS • Kitchen • Inventory • Reports
-      </p>
-
       <div
+        className="
+          card
+          border-0
+          shadow
+          p-5
+          text-center
+        "
         style={{
-          display: "flex",
-          gap: "10px",
+          maxWidth: "500px",
+          width: "100%",
         }}
       >
 
-        <button
-          onClick={() =>
-            navigate("/login")
-          }
-        >
-          Login
-        </button>
+        {/* APP TITLE */}
+        <h1 className="fw-bold mb-3">
 
-        <button
-          onClick={() =>
-            navigate("/register")
-          }
+          Restaurant ERP
+
+        </h1>
+
+
+        {/* SUBTITLE */}
+        <p className="text-muted mb-4">
+
+          POS • Kitchen • Billing • Staff • Reports
+
+        </p>
+
+
+        {/* ACTION BUTTONS */}
+        <div
+          className="
+            d-flex
+            flex-column
+            flex-sm-row
+            gap-3
+            justify-content-center
+          "
         >
-          Register Restaurant
-        </button>
+
+          {/* LOGIN BUTTON */}
+          <button
+            className="btn btn-primary px-4"
+            onClick={() =>
+              navigate("/login")
+            }
+          >
+
+            Login
+
+          </button>
+
+
+          {/* REGISTER BUTTON */}
+          <button
+            className="btn btn-outline-dark px-4"
+            onClick={() =>
+              navigate("/register")
+            }
+          >
+
+            Register Restaurant
+
+          </button>
+
+        </div>
 
       </div>
 

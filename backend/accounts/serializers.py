@@ -42,8 +42,9 @@ class RegisterSerializer(serializers.Serializer):
         """
         Creates:
         1. User (restaurant admin)
-        2. Restaurant linked to user
-        3. Sends verification email
+        2. Restaurant
+        3. Links user to restaurant
+        4. Sends verification email
 
         Transaction.atomic ensures:
         → Either both user + restaurant are created
@@ -57,6 +58,10 @@ class RegisterSerializer(serializers.Serializer):
         # Extract password separately (not stored directly)
         password = validated_data.pop("password")
 
+        # ==========================================
+        # Create restaurant admin user
+        # ==========================================
+        
         # Create user instance
         user = User(**validated_data)
 
@@ -69,12 +74,21 @@ class RegisterSerializer(serializers.Serializer):
         user.save()
 
         # Create linked restaurant entry
-        Restaurant.objects.create(
+        restaurant = Restaurant.objects.create(
             owner=user,
             name=restaurant_name,
             gst_number=gst_number,
             status="pending"  # default onboarding status
         )
+        # ==========================================
+        # Link owner to restaurant
+        # IMPORTANT:
+        # Needed for request.user.restaurant
+        # ==========================================
+
+        user.restaurant = restaurant
+
+        user.save(update_fields=["restaurant"])
 
         # Send email verification link
         send_verification_email(user)
@@ -96,53 +110,102 @@ class CustomLoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        """
-        Validates login credentials and returns:
-        - JWT tokens
-        - User data
-        - Restaurant status
-        """
 
         email = attrs.get("email")
         password = attrs.get("password")
 
-        # Step 1: Find user by email
+        # ==========================================
+        # FIND USER BY EMAIL
+        # ==========================================
         try:
+
             user = User.objects.get(email=email)
 
         except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid credentials")
 
-        # Step 2: Authenticate password
+            raise serializers.ValidationError(
+                "Invalid credentials"
+            )
+
+        # ==========================================
+        # CHECK PASSWORD MANUALLY
+        # ==========================================
+        if not user.check_password(password):
+
+            raise serializers.ValidationError(
+                "Invalid credentials"
+            )
+        
+        # ==========================================
+        # BLOCK DISABLED USERS
+        # ==========================================
+        if not user.is_active:
+
+            raise serializers.ValidationError(
+                "Your account has been disabled. Contact administrator."
+            )
+
+
+        # ==========================================
+        # AUTHENTICATE USER
+        # ==========================================
         authenticated_user = authenticate(
             username=user.username,
             password=password
         )
 
-        if not authenticated_user:
-            raise serializers.ValidationError("Invalid credentials")
 
-        # Step 3: Get restaurant linked to user
+
+        # ==========================================
+        # GET RESTAURANT
+        # ==========================================
         restaurant = authenticated_user.restaurant
 
-        # Step 4: Block login if email not verified
+        if not restaurant:
+
+            raise serializers.ValidationError(
+                "Restaurant not found."
+            )
+
+
+
+        # ==========================================
+        # EMAIL VERIFICATION CHECK
+        # ==========================================
         if not restaurant.is_email_verified:
-            raise serializers.ValidationError("Please verify your email.")
 
-        # Step 5: Generate JWT tokens
-        refresh = RefreshToken.for_user(authenticated_user)
+            raise serializers.ValidationError(
+                "Restaurant email is not verified."
+            )
 
-        # Step 6: Return response payload
+
+
+        # ==========================================
+        # JWT TOKEN GENERATION
+        # ==========================================
+        refresh = RefreshToken.for_user(
+            authenticated_user
+        )
+
+
+
+        # ==========================================
+        # RETURN RESPONSE
+        # ==========================================
         return {
+
             "refresh": str(refresh),
+
             "access": str(refresh.access_token),
 
             "user": {
+
                 "id": authenticated_user.id,
+
                 "email": authenticated_user.email,
+
                 "role": authenticated_user.role,
 
-                # Important for frontend routing logic
                 "restaurant_status": restaurant.status,
             }
         }

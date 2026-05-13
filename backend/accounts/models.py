@@ -28,6 +28,13 @@ class User(AbstractUser):
         max_length=20,
         unique=True
     )
-
+    
+    # Every staff member belongs to one restaurant 
+    restaurant = models.ForeignKey( 
+        "restaurants.Restaurant", 
+        on_delete=models.CASCADE, 
+        related_name="staff", null=True, blank=True 
+    
+    )
     def __str__(self):
         return self.email

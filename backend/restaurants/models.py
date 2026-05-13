@@ -15,7 +15,7 @@ class Restaurant(models.Model):
     owner = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="restaurant"
+        related_name="owned_restaurant"
     )
 
     name = models.CharField(

@@ -1,0 +1,56 @@
+/* ==========================================
+   SIDEBAR CONTAINER
+========================================== */
+
+.sidebar {
+    min-height: 100vh;
+    background-color: #212529;
+
+    transition: width 0.3s ease;
+}
+
+
+/* ==========================================
+   EXPANDED SIDEBAR
+========================================== */
+
+.sidebar-expanded {
+    width: 250px;
+}
+
+
+/* ==========================================
+   COLLAPSED SIDEBAR
+========================================== */
+
+.sidebar-collapsed {
+    width: 80px;
+}
+
+
+/* ==========================================
+   SIDEBAR BUTTON
+========================================== */
+
+.sidebar-button {
+    width: 100%;
+    border: none;
+}
+
+
+/* ==========================================
+   HIDE LABEL WHEN COLLAPSED
+========================================== */
+
+.sidebar-label-hidden {
+    display: none;
+}
+
+
+/* ==========================================
+   CONTENT TRANSITION
+========================================== */
+
+.dashboard-content {
+    transition: all 0.3s ease;
+}

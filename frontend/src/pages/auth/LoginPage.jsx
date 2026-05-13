@@ -87,7 +87,43 @@ export default function LoginPage() {
         });
 
       } else if (restaurantStatus === "active") {
-        navigate("/admin");
+
+        // ==========================================
+        // ROLE-BASED ROUTING
+        // ==========================================
+        const role = response.user.role;
+
+        switch (role) {
+
+          case "restaurant_admin":
+            navigate("/admin");
+            break;
+
+          case "cashier":
+            navigate("/cashier");
+            break;
+
+          case "manager":
+            navigate("/manager");
+            break;
+
+          case "waiter":
+            navigate("/waiter");
+            break;
+
+          case "kitchen":
+            navigate("/kitchen");
+            break;
+
+          case "delivery":
+            navigate("/delivery");
+            break;
+
+          default:
+
+            // Unknown role fallback
+            navigate("/login");
+        }
       }
 
     } catch (error) {
