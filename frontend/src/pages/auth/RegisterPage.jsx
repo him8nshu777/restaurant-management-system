@@ -1,65 +1,116 @@
+// React hook for managing component state
 import { useState } from "react";
 
+
+// API call for registering restaurant owner
 import {
   registerUser,
 } from "../../services/authService";
-import { useNavigate } from "react-router-dom";
-import ButtonLoader from "../../components/common/ButtonLoader";
 
+
+// React Router hook for navigation
+import {
+  useNavigate,
+} from "react-router-dom";
+
+
+// Reusable loading spinner for buttons
+import ButtonLoader
+from "../../components/common/ButtonLoader";
+
+
+// ==========================================
+// REGISTER PAGE (RESTAURANT ONBOARDING)
+// ==========================================
+// This page allows new restaurant owners to:
+// 1. Create account
+// 2. Submit restaurant details
+// 3. Trigger email verification flow
+// 4. Redirect to "Check Email" page
+// ==========================================
 export default function RegisterPage() {
 
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState("");
+  const navigate =
+    useNavigate();
 
+  // Loading state for submit button
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
+
+
+  // Form state for registration data
   const [formData, setFormData] =
     useState({
+
       username: "",
+
       email: "",
+
       phone: "",
+
       password: "",
+
       restaurant_name: "",
+
       gst_number: "",
     });
 
 
+  // ==========================================
+  // HANDLE INPUT CHANGE
+  // ==========================================
   const handleChange = (e) => {
 
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+
+      [e.target.name]:
+        e.target.value,
     });
   };
 
 
-  const handleSubmit = async (e) => {
+  // ==========================================
+  // SUBMIT REGISTRATION FORM
+  // ==========================================
+  const handleSubmit =
+    async (e) => {
 
     e.preventDefault();
+
     setLoading(true);
 
     try {
 
+      // Call backend registration API
       const response =
         await registerUser(formData);
 
       console.log(response);
 
-      // alert("Registration Successful");
-      // navigate("/login");
-
+      // After successful registration:
+      // DO NOT login user immediately
+      // Instead move to email verification step
       navigate(
         "/check-email",
         {
           state: {
-            email: formData.email,
+            email:
+              formData.email,
           },
         }
       );
+
     } catch (error) {
 
+      // Show backend error message
       alert(
         error.response?.data?.message ||
         "Something went wrong"
       );
+
     } finally {
 
       setLoading(false);
@@ -71,7 +122,9 @@ export default function RegisterPage() {
 
     <div>
 
-      <h1>Restaurant Registration</h1>
+      <h1>
+        Restaurant Registration
+      </h1>
 
       <form onSubmit={handleSubmit}>
 
@@ -117,7 +170,8 @@ export default function RegisterPage() {
           onChange={handleChange}
         />
 
-        <button type="submit"
+        <button
+          type="submit"
           disabled={loading}
         >
           {
@@ -125,7 +179,6 @@ export default function RegisterPage() {
               ? <ButtonLoader />
               : "Register"
           }
-
         </button>
 
       </form>
