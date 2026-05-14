@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from accounts.models import User
 
-from .models import Restaurant
+from .models import Restaurant, Floor, Area
 
 
 # ==========================================
@@ -76,13 +76,11 @@ class RestaurantCreateSerializer(serializers.ModelSerializer):
 class StaffCreateSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(write_only=True, min_length=6)
-    
+
     # ==========================================
     # ACTIVE RESTAURANT ID
     # ==========================================
-    restaurant_id = serializers.IntegerField(
-        write_only=True
-    )
+    restaurant_id = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = User
@@ -121,12 +119,9 @@ class StaffCreateSerializer(serializers.ModelSerializer):
         # ==========================================
         if restaurant.status != "active":
 
-            raise serializers.ValidationError({
-
-                "restaurant":
-                    "Pending restaurants cannot create staff."
-            })
-        
+            raise serializers.ValidationError(
+                {"restaurant": "Pending restaurants cannot create staff."}
+            )
 
         # Create user
         user = User.objects.create_user(
@@ -168,4 +163,153 @@ class StaffUpdateSerializer(serializers.ModelSerializer):
         fields = (
             "username",
             "email",
+        )
+
+
+# ==========================================
+# FLOOR LIST SERIALIZER
+# ==========================================
+class FloorListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = Floor
+
+        fields = (
+            "id",
+            "name",
+            "floor_number",
+            "is_active",
+            "created_at",
+        )
+
+
+# ==========================================
+# FLOOR CREATE SERIALIZER
+# ==========================================
+class FloorCreateSerializer(serializers.ModelSerializer):
+
+    # ==========================================
+    # ACTIVE RESTAURANT
+    # ==========================================
+    restaurant_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+
+        model = Floor
+
+        fields = (
+            "id",
+            "name",
+            "floor_number",
+            "restaurant_id",
+        )
+
+    def create(self, validated_data):
+
+        request = self.context.get("request")
+
+        restaurant_id = validated_data.pop("restaurant_id")
+
+        # ==========================================
+        # VERIFY OWNER RESTAURANT
+        # ==========================================
+        restaurant = Restaurant.objects.get(id=restaurant_id, owner=request.user)
+
+        # ==========================================
+        # CREATE FLOOR
+        # ==========================================
+        floor = Floor.objects.create(restaurant=restaurant, **validated_data)
+
+        return floor
+
+
+# ==========================================
+# FLOOR UPDATE SERIALIZER
+# ==========================================
+class FloorUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = Floor
+
+        fields = (
+            "name",
+            "floor_number",
+            "is_active",
+        )
+
+
+# ==========================================
+# AREA CREATE SERIALIZER
+# ==========================================
+class AreaCreateSerializer(serializers.ModelSerializer):
+
+    restaurant_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+
+        model = Area
+
+        fields = (
+            "id",
+            "name",
+            "area_type",
+            "floor",
+            "restaurant_id",
+        )
+
+    def create(self, validated_data):
+
+        request = self.context.get("request")
+
+        restaurant_id = validated_data.pop("restaurant_id")
+
+        # ==========================================
+        # VERIFY RESTAURANT OWNER
+        # ==========================================
+        restaurant = Restaurant.objects.get(id=restaurant_id, owner=request.user)
+
+        # ==========================================
+        # CREATE AREA
+        # ==========================================
+        area = Area.objects.create(restaurant=restaurant, **validated_data)
+
+        return area
+
+
+# ==========================================
+# AREA LIST SERIALIZER
+# ==========================================
+class AreaListSerializer(serializers.ModelSerializer):
+
+    floor_name = serializers.CharField(source="floor.name", read_only=True)
+
+    class Meta:
+
+        model = Area
+
+        fields = (
+            "id",
+            "name",
+            "area_type",
+            "floor",
+            "floor_name",
+            "is_active",
+        )
+
+
+# ==========================================
+# AREA UPDATE SERIALIZER
+# ==========================================
+class AreaUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = Area
+
+        fields = (
+            "name",
+            "area_type",
+            "floor",
         )

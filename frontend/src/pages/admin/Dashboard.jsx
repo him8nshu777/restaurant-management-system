@@ -6,6 +6,8 @@ import CreateRestaurant from "./CreateRestaurant";
 import Reports from "./Reports";
 import Staff from "./Staff";
 import { getRestaurants } from "../../services/adminService";
+import Floor from "../../pages/dashboard/Floor";
+import Area from "../../pages/dashboard/Area";
 
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
@@ -95,6 +97,12 @@ useEffect(() => {
 
             case "reports":
                 return <Reports />;
+
+            case "floors":
+                return <Floor />;
+
+            case "areas":
+                return <Area />;
 
             case "restaurant-profile":
 

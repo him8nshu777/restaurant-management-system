@@ -2,13 +2,18 @@ from rest_framework import status
 from rest_framework.generics import (
     CreateAPIView,
     ListAPIView,
+    RetrieveUpdateAPIView,
     RetrieveUpdateDestroyAPIView,
+
+    DestroyAPIView,
+    UpdateAPIView
+
 )
 from rest_framework.response import Response
 
 from accounts.models import User
 
-from .permissions import IsRestaurantAdmin
+from .permissions import IsRestaurantAdmin, IsRestaurantAdminOrManager
 from .serializers import (
     StaffCreateSerializer,
     StaffListSerializer,
@@ -16,15 +21,23 @@ from .serializers import (
 )
 
 from rest_framework.permissions import IsAuthenticated
-
-from .models import Restaurant
+from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
+from .models import Restaurant, Floor, Area
 
 from .serializers import (
     RestaurantListSerializer,
     RestaurantUpdateSerializer,
     RestaurantCreateSerializer,
 )
+from .serializers import (
+    FloorListSerializer,
+    FloorCreateSerializer,
+    FloorUpdateSerializer,
+)
+from .permissions import CanManageFloor
 from rest_framework.exceptions import ValidationError
+from .serializers import AreaCreateSerializer, AreaListSerializer, AreaUpdateSerializer
 
 
 # ==========================================
@@ -160,3 +173,202 @@ class StaffDetailView(RetrieveUpdateDestroyAPIView):
         )
 
         return Response({"message": message}, status=status.HTTP_200_OK)
+
+
+# ==========================================
+# FLOOR CREATE VIEW
+# ==========================================
+class FloorCreateView(CreateAPIView):
+
+    serializer_class = FloorCreateSerializer
+
+    permission_classes = [CanManageFloor]
+
+
+# ==========================================
+# FLOOR LIST VIEW
+# ==========================================
+class FloorListView(ListAPIView):
+
+    serializer_class = FloorListSerializer
+
+    permission_classes = [CanManageFloor]
+
+    def get_queryset(self):
+
+        restaurant_id = self.request.GET.get("restaurant_id")
+
+        return Floor.objects.filter(
+            restaurant_id=restaurant_id, restaurant__owner=self.request.user
+        )
+
+
+# ==========================================
+# FLOOR DETAIL VIEW
+# ==========================================
+class FloorDetailView(RetrieveUpdateAPIView):
+
+    permission_classes = [CanManageFloor]
+
+    def get_queryset(self):
+
+        return Floor.objects.filter(restaurant__owner=self.request.user)
+
+    def get_serializer_class(self):
+
+        if self.request.method in [
+            "PUT",
+            "PATCH",
+        ]:
+
+            return FloorUpdateSerializer
+
+        return FloorListSerializer
+
+
+# ==========================================
+# FLOOR ACTIVE / INACTIVE
+# ==========================================
+class FloorToggleStatusView(APIView):
+
+    permission_classes = [CanManageFloor]
+
+    def patch(self, request, pk):
+
+        floor = get_object_or_404(Floor, pk=pk, restaurant__owner=request.user)
+
+        floor.is_active = not floor.is_active
+
+        floor.save()
+
+        message = (
+            "Floor activated successfully."
+            if floor.is_active
+            else "Floor deactivated successfully."
+        )
+
+        return Response({"message": message})
+
+
+# ==========================================
+# FLOOR DELETE VIEW
+# ==========================================
+class FloorDeleteView(APIView):
+
+    permission_classes = [CanManageFloor]
+
+    def delete(self, request, pk):
+
+        floor = get_object_or_404(Floor, pk=pk, restaurant__owner=request.user)
+
+        floor.delete()
+
+        return Response({"message": "Floor deleted successfully."})
+
+
+# ==========================================
+# AREA CREATE VIEW
+# ==========================================
+class AreaCreateView(CreateAPIView):
+
+    serializer_class = AreaCreateSerializer
+
+    permission_classes = [IsRestaurantAdminOrManager]
+
+
+# ==========================================
+# AREA LIST VIEW
+# ==========================================
+class AreaListView(ListAPIView):
+
+    serializer_class = AreaListSerializer
+
+    permission_classes = [IsRestaurantAdminOrManager]
+
+    def get_queryset(self):
+
+        restaurant_id = self.request.GET.get("restaurant_id")
+
+        return Area.objects.filter(
+            restaurant_id=restaurant_id, restaurant__owner=self.request.user
+        ).order_by("-id")
+
+
+# ==========================================
+# AREA DETAIL VIEW
+# ==========================================
+class AreaDetailView(RetrieveUpdateDestroyAPIView):
+
+    permission_classes = [IsRestaurantAdminOrManager]
+
+    def get_queryset(self):
+
+        return Area.objects.filter(restaurant__owner=self.request.user)
+
+    def get_serializer_class(self):
+
+        if self.request.method in [
+            "PUT",
+            "PATCH",
+        ]:
+
+            return AreaUpdateSerializer
+
+        return AreaListSerializer
+
+    # ==========================================
+    # ACTIVE / INACTIVE
+    # ==========================================
+    def destroy(self, request, *args, **kwargs):
+
+        area = self.get_object()
+
+        area.is_active = not area.is_active
+
+        area.save()
+
+        message = (
+            "Area activated successfully."
+            if area.is_active
+            else "Area deactivated successfully."
+        )
+
+        return Response({"message": message}, status=status.HTTP_200_OK)
+
+# ==========================================
+# AREA TOGGLE STATUS VIEW
+# ==========================================
+class AreaToggleStatusView(UpdateAPIView):
+
+    permission_classes = [IsRestaurantAdminOrManager]
+
+    queryset = Area.objects.all()
+
+    def patch(self, request, *args, **kwargs):
+
+        area = self.get_object()
+
+        area.is_active = not area.is_active
+
+        area.save()
+
+        message = (
+            "Area activated successfully."
+            if area.is_active
+            else "Area deactivated successfully."
+        )
+
+        return Response(
+            {"message": message},
+            status=status.HTTP_200_OK
+        )
+
+
+# ==========================================
+# AREA DELETE VIEW
+# ==========================================
+class AreaDeleteView(DestroyAPIView):
+
+    permission_classes = [IsRestaurantAdminOrManager]
+
+    queryset = Area.objects.all()

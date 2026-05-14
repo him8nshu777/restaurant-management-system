@@ -36,5 +36,6 @@ class User(AbstractUser):
         related_name="staff", null=True, blank=True 
     
     )
+
     def __str__(self):
         return self.email

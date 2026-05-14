@@ -11,6 +11,8 @@ import {
     Trash,
     CheckCircleFill,
     Building,
+    GridFill,
+    BoundingBox
 } from "react-bootstrap-icons";
 
 import { useEffect } from "react";
@@ -34,6 +36,24 @@ const menuItems = [
         key: "staff",
         label: "Staff",
         icon: <PeopleFill />,
+    },
+
+    // ==========================================
+    // FLOOR MANAGEMENT
+    // ==========================================
+    {
+        key: "floors",
+        label: "Floors",
+        icon: <GridFill />,
+    },
+
+    // ==========================================
+    // AREA MANAGEMENT
+    // ==========================================
+    {
+        key: "areas",
+        label: "Areas",
+        icon: <BoundingBox />,
     },
 
     {

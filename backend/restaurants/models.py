@@ -18,42 +18,184 @@ class Restaurant(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="owned_restaurant"
+        related_name="owned_restaurant",
     )
 
-    name = models.CharField(
-        max_length=255
-    )
+    name = models.CharField(max_length=255)
 
-    gst_number = models.CharField(
-        max_length=50,
-        unique=True
-    )
+    gst_number = models.CharField(max_length=50, unique=True)
 
-    address = models.TextField(
-        blank=True
-    )
+    address = models.TextField(blank=True)
 
     # ==========================================
     # DEFAULT RESTAURANT CREATED ON REGISTRATION
     # ==========================================
-    is_primary = models.BooleanField(
-        default=False
-    )
+    is_primary = models.BooleanField(default=False)
 
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="pending"
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
 
-    is_email_verified = models.BooleanField(
-        default=False
-    )
+    is_email_verified = models.BooleanField(default=False)
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+
+# ==========================================
+# FLOOR MODEL
+# ==========================================
+class Floor(models.Model):
+
+    # ==========================================
+    # FLOOR BELONGS TO RESTAURANT
+    # ==========================================
+    restaurant = models.ForeignKey(
+        "restaurants.Restaurant", on_delete=models.CASCADE, related_name="floors"
+    )
+
+    # ==========================================
+    # FLOOR NAME
+    # Example:
+    # Ground Floor
+    # First Floor
+    # Rooftop
+    # ==========================================
+    name = models.CharField(max_length=100)
+
+    # ==========================================
+    # FLOOR NUMBER
+    # Example:
+    # Ground = 0
+    # First = 1
+    # ==========================================
+    floor_number = models.IntegerField()
+
+    # ==========================================
+    # ACTIVE STATUS
+    # ==========================================
+    is_active = models.BooleanField(default=True)
+
+    # ==========================================
+    # CREATED DATE
+    # ==========================================
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+
+        ordering = ["floor_number"]
+
+        unique_together = [
+            "restaurant",
+            "floor_number",
+        ]
+
+    def __str__(self):
+
+        return f"{self.restaurant.name} - {self.name}"
+
+    # ==========================================
+    # BRANCH RELATION
+    # ==========================================
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name="floors"
+    )
+
+    # ==========================================
+    # FLOOR NAME
+    # ==========================================
+    name = models.CharField(max_length=100)
+
+    # ==========================================
+    # FLOOR NUMBER
+    # Example:
+    # Ground Floor = 0
+    # First Floor = 1
+    # ==========================================
+    floor_number = models.IntegerField()
+
+    # ==========================================
+    # ACTIVE STATUS
+    # ==========================================
+    is_active = models.BooleanField(default=True)
+
+    # ==========================================
+    # CREATED DATE
+    # ==========================================
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+
+        ordering = ["floor_number"]
+
+        unique_together = [
+            "restaurant",
+            "floor_number",
+        ]
+
+    def __str__(self):
+
+        return f"{self.restaurant.name} - {self.name}"
+
+
+# ==========================================
+# AREA MODEL
+# ==========================================
+class Area(models.Model):
+
+    AREA_TYPES = (
+        ("indoor", "Indoor"),
+        ("outdoor", "Outdoor"),
+        ("vip", "VIP"),
+        ("smoking", "Smoking"),
+    )
+
+    # ==========================================
+    # RESTAURANT
+    # ==========================================
+    restaurant = models.ForeignKey(
+        Restaurant,
+        on_delete=models.CASCADE,
+        related_name="areas"
+    )
+
+    # ==========================================
+    # FLOOR
+    # ==========================================
+    floor = models.ForeignKey(
+        Floor,
+        on_delete=models.CASCADE,
+        related_name="areas"
+    )
+
+    # ==========================================
+    # AREA NAME
+    # ==========================================
+    name = models.CharField(max_length=100)
+
+    # ==========================================
+    # AREA TYPE
+    # ==========================================
+    area_type = models.CharField(
+        max_length=20,
+        choices=AREA_TYPES,
+        default="indoor"
+    )
+
+    # ==========================================
+    # ACTIVE STATUS
+    # ==========================================
+    is_active = models.BooleanField(default=True)
+
+    # ==========================================
+    # CREATED DATE
+    # ==========================================
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+
+        ordering = ["id"]
+
+    def __str__(self):
+
+        return f"{self.floor.name} - {self.name}"
