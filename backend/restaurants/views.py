@@ -15,6 +15,82 @@ from .serializers import (
     StaffUpdateSerializer,
 )
 
+from rest_framework.permissions import IsAuthenticated
+
+from .models import Restaurant
+
+from .serializers import (
+    RestaurantListSerializer,
+    RestaurantUpdateSerializer,
+    RestaurantCreateSerializer,
+)
+from rest_framework.exceptions import ValidationError
+
+
+# ==========================================
+# LIST OWNER RESTAURANTS
+# ==========================================
+class RestaurantListView(ListAPIView):
+
+    serializer_class = RestaurantListSerializer
+
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+
+        # Return all restaurants owned by user
+        return Restaurant.objects.filter(owner=self.request.user)
+
+
+# ==========================================
+# UPDATE / DELETE RESTAURANT
+# ==========================================
+class RestaurantDetailView(RetrieveUpdateDestroyAPIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+
+        # Only allow owner restaurants
+        return Restaurant.objects.filter(owner=self.request.user)
+
+    def get_serializer_class(self):
+
+        # Update serializer
+        if self.request.method in ["PUT", "PATCH"]:
+
+            return RestaurantUpdateSerializer
+
+        return RestaurantListSerializer
+
+    # ==========================================
+    # PREVENT PRIMARY RESTAURANT DELETE
+    # ==========================================
+    def destroy(self, request, *args, **kwargs):
+
+        restaurant = self.get_object()
+
+        # Block primary restaurant deletion
+        if restaurant.is_primary:
+
+            raise ValidationError({"detail": "Primary restaurant cannot be deleted."})
+
+        restaurant.delete()
+
+        return Response({"message": "Restaurant deleted successfully."})
+
+
+# ==========================================
+# CREATE NEW BRANCH
+# ==========================================
+class RestaurantCreateView(CreateAPIView):
+
+    serializer_class = RestaurantCreateSerializer
+
+    def get_queryset(self):
+
+        return Restaurant.objects.filter(owner=self.request.user)
+
 
 class StaffCreateView(CreateAPIView):
     """
@@ -35,12 +111,12 @@ class StaffListView(ListAPIView):
 
     def get_queryset(self):
 
-        # Get current user's restaurant
-        restaurant = self.request.user.restaurant
+        restaurant_id = self.request.GET.get("restaurant_id")
 
-        # Return only users of same restaurant
         return (
-            User.objects.filter(restaurant=restaurant)
+            User.objects.filter(
+                restaurant_id=restaurant_id, restaurant__owner=self.request.user
+            )
             .exclude(role="restaurant_admin")
             .order_by("-id")
         )
@@ -55,7 +131,8 @@ class StaffDetailView(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
 
-        return User.objects.filter(restaurant=self.request.user.restaurant)
+        # return User.objects.filter(restaurant=self.request.user.restaurant)
+        return User.objects.filter(restaurant__owner=self.request.user)
 
     def get_serializer_class(self):
 

@@ -10,6 +10,64 @@
 
 import axiosInstance from "../api/axios";
 
+// ==========================================
+// GET OWNER RESTAURANTS
+// ==========================================
+export const getRestaurants = async () => {
+
+    const response =
+        await axiosInstance.get(
+            "/restaurants/my-restaurants/"
+        );
+
+    return response.data;
+};
+
+// ==========================================
+// UPDATE RESTAURANT
+// ==========================================
+export const updateRestaurant = async (
+    restaurantId,
+    data
+) => {
+
+    const response =
+        await axiosInstance.patch(
+            `/restaurants/my-restaurants/${restaurantId}/`,
+            data
+        );
+
+    return response.data;
+};
+
+// ==========================================
+// CREATE RESTAURANT
+// ==========================================
+export const createRestaurant = async (data) => {
+
+    const response =
+        await axiosInstance.post(
+            "/restaurants/my-restaurants/create/",
+            data
+        );
+
+    return response.data;
+};
+
+// ==========================================
+// DELETE RESTAURANT
+// ==========================================
+export const deleteRestaurant = async (
+    restaurantId
+) => {
+
+    const response =
+        await axiosInstance.delete(
+            `/restaurants/my-restaurants/${restaurantId}/`
+        );
+
+    return response.data;
+};
 
 // ==========================================
 // CREATE STAFF MEMBER
@@ -28,10 +86,10 @@ export const createStaff = async (data) => {
 // ==========================================
 // GET STAFF LIST
 // ==========================================
-export const getStaffList = async () => {
+export const getStaffList = async (restaurantId) => {
 
     const response = await axiosInstance.get(
-        "/restaurants/staff/"
+        `/restaurants/staff/?restaurant_id=${restaurantId}`
     );
 
     return response.data;

@@ -6,7 +6,7 @@ import {
     deleteStaff,
     updateStaff,
 } from "../../services/adminService";
-
+import { useSelector, } from "react-redux";
 
 // ==========================================
 // STAFF MANAGEMENT PAGE
@@ -58,15 +58,24 @@ export default function Staff() {
         role: "cashier",
     });
 
+    // ==========================================
+    // GET ACTIVE BRANCH
+    // ==========================================
+    const activeRestaurant =
+    useSelector(
+        (state) =>
+            state.restaurant.activeRestaurant
+    );
+
 
     // ==========================================
     // FETCH STAFF ON LOAD
     // ==========================================
     useEffect(() => {
-
-        fetchStaffList();
-
-    }, []);
+        if (activeRestaurant?.id) {
+            fetchStaffList();
+        }
+    }, [activeRestaurant]);
 
 
     // ==========================================
@@ -76,7 +85,7 @@ export default function Staff() {
 
         try {
 
-            const data = await getStaffList();
+            const data = await getStaffList(activeRestaurant?.id);
 
             setStaffList(data);
 
@@ -113,7 +122,9 @@ export default function Staff() {
 
         try {
 
-            await createStaff(formData);
+            await createStaff({
+                ...formData,
+                restaurant_id:activeRestaurant.id,});
 
             fetchStaffList();
 
@@ -126,17 +137,54 @@ export default function Staff() {
 
         } catch (error) {
 
-            const backendErrors =
-                error.response?.data;
+    console.log(
+        error.response?.data
+    );
 
-            const firstError =
-                Object.values(backendErrors)[0][0];
+    const backendErrors =
+        error.response?.data;
 
-            setAlert({
-                type: "danger",
-                message: firstError,
-            });
+    let errorMessage =
+        "Failed to create staff.";
+
+    // ==========================================
+    // HANDLE DRF VALIDATION ERRORS
+    // ==========================================
+    if (
+        backendErrors &&
+        typeof backendErrors === "object"
+    ) {
+
+        const firstKey =
+            Object.keys(backendErrors)[0];
+
+        const firstValue =
+            backendErrors[firstKey];
+
+        // Array error
+        if (Array.isArray(firstValue)) {
+
+            errorMessage =
+                firstValue[0];
         }
+
+        // String error
+        else if (
+            typeof firstValue === "string"
+        ) {
+
+            errorMessage =
+                firstValue;
+        }
+    }
+
+    setAlert({
+
+        type: "danger",
+
+        message: errorMessage,
+    });
+}
     };
 
 

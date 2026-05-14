@@ -8,6 +8,11 @@ export default function DashboardLayout({
 
     activePage,
     setActivePage,
+
+    restaurants,
+    activeRestaurant,
+    setActiveRestaurant,
+
     children,
 
 }) {
@@ -22,6 +27,12 @@ export default function DashboardLayout({
             <Sidebar
                 activePage={activePage}
                 setActivePage={setActivePage}
+
+                restaurants={restaurants}
+
+                activeRestaurant={activeRestaurant}
+
+                setActiveRestaurant={setActiveRestaurant}
             />
 
 

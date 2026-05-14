@@ -78,6 +78,7 @@ class RegisterSerializer(serializers.Serializer):
             owner=user,
             name=restaurant_name,
             gst_number=gst_number,
+            is_primary=True,
             status="pending"  # default onboarding status
         )
         # ==========================================

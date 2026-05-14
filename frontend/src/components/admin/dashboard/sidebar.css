@@ -1,56 +1,58 @@
 /* ==========================================
-   SIDEBAR CONTAINER
+SIDEBAR BASE
 ========================================== */
-
 .sidebar {
+    width: 260px;
     min-height: 100vh;
-    background-color: #212529;
-
-    transition: width 0.3s ease;
-}
-
-
-/* ==========================================
-   EXPANDED SIDEBAR
-========================================== */
-
-.sidebar-expanded {
-    width: 250px;
-}
-
-
-/* ==========================================
-   COLLAPSED SIDEBAR
-========================================== */
-
-.sidebar-collapsed {
-    width: 80px;
-}
-
-
-/* ==========================================
-   SIDEBAR BUTTON
-========================================== */
-
-.sidebar-button {
-    width: 100%;
-    border: none;
-}
-
-
-/* ==========================================
-   HIDE LABEL WHEN COLLAPSED
-========================================== */
-
-.sidebar-label-hidden {
-    display: none;
-}
-
-
-/* ==========================================
-   CONTENT TRANSITION
-========================================== */
-
-.dashboard-content {
+    background-color: #111827;
     transition: all 0.3s ease;
+}
+
+
+/* ==========================================
+COLLAPSED SIDEBAR
+========================================== */
+.sidebar-collapsed {
+    width: 90px;
+}
+
+
+/* ==========================================
+EXPANDED SIDEBAR
+========================================== */
+.sidebar-expanded {
+    width: 260px;
+}
+
+
+/* ==========================================
+SIDEBAR BUTTON
+========================================== */
+.sidebar-button {
+    border-radius: 10px;
+    transition: 0.2s ease;
+}
+
+
+/* ==========================================
+HOVER EFFECT
+========================================== */
+.sidebar-button:hover {
+    transform: translateX(3px);
+}
+
+
+/* ==========================================
+RESTAURANT ITEM
+========================================== */
+.restaurant-item {
+    transition: 0.2s ease;
+}
+
+
+/* ==========================================
+RESTAURANT ITEM HOVER
+========================================== */
+.restaurant-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
 }

@@ -12,7 +12,10 @@ class Restaurant(models.Model):
         ("suspended", "Suspended"),
     )
 
-    owner = models.OneToOneField(
+    # ==========================================
+    # ONE OWNER CAN HAVE MULTIPLE BRANCHES
+    # ==========================================
+    owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="owned_restaurant"
@@ -25,6 +28,17 @@ class Restaurant(models.Model):
     gst_number = models.CharField(
         max_length=50,
         unique=True
+    )
+
+    address = models.TextField(
+        blank=True
+    )
+
+    # ==========================================
+    # DEFAULT RESTAURANT CREATED ON REGISTRATION
+    # ==========================================
+    is_primary = models.BooleanField(
+        default=False
     )
 
     status = models.CharField(
