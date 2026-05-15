@@ -173,3 +173,89 @@ export const deleteArea = async (
 
     return response.data;
 };
+
+// ==========================================
+// GET TABLE LIST
+// ==========================================
+export const getTableList = async (
+    restaurantId
+) => {
+
+    const response =
+        await axiosInstance.get(
+
+            `/restaurants/tables/?restaurant_id=${restaurantId}`
+        );
+
+    return response.data;
+};
+
+
+// ==========================================
+// CREATE TABLE
+// ==========================================
+export const createTable = async (
+    data
+) => {
+
+    const response =
+        await axiosInstance.post(
+
+            "/restaurants/tables/create/",
+            data
+        );
+
+    return response.data;
+};
+
+
+// ==========================================
+// UPDATE TABLE
+// ==========================================
+export const updateTable = async (
+    tableId,
+    data
+) => {
+
+    const response =
+        await axiosInstance.put(
+
+            `/restaurants/tables/${tableId}/`,
+            data
+        );
+
+    return response.data;
+};
+
+
+// ==========================================
+// DELETE / ACTIVE-INACTIVE TABLE
+// ==========================================
+export const deleteTable = async (
+    tableId
+) => {
+
+    const response =
+        await axiosInstance.delete(
+
+            `/restaurants/tables/${tableId}/`
+        );
+
+    return response.data;
+};
+
+// ==========================================
+// TOGGLE TABLE STATUS
+// ==========================================
+export const toggleTableStatus = async (
+    tableId
+) => {
+
+    const response =
+        await axiosInstance.patch(
+
+            `/restaurants/tables/${tableId}/toggle-status/`
+        );
+
+    return response.data;
+};

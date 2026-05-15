@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from accounts.models import User
 
-from .models import Restaurant, Floor, Area
+from .models import Restaurant, Floor, Area, RestaurantTable
 
 
 # ==========================================
@@ -312,4 +312,96 @@ class AreaUpdateSerializer(serializers.ModelSerializer):
             "name",
             "area_type",
             "floor",
+        )
+
+
+# ==========================================
+# TABLE LIST SERIALIZER
+# ==========================================
+class TableListSerializer(serializers.ModelSerializer):
+
+    floor_name = serializers.CharField(source="floor.name", read_only=True)
+
+    area_name = serializers.CharField(source="area.name", read_only=True)
+
+    waiter_name = serializers.CharField(
+        source="assigned_waiter.username", read_only=True
+    )
+
+    class Meta:
+
+        model = RestaurantTable
+
+        fields = (
+            "id",
+            "table_number",
+            "capacity",
+            "status",
+            "floor",
+            "floor_name",
+            "area",
+            "area_name",
+            "assigned_waiter",
+            "waiter_name",
+            "is_active",
+        )
+
+
+# ==========================================
+# TABLE CREATE SERIALIZER
+# ==========================================
+class TableCreateSerializer(serializers.ModelSerializer):
+
+    restaurant_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+
+        model = RestaurantTable
+
+        fields = (
+            "id",
+            "table_number",
+            "capacity",
+            "status",
+            "floor",
+            "area",
+            "assigned_waiter",
+            "restaurant_id",
+        )
+
+    def create(self, validated_data):
+
+        request = self.context.get("request")
+
+        restaurant_id = validated_data.pop("restaurant_id")
+
+        # ==========================================
+        # VERIFY RESTAURANT OWNER
+        # ==========================================
+        restaurant = Restaurant.objects.get(id=restaurant_id, owner=request.user)
+
+        # ==========================================
+        # CREATE TABLE
+        # ==========================================
+        table = RestaurantTable.objects.create(restaurant=restaurant, **validated_data)
+
+        return table
+
+
+# ==========================================
+# TABLE UPDATE SERIALIZER
+# ==========================================
+class TableUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = RestaurantTable
+
+        fields = (
+            "table_number",
+            "capacity",
+            "status",
+            "floor",
+            "area",
+            "assigned_waiter",
         )

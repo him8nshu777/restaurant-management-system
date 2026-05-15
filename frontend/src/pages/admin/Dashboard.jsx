@@ -8,6 +8,7 @@ import Staff from "./Staff";
 import { getRestaurants } from "../../services/adminService";
 import Floor from "../../pages/dashboard/Floor";
 import Area from "../../pages/dashboard/Area";
+import Table from "../dashboard/Table";
 
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
@@ -103,6 +104,9 @@ useEffect(() => {
 
             case "areas":
                 return <Area />;
+
+            case "tables":
+                return <Table />;
 
             case "restaurant-profile":
 

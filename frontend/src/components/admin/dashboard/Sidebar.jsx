@@ -12,7 +12,8 @@ import {
     CheckCircleFill,
     Building,
     GridFill,
-    BoundingBox
+    BoundingBox,
+    Table,
 } from "react-bootstrap-icons";
 
 import { useEffect } from "react";
@@ -54,6 +55,14 @@ const menuItems = [
         key: "areas",
         label: "Areas",
         icon: <BoundingBox />,
+    },
+    // ==========================================
+    // TABLE MANAGEMENT
+    // ==========================================
+    {
+        key: "tables",
+        label: "Tables",
+        icon: <Table />,
     },
 
     {

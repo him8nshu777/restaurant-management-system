@@ -12,13 +12,15 @@ from .views import (
     FloorListView,
     FloorToggleStatusView,
     FloorDeleteView,
-
     AreaCreateView,
     AreaListView,
     AreaDetailView,
-
     AreaDeleteView,
-    AreaToggleStatusView
+    AreaToggleStatusView,
+    TableListView,
+    TableCreateView,
+    TableDetailView,
+    ToggleTableStatusView,
 )
 
 urlpatterns = [
@@ -44,7 +46,11 @@ urlpatterns = [
     path("floors/<int:pk>/", FloorDetailView.as_view(), name="floor-detail"),
     path("floors/<int:pk>/", FloorDetailView.as_view(), name="floor-detail"),
     # ACTIVE / INACTIVE
-    path("floors/<int:pk>/toggle-status/", FloorToggleStatusView.as_view(), name="floor-toggle-status"),
+    path(
+        "floors/<int:pk>/toggle-status/",
+        FloorToggleStatusView.as_view(),
+        name="floor-toggle-status",
+    ),
     # DELETE
     path("floors/<int:pk>/delete/", FloorDeleteView.as_view(), name="floor-delete"),
     # ==========================================
@@ -53,6 +59,17 @@ urlpatterns = [
     path("areas/create/", AreaCreateView.as_view(), name="area-create"),
     path("areas/", AreaListView.as_view(), name="area-list"),
     path("areas/<int:pk>/", AreaDetailView.as_view(), name="area-detail"),
-    path("areas/<int:pk>/toggle-status/", AreaToggleStatusView.as_view(), name="area-toggle-status"),
+    path(
+        "areas/<int:pk>/toggle-status/",
+        AreaToggleStatusView.as_view(),
+        name="area-toggle-status",
+    ),
     path("areas/<int:pk>/delete/", AreaDeleteView.as_view(), name="area-delete"),
+    # ==========================================
+    # TABLE URLS
+    # ==========================================
+    path("tables/", TableListView.as_view(), name="table-list"),
+    path("tables/create/", TableCreateView.as_view(), name="table-create"),
+    path("tables/<int:pk>/", TableDetailView.as_view(), name="table-detail"),
+    path("tables/<int:pk>/toggle-status/", ToggleTableStatusView.as_view(), name="table-toggle-status"),
 ]
