@@ -36,17 +36,15 @@ export default function Table() {
   // ==========================================
   const [alert, setAlert] = useState(null);
 
+  //waiter assignment
+  const [waiterList, setWaiterList] = useState([]);
+
   // ==========================================
   // MODALS
   // ==========================================
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const [showEditModal, setShowEditModal] = useState(false);
-
-  // ==========================================
-  // SELECTED TABLE
-  // ==========================================
-  const [selectedTable, setSelectedTable] = useState(null);
 
   // ==========================================
   // FORM STATE
@@ -57,6 +55,7 @@ export default function Table() {
     floor: "",
     area: "",
     status: "available",
+    assigned_waiter: "",
   });
 
   // ==========================================
@@ -85,8 +84,11 @@ export default function Table() {
     try {
       const data = await getTableList(activeRestaurant.id);
 
-      setTableList(data);
+      setTableList(data.tables || []);
+      setWaiterList(data.waiters || []);
     } catch (error) {
+      setTableList([]); // fallback safety
+      setWaiterList([]);
       setAlert({
         type: "danger",
         message: "Failed to fetch tables.",
@@ -182,6 +184,7 @@ export default function Table() {
       floor: table.floor,
       area: table.area,
       status: table.status,
+      assigned_waiter: table.assigned_waiter || "",
     });
 
     setShowEditModal(true);
@@ -237,9 +240,7 @@ export default function Table() {
   // DELETE TABLE
   // ==========================================
   const handleDeleteTable = async (tableId) => {
-    const confirmDelete = window.confirm(
-      "Delete this table permanently?",
-    );
+    const confirmDelete = window.confirm("Delete this table permanently?");
 
     if (!confirmDelete) {
       return;
@@ -268,9 +269,7 @@ export default function Table() {
           ALERT
       ========================================== */}
       {alert && (
-        <div className={`alert alert-${alert.type}`}>
-          {alert.message}
-        </div>
+        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
       {/* ==========================================
@@ -299,6 +298,7 @@ export default function Table() {
                 <th>Capacity</th>
                 <th>Floor</th>
                 <th>Area</th>
+                <th>Assigned Waiter</th>
                 <th>Status</th>
                 <th>Active</th>
                 <th>Actions</th>
@@ -314,15 +314,15 @@ export default function Table() {
 
                   <td>{table.floor_name}</td>
                   <td>{table.area_name}</td>
-
+                  <td>{table.waiter_name || "None"}</td>
                   <td>
                     <span
                       className={`badge ${
                         table.status === "available"
                           ? "bg-success"
                           : table.status === "occupied"
-                          ? "bg-danger"
-                          : "bg-warning"
+                            ? "bg-danger"
+                            : "bg-warning"
                       }`}
                     >
                       {table.status}
@@ -332,14 +332,10 @@ export default function Table() {
                   <td>
                     <span
                       className={`badge ${
-                        table.is_active
-                          ? "bg-success"
-                          : "bg-danger"
+                        table.is_active ? "bg-success" : "bg-danger"
                       }`}
                     >
-                      {table.is_active
-                        ? "Active"
-                        : "Inactive"}
+                      {table.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
 
@@ -355,28 +351,21 @@ export default function Table() {
                     {/* ACTIVE / INACTIVE */}
                     <button
                       className={`btn btn-sm me-2 ${
-                        table.is_active
-                          ? "btn-secondary"
-                          : "btn-success"
+                        table.is_active ? "btn-secondary" : "btn-success"
                       }`}
-                      onClick={() =>
-                        handleToggleStatus(table.id)
-                      }
+                      onClick={() => handleToggleStatus(table.id)}
                     >
-                      {table.is_active
-                        ? "Deactivate"
-                        : "Activate"}
+                      {table.is_active ? "Deactivate" : "Activate"}
                     </button>
 
                     {/* DELETE */}
                     <button
                       className="btn btn-danger btn-sm"
-                      onClick={() =>
-                        handleDeleteTable(table.id)
-                      }
+                      onClick={() => handleDeleteTable(table.id)}
                     >
                       Delete
                     </button>
+
                   </td>
                 </tr>
               ))}
@@ -399,6 +388,8 @@ export default function Table() {
             handleChange={handleChange}
             floorList={floorList}
             areaList={areaList}
+            waiterList={waiterList}
+            showWaiter={false}
           />
         </ModalWrapper>
       )}
@@ -417,9 +408,13 @@ export default function Table() {
             handleChange={handleChange}
             floorList={floorList}
             areaList={areaList}
+            waiterList={waiterList}
+            showWaiter={true}
           />
         </ModalWrapper>
       )}
+
+    
     </div>
   );
 }
@@ -432,6 +427,8 @@ function TableForm({
   handleChange,
   floorList,
   areaList,
+  waiterList,
+  showWaiter,
 }) {
   return (
     <>
@@ -463,15 +460,10 @@ function TableForm({
           onChange={handleChange}
           required
         >
-          <option value="">
-            Select FLoor
-          </option>
+          <option value="">Select FLoor</option>
 
           {floorList.map((floor) => (
-            <option
-              key={floor.id}
-              value={floor.id}
-            >
+            <option key={floor.id} value={floor.id}>
               {floor.name}
             </option>
           ))}
@@ -488,15 +480,10 @@ function TableForm({
           onChange={handleChange}
           required
         >
-          <option value="">
-            Select Area
-          </option>
+          <option value="">Select Area</option>
 
           {areaList.map((area) => (
-            <option
-              key={area.id}
-              value={area.id}
-            >
+            <option key={area.id} value={area.id}>
               {area.name}
             </option>
           ))}
@@ -505,9 +492,7 @@ function TableForm({
 
       {/* STATUS */}
       <div className="mb-3">
-        <label className="form-label">
-          Table Status
-        </label>
+        <label className="form-label">Table Status</label>
 
         <select
           className="form-select"
@@ -516,23 +501,39 @@ function TableForm({
           onChange={handleChange}
           required
         >
-          <option value="available">
-            Available
-          </option>
+          <option value="available">Available</option>
 
-          <option value="occupied">
-            Occupied
-          </option>
+          <option value="occupied">Occupied</option>
 
-          <option value="reserved">
-            Reserved
-          </option>
+          <option value="reserved">Reserved</option>
 
-          <option value="cleaning">
-            Cleaning
-          </option>
+          <option value="cleaning">Cleaning</option>
         </select>
       </div>
+
+      {/* WAITER (ONLY FOR EDIT) */}
+      {showWaiter && (
+        <div className="mb-3">
+          <label className="form-label">Assign Waiter</label>
+
+          <select
+            className="form-select"
+            name="assigned_waiter"
+            value={formData.assigned_waiter || ""}
+            onChange={handleChange}
+          >
+            <option value="">None</option>
+
+            {waiterList
+              .filter((w) => w.is_active)
+              .map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.username}
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
     </>
   );
 }
@@ -540,31 +541,19 @@ function TableForm({
 // ==========================================
 // MODAL WRAPPER
 // ==========================================
-function ModalWrapper({
-  title,
-  children,
-  onClose,
-  onSubmit,
-}) {
+function ModalWrapper({ title, children, onClose, onSubmit }) {
   return (
     <div className="modal d-block">
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">
-              {title}
-            </h5>
+            <h5 className="modal-title">{title}</h5>
 
-            <button
-              className="btn-close"
-              onClick={onClose}
-            ></button>
+            <button className="btn-close" onClick={onClose}></button>
           </div>
 
           <form onSubmit={onSubmit}>
-            <div className="modal-body">
-              {children}
-            </div>
+            <div className="modal-body">{children}</div>
 
             <div className="modal-footer">
               <button
@@ -575,10 +564,7 @@ function ModalWrapper({
                 Cancel
               </button>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
+              <button type="submit" className="btn btn-primary">
                 Save
               </button>
             </div>
@@ -592,18 +578,10 @@ function ModalWrapper({
 // ==========================================
 // INPUT FIELD
 // ==========================================
-function InputField({
-  label,
-  name,
-  value,
-  handleChange,
-  type = "text",
-}) {
+function InputField({ label, name, value, handleChange, type = "text" }) {
   return (
     <div className="mb-3">
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
 
       <input
         type={type}

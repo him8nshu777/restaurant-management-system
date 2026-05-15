@@ -4,7 +4,6 @@ from rest_framework.generics import (
     ListAPIView,
     RetrieveUpdateAPIView,
     RetrieveUpdateDestroyAPIView,
-
     DestroyAPIView,
     UpdateAPIView,
 )
@@ -38,7 +37,11 @@ from .permissions import CanManageFloor
 from rest_framework.exceptions import ValidationError
 from .serializers import AreaCreateSerializer, AreaListSerializer, AreaUpdateSerializer
 
-from .serializers import TableCreateSerializer, TableListSerializer, TableUpdateSerializer
+from .serializers import (
+    TableCreateSerializer,
+    TableListSerializer,
+    TableUpdateSerializer,
+)
 
 
 # ==========================================
@@ -336,6 +339,7 @@ class AreaDetailView(RetrieveUpdateDestroyAPIView):
 
         return Response({"message": message}, status=status.HTTP_200_OK)
 
+
 # ==========================================
 # AREA TOGGLE STATUS VIEW
 # ==========================================
@@ -359,10 +363,7 @@ class AreaToggleStatusView(UpdateAPIView):
             else "Area deactivated successfully."
         )
 
-        return Response(
-            {"message": message},
-            status=status.HTTP_200_OK
-        )
+        return Response({"message": message}, status=status.HTTP_200_OK)
 
 
 # ==========================================
@@ -382,9 +383,7 @@ class TableCreateView(CreateAPIView):
 
     serializer_class = TableCreateSerializer
 
-    permission_classes = [
-        IsRestaurantAdminOrManager
-    ]
+    permission_classes = [IsRestaurantAdminOrManager]
 
 
 # ==========================================
@@ -394,38 +393,53 @@ class TableListView(ListAPIView):
 
     serializer_class = TableListSerializer
 
-    permission_classes = [
-        IsRestaurantAdminOrManager
-    ]
+    permission_classes = [IsRestaurantAdminOrManager]
 
     def get_queryset(self):
 
-        restaurant_id = self.request.GET.get(
-            "restaurant_id"
-        )
+        restaurant_id = self.request.GET.get("restaurant_id")
 
         return RestaurantTable.objects.filter(
-            restaurant_id=restaurant_id,
-            restaurant__owner=self.request.user
+            restaurant_id=restaurant_id, restaurant__owner=self.request.user
         ).order_by("table_number")
+
+    # ==========================================
+    # OVERRIDE LIST RESPONSE
+    # ==========================================
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        tables = self.get_serializer(queryset, many=True).data
+
+        restaurant_id = request.GET.get("restaurant_id")
+
+        waiters = User.objects.filter(
+            role="waiter",
+            is_active=True,
+            restaurant_id=restaurant_id,
+        ).distinct()
+        print("w->", waiters)
+        waiter_data = [
+            {
+                "id": w.id,
+                "username": w.username,
+                "is_active": w.is_active,
+            }
+            for w in waiters
+        ]
+        print("wai", waiter_data)
+        return Response({"tables": tables, "waiters": waiter_data})
 
 
 # ==========================================
 # TABLE DETAIL VIEW
 # ==========================================
-class TableDetailView(
-    RetrieveUpdateDestroyAPIView
-):
+class TableDetailView(RetrieveUpdateDestroyAPIView):
 
-    permission_classes = [
-        IsRestaurantAdminOrManager
-    ]
+    permission_classes = [IsRestaurantAdminOrManager]
 
     def get_queryset(self):
 
-        return RestaurantTable.objects.filter(
-            restaurant__owner=self.request.user
-        )
+        return RestaurantTable.objects.filter(restaurant__owner=self.request.user)
 
     def get_serializer_class(self):
 
@@ -444,16 +458,11 @@ class TableDetailView(
 # ==========================================
 class ToggleTableStatusView(APIView):
 
-    permission_classes = [
-        IsRestaurantAdminOrManager
-    ]
+    permission_classes = [IsRestaurantAdminOrManager]
 
     def patch(self, request, pk):
 
-        table = RestaurantTable.objects.get(
-            pk=pk,
-            restaurant__owner=request.user
-        )
+        table = RestaurantTable.objects.get(pk=pk, restaurant__owner=request.user)
 
         table.is_active = not table.is_active
 
@@ -465,7 +474,4 @@ class ToggleTableStatusView(APIView):
             else "Table deactivated successfully."
         )
 
-        return Response(
-            {"message": message},
-            status=status.HTTP_200_OK
-        )
+        return Response({"message": message}, status=status.HTTP_200_OK)

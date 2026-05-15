@@ -71,5 +71,10 @@ urlpatterns = [
     path("tables/", TableListView.as_view(), name="table-list"),
     path("tables/create/", TableCreateView.as_view(), name="table-create"),
     path("tables/<int:pk>/", TableDetailView.as_view(), name="table-detail"),
-    path("tables/<int:pk>/toggle-status/", ToggleTableStatusView.as_view(), name="table-toggle-status"),
+    path(
+        "tables/<int:pk>/toggle-status/",
+        ToggleTableStatusView.as_view(),
+        name="table-toggle-status",
+    ),
+
 ]

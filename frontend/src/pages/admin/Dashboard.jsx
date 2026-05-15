@@ -10,6 +10,8 @@ import Floor from "../../pages/dashboard/Floor";
 import Area from "../../pages/dashboard/Area";
 import Table from "../dashboard/Table";
 
+import Categories from "../dashboard/menu/Categories";
+import Products from "../dashboard/menu/Product";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -107,6 +109,12 @@ useEffect(() => {
 
             case "tables":
                 return <Table />;
+
+            case "categories":
+                return <Categories />;
+
+            case "products":
+                return <Products />;
 
             case "restaurant-profile":
 

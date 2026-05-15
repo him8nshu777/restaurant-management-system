@@ -21,7 +21,8 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,4 +30,15 @@ urlpatterns = [
     path("api/auth/",include("accounts.urls")),
     path("api/restaurants/",include("restaurants.urls")),
     path("api/auth/refresh/",TokenRefreshView.as_view(),name="token_refresh"),
+
+    path("api/menu/", include("menu.urls")),
 ]
+# =========================================================
+# MEDIA FILES
+# =========================================================
+if settings.DEBUG:
+
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT,
+    )

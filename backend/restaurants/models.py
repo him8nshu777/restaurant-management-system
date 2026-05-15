@@ -262,6 +262,19 @@ class RestaurantTable(models.Model):
     )
 
     # ==========================================
+    # MERGE SUPPORT
+    # ==========================================
+    is_merged = models.BooleanField(default=False)
+
+    merged_into = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="merged_tables",
+    )
+
+    # ==========================================
     # ACTIVE STATUS
     # ==========================================
     is_active = models.BooleanField(default=True)
