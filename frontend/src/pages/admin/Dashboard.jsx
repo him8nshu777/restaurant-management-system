@@ -17,6 +17,11 @@ import Addons from "../dashboard/menu/Addons";
 import ProductAddons from "../dashboard/menu/ProductAddons";
 import Combos from "../dashboard/menu/Combos";
 import ComboProducts from "../dashboard/menu/ComboProducts";
+import Taxes from "../dashboard/menu/Taxes";
+import ProductTaxes from "../dashboard/menu/ProductTaxes";
+import ServiceCharges from "../dashboard/menu/ServiceCharges";
+import DynamicPricing from "../dashboard/menu/DynamicPricing";
+import ProductDynamicPricing from "../dashboard/menu/ProductDynamicPricing";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -135,6 +140,21 @@ useEffect(() => {
 
             case "combo-products":
                 return <ComboProducts />;
+
+            case "taxes":
+                return <Taxes />;
+
+            case "product-taxes":
+                return <ProductTaxes />;
+
+            case "service-charges":
+                return <ServiceCharges />;
+
+            case "dynamic-pricing":
+                return <DynamicPricing />;
+
+            case "product-dynamic-pricing":
+                return <ProductDynamicPricing />;
 
             case "restaurant-profile":
 

@@ -1,33 +1,34 @@
 import { useState, useEffect } from "react";
 
 import {
-    BarChartFill,
-    PeopleFill,
-    ReceiptCutoff,
-    ClipboardCheck,
-    List,
-    ChevronDown,
-    ChevronRight,
-    PlusCircle,
-    CheckCircleFill,
-    Building,
-    GridFill,
-    BoundingBox,
-    Table,
+  BarChartFill,
+  PeopleFill,
+  ReceiptCutoff,
+  ClipboardCheck,
+  List,
+  ChevronDown,
+  ChevronRight,
+  PlusCircle,
+  CheckCircleFill,
+  Building,
+  GridFill,
+  BoundingBox,
+  Table,
 
-    // ==========================================
-    // MENU ICONS
-    // ==========================================
-    MenuButtonWideFill,
-    TagsFill,
-    CupHotFill,
-    LayersFill,
-    PlusSquareFill,
-    Link45deg,
-    CollectionFill,
-    Diagram3Fill,
-    Percent,
-    ClockFill,
+  // ==========================================
+  // MENU ICONS
+  // ==========================================
+  MenuButtonWideFill,
+  TagsFill,
+  CupHotFill,
+  LayersFill,
+  PlusSquareFill,
+  Link45deg,
+  CollectionFill,
+  Diagram3Fill,
+  Percent,
+  GraphUpArrow,
+  ClockFill,
 } from "react-bootstrap-icons";
 
 import { getRestaurants } from "../../../services/adminService";
@@ -36,369 +37,365 @@ import "./sidebar.css";
 
 import { useDispatch, useSelector } from "react-redux";
 
-import {
-    setActiveRestaurant,
-} from "../../../features/restaurants/restaurantSlice";
-
+import { setActiveRestaurant } from "../../../features/restaurants/restaurantSlice";
 
 // ==========================================
 // SIDEBAR MENU CONFIGURATION
 // ==========================================
 const menuItems = [
+  // ==========================================
+  // REPORTS
+  // ==========================================
+  {
+    key: "reports",
+    label: "Reports",
+    icon: <BarChartFill />,
+  },
 
-    // ==========================================
-    // REPORTS
-    // ==========================================
-    {
-        key: "reports",
-        label: "Reports",
-        icon: <BarChartFill />,
-    },
+  // ==========================================
+  // STAFF
+  // ==========================================
+  {
+    key: "staff",
+    label: "Staff",
+    icon: <PeopleFill />,
+  },
 
-    // ==========================================
-    // STAFF
-    // ==========================================
-    {
-        key: "staff",
-        label: "Staff",
-        icon: <PeopleFill />,
-    },
+  // ==========================================
+  // FLOOR MANAGEMENT
+  // ==========================================
+  {
+    key: "floors",
+    label: "Floors",
+    icon: <GridFill />,
+  },
 
-    // ==========================================
-    // FLOOR MANAGEMENT
-    // ==========================================
-    {
-        key: "floors",
-        label: "Floors",
-        icon: <GridFill />,
-    },
+  // ==========================================
+  // AREA MANAGEMENT
+  // ==========================================
+  {
+    key: "areas",
+    label: "Areas",
+    icon: <BoundingBox />,
+  },
 
-    // ==========================================
-    // AREA MANAGEMENT
-    // ==========================================
-    {
-        key: "areas",
-        label: "Areas",
-        icon: <BoundingBox />,
-    },
+  // ==========================================
+  // TABLE MANAGEMENT
+  // ==========================================
+  {
+    key: "tables",
+    label: "Tables",
+    icon: <Table />,
+  },
 
-    // ==========================================
-    // TABLE MANAGEMENT
-    // ==========================================
-    {
-        key: "tables",
-        label: "Tables",
-        icon: <Table />,
-    },
+  // ==========================================
+  // MENU MANAGEMENT DROPDOWN
+  // ==========================================
+  {
+    key: "menu-management",
+    label: "Menu Management",
+    icon: <MenuButtonWideFill />,
 
-    // ==========================================
-    // MENU MANAGEMENT DROPDOWN
-    // ==========================================
-    {
-        key: "menu-management",
-        label: "Menu Management",
-        icon: <MenuButtonWideFill />,
+    children: [
+      // ======================================
+      // CATEGORIES
+      // ======================================
+      {
+        key: "categories",
+        label: "Categories",
+        icon: <TagsFill />,
+      },
+
+      // ======================================
+      // PRODUCTS
+      // ======================================
+      {
+        key: "products",
+        label: "Products",
+        icon: <CupHotFill />,
+      },
+
+      // ======================================
+      // PRODUCT VARIANTS
+      // ======================================
+      {
+        key: "product-variants",
+        label: "Variants",
+        icon: <LayersFill />,
+      },
+
+      // ======================================
+      // ADDONS
+      // ======================================
+      {
+        key: "addons",
+        label: "Addons",
+        icon: <PlusSquareFill />,
+      },
+
+      // ======================================
+      {
+        key: "product-addons",
+        label: "Product Addons",
+        icon: <Link45deg />,
+      },
+
+      // ======================================
+      // COMBOS
+      // ======================================
+      {
+        key: "combos",
+        label: "Combos",
+        icon: <CollectionFill />,
+      },
+
+      {
+        key: "combo-products",
+        label: "Combo Products",
+        icon: <Diagram3Fill />,
+      },
+
+      // ======================================
+      // TAXES
+      // ======================================
+      {
+        key: "tax-pricing",
+        label: "Tax & Pricing",
+        icon: <Percent />,
 
         children: [
+          // ==================================
+          // TAX MANAGEMENT
+          // ==================================
+          {
+            key: "taxes",
+            label: "Taxes",
+            icon: <Percent />,
+          },
 
-            // ======================================
-            // CATEGORIES
-            // ======================================
-            {
-                key: "categories",
-                label: "Categories",
-                icon: <TagsFill />,
-            },
+          // ==================================
+          // PRODUCT TAX MAPPING
+          // ==================================
+          {
+            key: "product-taxes",
+            label: "Product Taxes",
+            icon: <Link45deg />,
+          },
 
-            // ======================================
-            // PRODUCTS
-            // ======================================
-            {
-                key: "products",
-                label: "Products",
-                icon: <CupHotFill />,
-            },
+          // ==================================
+          // SERVICE CHARGES
+          // ==================================
+          {
+            key: "service-charges",
+            label: "Service Charges",
+            icon: <ReceiptCutoff />,
+          },
 
-            // ======================================
-            // PRODUCT VARIANTS
-            // ======================================
+          // ==================================
+          // DYNAMIC PRICING
+          // ==================================
+          {
+            key: "dynamic-pricing",
+            label: "Dynamic Pricing",
+            icon: <GraphUpArrow />,
+          },
+          // ==================================
+            // PRODUCT DYNAMIC PRICING
+            // ==================================
             {
-                key: "product-variants",
-                label: "Variants",
-                icon: <LayersFill />,
-            },
-
-            // ======================================
-            // ADDONS
-            // ======================================
-            {
-                key: "addons",
-                label: "Addons",
-                icon: <PlusSquareFill />,
-            },
-            
-            // ======================================
-            {
-                key: "product-addons",
-                label: "Product Addons",
+                key: "product-dynamic-pricing",
+                label: "Product Dynamic Pricing",
                 icon: <Link45deg />,
             },
-
-            // ======================================
-            // COMBOS
-            // ======================================
-            {
-                key: "combos",
-                label: "Combos",
-                icon: <CollectionFill />,
-            },
-
-            {
-                key: "combo-products",
-                label: "Combo Products",
-                icon: <Diagram3Fill />,
-            },
-
-            // ======================================
-            // TAXES
-            // ======================================
-            {
-                key: "taxes",
-                label: "Taxes",
-                icon: <Percent />,
-            },
-
-            // ======================================
-            // OFFERS / HAPPY HOURS
-            // ======================================
-            {
-                key: "offers",
-                label: "Offers",
-                icon: <ClockFill />,
-            },
         ],
-    },
+      },
 
-    // ==========================================
-    // ORDERS
-    // ==========================================
-    {
-        key: "orders",
-        label: "Orders",
-        icon: <ClipboardCheck />,
-    },
+      // ======================================
+      // OFFERS / HAPPY HOURS
+      // ======================================
+      {
+        key: "offers",
+        label: "Offers",
+        icon: <ClockFill />,
+      },
+    ],
+  },
 
-    // ==========================================
-    // BILLING
-    // ==========================================
-    {
-        key: "billing",
-        label: "Billing",
-        icon: <ReceiptCutoff />,
-    },
+  // ==========================================
+  // ORDERS
+  // ==========================================
+  {
+    key: "orders",
+    label: "Orders",
+    icon: <ClipboardCheck />,
+  },
+
+  // ==========================================
+  // BILLING
+  // ==========================================
+  {
+    key: "billing",
+    label: "Billing",
+    icon: <ReceiptCutoff />,
+  },
 ];
-
 
 // ==========================================
 // REUSABLE SIDEBAR
 // ==========================================
-export default function Sidebar({
-    activePage,
-    setActivePage,
-}) {
+export default function Sidebar({ activePage, setActivePage }) {
+  // ==========================================
+  // SIDEBAR COLLAPSE STATE
+  // ==========================================
+  const [collapsed, setCollapsed] = useState(false);
 
-    // ==========================================
-    // SIDEBAR COLLAPSE STATE
-    // ==========================================
-    const [collapsed, setCollapsed] = useState(false);
+  // ==========================================
+  // PROFILE DROPDOWN STATE
+  // ==========================================
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-    // ==========================================
-    // PROFILE DROPDOWN STATE
-    // ==========================================
-    const [showProfileMenu, setShowProfileMenu] = useState(false);
+  // ==========================================
+  // MENU DROPDOWN STATE
+  // ==========================================
+  const [openMenus, setOpenMenus] = useState({});
 
-    // ==========================================
-    // MENU DROPDOWN STATE
-    // ==========================================
-    const [openMenus, setOpenMenus] = useState({
-        "menu-management": true,
-    });
+  // ==========================================
+  // RESTAURANTS
+  // ==========================================
+  const [restaurants, setRestaurants] = useState([]);
 
-    // ==========================================
-    // RESTAURANTS
-    // ==========================================
-    const [restaurants, setRestaurants] = useState([]);
+  const dispatch = useDispatch();
 
-    const dispatch = useDispatch();
+  // ==========================================
+  // ACTIVE RESTAURANT
+  // ==========================================
+  const activeRestaurant = useSelector(
+    (state) => state.restaurant.activeRestaurant,
+  );
 
-    // ==========================================
-    // ACTIVE RESTAURANT
-    // ==========================================
-    const activeRestaurant = useSelector(
-        (state) =>
-            state.restaurant.activeRestaurant
-    );
+  // ==========================================
+  // TOGGLE DROPDOWN MENU
+  // ==========================================
+  const toggleMenu = (menuKey) => {
+    setOpenMenus((prev) => ({
+      ...prev,
+      [menuKey]: !prev[menuKey],
+    }));
+  };
 
-    // ==========================================
-    // TOGGLE DROPDOWN MENU
-    // ==========================================
-    const toggleMenu = (menuKey) => {
+  // ==========================================
+  // SWITCH RESTAURANT
+  // ==========================================
+  const handleSwitchRestaurant = (restaurant) => {
+    dispatch(setActiveRestaurant(restaurant));
 
-        setOpenMenus((prev) => ({
-            ...prev,
-            [menuKey]: !prev[menuKey],
-        }));
-    };
+    // ======================================
+    // SAVE IN LOCAL STORAGE
+    // ======================================
+    localStorage.setItem("activeRestaurant", JSON.stringify(restaurant));
 
-    // ==========================================
-    // SWITCH RESTAURANT
-    // ==========================================
-    const handleSwitchRestaurant = (restaurant) => {
+    // ======================================
+    // RELOAD DASHBOARD
+    // ======================================
+    window.location.reload();
+  };
 
-        dispatch(
-            setActiveRestaurant(restaurant)
-        );
+  // ==========================================
+  // FETCH RESTAURANTS
+  // ==========================================
+  useEffect(() => {
+    fetchRestaurants();
+  }, []);
 
-        // ======================================
-        // SAVE IN LOCAL STORAGE
-        // ======================================
-        localStorage.setItem(
-            "activeRestaurant",
-            JSON.stringify(restaurant)
-        );
+  // ==========================================
+  // FETCH FUNCTION
+  // ==========================================
+  const fetchRestaurants = async () => {
+    try {
+      const data = await getRestaurants();
 
-        // ======================================
-        // RELOAD DASHBOARD
-        // ======================================
-        window.location.reload();
-    };
+      setRestaurants(data);
 
-    // ==========================================
-    // FETCH RESTAURANTS
-    // ==========================================
-    useEffect(() => {
-        fetchRestaurants();
-    }, []);
+      // ======================================
+      // DEFAULT ACTIVE RESTAURANT
+      // ======================================
+      if (data.length > 0 && !activeRestaurant) {
+        dispatch(setActiveRestaurant(data[0]));
 
-    // ==========================================
-    // FETCH FUNCTION
-    // ==========================================
-    const fetchRestaurants = async () => {
+        localStorage.setItem("activeRestaurant", JSON.stringify(data[0]));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-        try {
-
-            const data = await getRestaurants();
-
-            setRestaurants(data);
-
-            // ======================================
-            // DEFAULT ACTIVE RESTAURANT
-            // ======================================
-            if (
-                data.length > 0 &&
-                !activeRestaurant
-            ) {
-
-                dispatch(
-                    setActiveRestaurant(data[0])
-                );
-
-                localStorage.setItem(
-                    "activeRestaurant",
-                    JSON.stringify(data[0])
-                );
-            }
-
-        } catch (error) {
-
-            console.log(error);
-        }
-    };
-
-    return (
-
-        <div
-            className={`
+  return (
+    <div
+      className={`
                 sidebar
                 text-white
                 p-3
                 d-flex
                 flex-column
                 justify-content-between
-                ${collapsed
-                    ? "sidebar-collapsed"
-                    : "sidebar-expanded"
-                }
+                ${collapsed ? "sidebar-collapsed" : "sidebar-expanded"}
             `}
-        >
-
-            {/* ======================================
+    >
+      {/* ======================================
                 TOP SECTION
             ====================================== */}
-            <div>
-
-                {/* ======================================
+      <div>
+        {/* ======================================
                     HEADER
                 ====================================== */}
-                <div
-                    className="
+        <div
+          className="
                         d-flex
                         justify-content-between
                         align-items-center
                         mb-4
                     "
-                >
+        >
+          {!collapsed && <h4 className="fw-bold mb-0">ERP</h4>}
 
-                    {!collapsed && (
-                        <h4 className="fw-bold mb-0">
-                            ERP
-                        </h4>
-                    )}
-
-                    {/* COLLAPSE BUTTON */}
-                    <button
-                        className="
+          {/* COLLAPSE BUTTON */}
+          <button
+            className="
                             btn
                             btn-outline-light
                             btn-sm
                         "
-                        onClick={() =>
-                            setCollapsed(!collapsed)
-                        }
-                    >
-                        <List size={20} />
-                    </button>
-                </div>
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            <List size={20} />
+          </button>
+        </div>
 
-                <hr />
+        <hr />
 
-                {/* ======================================
+        {/* ======================================
                     SIDEBAR MENU
                 ====================================== */}
-                <div
-                    className="
+        <div
+          className="
                         d-flex
                         flex-column
                         gap-2
                     "
-                >
-
-                    {menuItems.map((item) => (
-
-                        <div key={item.key}>
-
-                            {/* ==================================
+        >
+          {menuItems.map((item) => (
+            <div key={item.key}>
+              {/* ==================================
                                 NORMAL MENU ITEM
                             ================================== */}
-                            {!item.children && (
-
-                                <button
-                                    onClick={() =>
-                                        setActivePage({
-                                            type: item.key,
-                                        })
-                                    }
-                                    className={`
+              {!item.children && (
+                <button
+                  onClick={() =>
+                    setActivePage({
+                      type: item.key,
+                    })
+                  }
+                  className={`
                                         sidebar-button
                                         btn
                                         d-flex
@@ -407,39 +404,30 @@ export default function Sidebar({
                                         py-2
                                         w-100
 
-                                        ${activePage.type === item.key
+                                        ${
+                                          activePage.type === item.key
                                             ? "btn-primary"
                                             : "btn-outline-light"
                                         }
                                     `}
-                                >
+                >
+                  {/* ICON */}
+                  <span className="fs-5">{item.icon}</span>
 
-                                    {/* ICON */}
-                                    <span className="fs-5">
-                                        {item.icon}
-                                    </span>
+                  {/* LABEL */}
+                  {!collapsed && <span>{item.label}</span>}
+                </button>
+              )}
 
-                                    {/* LABEL */}
-                                    {!collapsed && (
-                                        <span>
-                                            {item.label}
-                                        </span>
-                                    )}
-                                </button>
-                            )}
-
-                            {/* ==================================
+              {/* ==================================
                                 DROPDOWN MENU
                             ================================== */}
-                            {item.children && (
-
-                                <>
-                                    {/* MAIN BUTTON */}
-                                    <button
-                                        onClick={() =>
-                                            toggleMenu(item.key)
-                                        }
-                                        className="
+              {item.children && (
+                <>
+                  {/* MAIN BUTTON */}
+                  <button
+                    onClick={() => toggleMenu(item.key)}
+                    className="
                                             sidebar-button
                                             btn
                                             btn-outline-light
@@ -449,109 +437,177 @@ export default function Sidebar({
                                             w-100
                                             py-2
                                         "
-                                    >
-
-                                        {/* LEFT */}
-                                        <div
-                                            className="
+                  >
+                    {/* LEFT */}
+                    <div
+                      className="
                                                 d-flex
                                                 align-items-center
                                                 gap-3
                                             "
-                                        >
+                    >
+                      <span className="fs-5">{item.icon}</span>
 
-                                            <span className="fs-5">
-                                                {item.icon}
-                                            </span>
+                      {!collapsed && <span>{item.label}</span>}
+                    </div>
 
-                                            {!collapsed && (
-                                                <span>
-                                                    {item.label}
-                                                </span>
-                                            )}
-                                        </div>
+                    {/* RIGHT ICON */}
+                    {!collapsed &&
+                      (openMenus[item.key] ? (
+                        <ChevronDown />
+                      ) : (
+                        <ChevronRight />
+                      ))}
+                  </button>
 
-                                        {/* RIGHT ICON */}
-                                        {!collapsed && (
+                  {/* ==================================
+    DROPDOWN CHILDREN
+================================== */}
+                  {openMenus[item.key] && !collapsed && (
+                    <div
+                      className="
+                ms-3
+                mt-2
+                d-flex
+                flex-column
+                gap-2
+            "
+                    >
+                      {item.children.map((child) => (
+                        <div key={child.key}>
+                          {/* =========================
+                        NORMAL CHILD
+                    ========================= */}
+                          {!child.children && (
+                            <button
+                              onClick={() =>
+                                setActivePage({
+                                  type: child.key,
+                                })
+                              }
+                              className={`
+                                btn
+                                d-flex
+                                align-items-center
+                                gap-2
+                                text-start
+                                w-100
 
-                                            openMenus[item.key]
-                                                ? <ChevronDown />
-                                                : <ChevronRight />
-                                        )}
+                                ${
+                                  activePage.type === child.key
+                                    ? "btn-primary"
+                                    : "btn-outline-secondary"
+                                }
+                            `}
+                            >
+                              <span>{child.icon}</span>
+
+                              <span>{child.label}</span>
+                            </button>
+                          )}
+
+                          {/* =========================
+                        NESTED DROPDOWN
+                    ========================= */}
+                          {child.children && (
+                            <>
+                              {/* PARENT BUTTON */}
+                              <button
+                                onClick={() => toggleMenu(child.key)}
+                                className="
+                                    btn
+                                    btn-outline-secondary
+                                    d-flex
+                                    align-items-center
+                                    justify-content-between
+                                    w-100
+                                "
+                              >
+                                <div
+                                  className="
+                                        d-flex
+                                        align-items-center
+                                        gap-2
+                                    "
+                                >
+                                  <span>{child.icon}</span>
+
+                                  <span>{child.label}</span>
+                                </div>
+
+                                {openMenus[child.key] ? (
+                                  <ChevronDown />
+                                ) : (
+                                  <ChevronRight />
+                                )}
+                              </button>
+
+                              {/* =====================
+                                SUB CHILDREN
+                            ===================== */}
+                              {openMenus[child.key] && (
+                                <div
+                                  className="
+                                        ms-3
+                                        mt-2
+                                        d-flex
+                                        flex-column
+                                        gap-2
+                                    "
+                                >
+                                  {child.children.map((subChild) => (
+                                    <button
+                                      key={subChild.key}
+                                      onClick={() =>
+                                        setActivePage({
+                                          type: subChild.key,
+                                        })
+                                      }
+                                      className={`
+                                                btn
+                                                d-flex
+                                                align-items-center
+                                                gap-2
+                                                text-start
+                                                w-100
+
+                                                ${
+                                                  activePage.type ===
+                                                  subChild.key
+                                                    ? "btn-primary"
+                                                    : "btn-outline-secondary"
+                                                }
+                                            `}
+                                    >
+                                      <span>{subChild.icon}</span>
+
+                                      <span>{subChild.label}</span>
                                     </button>
-
-                                    {/* ==================================
-                                        DROPDOWN CHILDREN
-                                    ================================== */}
-                                    {openMenus[item.key] &&
-                                        !collapsed && (
-
-                                            <div
-                                                className="
-                                                    ms-3
-                                                    mt-2
-                                                    d-flex
-                                                    flex-column
-                                                    gap-2
-                                                "
-                                            >
-
-                                                {item.children.map((child) => (
-
-                                                    <button
-                                                        key={child.key}
-
-                                                        onClick={() =>
-                                                            setActivePage({
-                                                                type: child.key,
-                                                            })
-                                                        }
-
-                                                        className={`
-                                                            btn
-                                                            d-flex
-                                                            align-items-center
-                                                            gap-2
-                                                            text-start
-
-                                                            ${activePage.type === child.key
-                                                                ? "btn-primary"
-                                                                : "btn-outline-secondary"
-                                                            }
-                                                        `}
-                                                    >
-
-                                                        {/* ICON */}
-                                                        <span>
-                                                            {child.icon}
-                                                        </span>
-
-                                                        {/* LABEL */}
-                                                        <span>
-                                                            {child.label}
-                                                        </span>
-
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                </>
-                            )}
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
-                    ))}
-                </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
+          ))}
+        </div>
+      </div>
 
-            {/* ======================================
+      {/* ======================================
                 PROFILE / RESTAURANT SECTION
             ====================================== */}
-            <div className="mt-4">
+      <div className="mt-4">
+        <hr />
 
-                <hr />
-
-                {/* PROFILE BUTTON */}
-                <button
-                    className="
+        {/* PROFILE BUTTON */}
+        <button
+          className="
                         btn
                         btn-outline-light
                         w-100
@@ -559,60 +615,53 @@ export default function Sidebar({
                         align-items-center
                         justify-content-between
                     "
-                    onClick={() =>
-                        setShowProfileMenu(!showProfileMenu)
-                    }
-                >
-
-                    {/* LEFT */}
-                    <div
-                        className="
+          onClick={() => setShowProfileMenu(!showProfileMenu)}
+        >
+          {/* LEFT */}
+          <div
+            className="
                             d-flex
                             align-items-center
                             gap-2
                         "
-                    >
+          >
+            {/* ICON */}
+            <Building size={18} />
 
-                        {/* ICON */}
-                        <Building size={18} />
-
-                        {/* RESTAURANT NAME */}
-                        {!collapsed && (
-
-                            <div className="text-start">
-
-                                <div
-                                    className="
+            {/* RESTAURANT NAME */}
+            {!collapsed && (
+              <div className="text-start">
+                <div
+                  className="
                                         small
                                         fw-bold
                                     "
-                                >
-                                    {activeRestaurant?.name}
-                                </div>
+                >
+                  {activeRestaurant?.name}
+                </div>
 
-                                <div
-                                    className="
+                <div
+                  className="
                                         text-secondary
                                         small
                                     "
-                                >
-                                    Branch
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                >
+                  Branch
+                </div>
+              </div>
+            )}
+          </div>
 
-                    {/* DROPDOWN ICON */}
-                    {!collapsed && <ChevronDown />}
-                </button>
+          {/* DROPDOWN ICON */}
+          {!collapsed && <ChevronDown />}
+        </button>
 
-                {/* ======================================
+        {/* ======================================
                     DROPDOWN MENU
                 ====================================== */}
-                {showProfileMenu && !collapsed && (
-
-                    <div
-                        className="
+        {showProfileMenu && !collapsed && (
+          <div
+            className="
                             bg-dark
                             border
                             border-secondary
@@ -620,22 +669,17 @@ export default function Sidebar({
                             mt-2
                             p-2
                         "
-                    >
+          >
+            {/* TITLE */}
+            <div className="mb-2">
+              <small className="text-secondary">Your Branches</small>
+            </div>
 
-                        {/* TITLE */}
-                        <div className="mb-2">
-                            <small className="text-secondary">
-                                Your Branches
-                            </small>
-                        </div>
-
-                        {/* RESTAURANTS */}
-                        {restaurants.map((restaurant) => (
-
-                            <div
-                                key={restaurant.id}
-
-                                className="
+            {/* RESTAURANTS */}
+            {restaurants.map((restaurant) => (
+              <div
+                key={restaurant.id}
+                className="
                                     d-flex
                                     justify-content-between
                                     align-items-center
@@ -644,70 +688,62 @@ export default function Sidebar({
                                     mb-1
                                     restaurant-item
                                 "
-                            >
-
-                                {/* LEFT */}
-                                <div
-                                    className="
+              >
+                {/* LEFT */}
+                <div
+                  className="
                                         d-flex
                                         align-items-center
                                         gap-2
                                     "
-                                >
+                >
+                  {/* ACTIVE ICON */}
+                  {activeRestaurant?.id === restaurant.id && (
+                    <CheckCircleFill className="text-success" />
+                  )}
 
-                                    {/* ACTIVE ICON */}
-                                    {activeRestaurant?.id === restaurant.id && (
-                                        <CheckCircleFill className="text-success" />
-                                    )}
+                  {/* NAME */}
+                  <div
+                    style={{
+                      cursor: "pointer",
+                    }}
+                    onClick={() =>
+                      setActivePage({
+                        type: "restaurant-profile",
+                        restaurant,
+                      })
+                    }
+                  >
+                    <div className="small fw-semibold">{restaurant.name}</div>
 
-                                    {/* NAME */}
-                                    <div
-                                        style={{
-                                            cursor: "pointer",
-                                        }}
-
-                                        onClick={() =>
-                                            setActivePage({
-                                                type: "restaurant-profile",
-                                                restaurant,
-                                            })
-                                        }
-                                    >
-
-                                        <div className="small fw-semibold">
-                                            {restaurant.name}
-                                        </div>
-
-                                        <div
-                                            className="
+                    <div
+                      className="
                                                 text-secondary
                                                 small
                                             "
-                                        >
-                                            {restaurant.status}
-                                        </div>
-                                    </div>
-                                </div>
+                    >
+                      {restaurant.status}
+                    </div>
+                  </div>
+                </div>
 
-                                {/* ACTION */}
-                                <button
-                                    className="
+                {/* ACTION */}
+                <button
+                  className="
                                         btn
                                         btn-sm
                                         btn-outline-primary
                                     "
-                                    onClick={() =>
-                                        handleSwitchRestaurant(restaurant)
-                                    }
-                                >
-                                    Switch
-                                </button>
-                            </div>
-                        ))}
+                  onClick={() => handleSwitchRestaurant(restaurant)}
+                >
+                  Switch
+                </button>
+              </div>
+            ))}
 
-                        {/* CREATE BUTTON */}
-                        <button
-                            className="
+            {/* CREATE BUTTON */}
+            <button
+              className="
                                 btn
                                 btn-primary
                                 w-100
@@ -717,20 +753,18 @@ export default function Sidebar({
                                 justify-content-center
                                 gap-2
                             "
-                            onClick={() =>
-                                setActivePage({
-                                    type: "create-restaurant",
-                                })
-                            }
-                        >
-
-                            <PlusCircle size={16} />
-
-                            Create Branch
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+              onClick={() =>
+                setActivePage({
+                  type: "create-restaurant",
+                })
+              }
+            >
+              <PlusCircle size={16} />
+              Create Branch
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

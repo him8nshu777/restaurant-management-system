@@ -505,3 +505,326 @@ export const deleteComboProduct = async (
 
   return response.data;
 };
+
+// ======================================================
+// GET TAX LIST
+// ======================================================
+export const getTaxList = async (
+  restaurantId,
+) => {
+
+  const response = await axiosInstance.get(
+    `/menu/taxes/?restaurant=${restaurantId}`,
+  );
+
+  return response.data.data;
+};
+
+// ======================================================
+// CREATE TAX
+// ======================================================
+export const createTax = async (
+  payload,
+) => {
+
+  const response = await axiosInstance.post(
+    "/menu/taxes/",
+    payload,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// UPDATE TAX
+// ======================================================
+export const updateTax = async (
+  taxId,
+  payload,
+) => {
+
+  const response = await axiosInstance.patch(
+    `/menu/taxes/${taxId}/`,
+    payload,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// DELETE TAX
+// ======================================================
+export const deleteTax = async (
+  taxId,
+) => {
+
+  const response = await axiosInstance.delete(
+    `/menu/taxes/${taxId}/`,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// TOGGLE TAX STATUS
+// ======================================================
+export const toggleTaxStatus = async (
+  taxId,
+) => {
+
+  const response = await axiosInstance.patch(
+    `/menu/taxes/${taxId}/toggle-status/`,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// GET PRODUCT TAX LIST
+// ======================================================
+export const getProductTaxList = async (
+  restaurantId,
+) => {
+
+  const response = await axiosInstance.get(
+    `/menu/product-taxes/?restaurant=${restaurantId}`,
+  );
+
+  return response.data.data;
+};
+
+// ======================================================
+// CREATE PRODUCT TAX
+// ======================================================
+export const createProductTax = async (
+  payload,
+) => {
+
+  const response = await axiosInstance.post(
+    "/menu/product-taxes/",
+    payload,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// UPDATE PRODUCT TAX
+// ======================================================
+export const updateProductTax = async (
+  mappingId,
+  payload,
+) => {
+
+  const response = await axiosInstance.patch(
+    `/menu/product-taxes/${mappingId}/`,
+    payload,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// DELETE PRODUCT TAX
+// ======================================================
+export const deleteProductTax = async (
+  mappingId,
+) => {
+
+  const response = await axiosInstance.delete(
+    `/menu/product-taxes/${mappingId}/`,
+  );
+
+  return response.data;
+};
+
+
+// ======================================================
+// GET SERVICE CHARGE LIST
+// ======================================================
+export const getServiceChargeList = async (
+  restaurantId,
+) => {
+
+  const response = await axiosInstance.get(
+    `/menu/service-charges/?restaurant=${restaurantId}`,
+  );
+
+  return response.data.data;
+};
+
+// ======================================================
+// CREATE SERVICE CHARGE
+// ======================================================
+export const createServiceCharge = async (
+  payload,
+) => {
+
+  const response = await axiosInstance.post(
+    "/menu/service-charges/",
+    payload,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// UPDATE SERVICE CHARGE
+// ======================================================
+export const updateServiceCharge = async (
+  chargeId,
+  payload,
+) => {
+
+  const response = await axiosInstance.put(
+    `/menu/service-charges/${chargeId}/update/`,
+    payload,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// DELETE SERVICE CHARGE
+// ======================================================
+export const deleteServiceCharge = async (
+  chargeId,
+) => {
+
+  const response = await axiosInstance.delete(
+    `/menu/service-charges/${chargeId}/delete/`,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// TOGGLE SERVICE CHARGE STATUS
+// ======================================================
+export const toggleServiceChargeStatus = async (
+  chargeId,
+) => {
+
+  const response = await axiosInstance.patch(
+    `/menu/service-charges/${chargeId}/toggle-status/`,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// GET DYNAMIC PRICING LIST
+// ======================================================
+export const getDynamicPricingList = async (
+  restaurantId,
+) => {
+
+  const response = await axiosInstance.get(
+    `/menu/dynamic-pricing/?restaurant=${restaurantId}`,
+  );
+
+  return response.data.data;
+};
+
+// ======================================================
+// CREATE DYNAMIC PRICING
+// ======================================================
+export const createDynamicPricing = async (
+  payload,
+) => {
+
+  const response = await axiosInstance.post(
+    "/menu/dynamic-pricing/",
+    payload,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// UPDATE DYNAMIC PRICING
+// ======================================================
+export const updateDynamicPricing = async (
+  pricingId,
+  payload,
+) => {
+
+  const response = await axiosInstance.put(
+    `/menu/dynamic-pricing/${pricingId}/`,
+    payload,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// DELETE DYNAMIC PRICING
+// ======================================================
+export const deleteDynamicPricing = async (
+  pricingId,
+) => {
+
+  const response = await axiosInstance.delete(
+    `/menu/dynamic-pricing/${pricingId}/`,
+  );
+
+  return response.data;
+};
+
+// ======================================================
+// GET PRODUCT DYNAMIC PRICING
+// ======================================================
+export const getProductDynamicPricingList =
+  async (restaurantId) => {
+
+    const response =
+      await axiosInstance.get(
+        `/menu/product-dynamic-pricing/?restaurant=${restaurantId}`,
+      );
+
+    return response.data.data;
+  };
+
+// ======================================================
+// CREATE PRODUCT DYNAMIC PRICING
+// ======================================================
+export const createProductDynamicPricing =
+  async (payload) => {
+
+    const response =
+      await axiosInstance.post(
+        "/menu/product-dynamic-pricing/",
+        payload,
+      );
+
+    return response.data;
+  };
+
+// ======================================================
+// UPDATE PRODUCT DYNAMIC PRICING
+// ======================================================
+export const updateProductDynamicPricing =
+  async (mappingId, payload) => {
+
+    const response =
+      await axiosInstance.put(
+        `/menu/product-dynamic-pricing/${mappingId}/`,
+        payload,
+      );
+
+    return response.data;
+  };
+
+// ======================================================
+// DELETE PRODUCT DYNAMIC PRICING
+// ======================================================
+export const deleteProductDynamicPricing =
+  async (mappingId) => {
+
+    const response =
+      await axiosInstance.delete(
+        `/menu/product-dynamic-pricing/${mappingId}/`,
+      );
+
+    return response.data;
+  };
