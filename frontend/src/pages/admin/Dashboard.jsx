@@ -12,6 +12,11 @@ import Table from "../dashboard/Table";
 
 import Categories from "../dashboard/menu/Categories";
 import Products from "../dashboard/menu/Product";
+import Variants from "../dashboard/menu/Variants";
+import Addons from "../dashboard/menu/Addons";
+import ProductAddons from "../dashboard/menu/ProductAddons";
+import Combos from "../dashboard/menu/Combos";
+import ComboProducts from "../dashboard/menu/ComboProducts";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -115,6 +120,21 @@ useEffect(() => {
 
             case "products":
                 return <Products />;
+
+            case "product-variants":
+                return <Variants />;
+
+            case "addons":
+                return <Addons />;
+
+            case "product-addons":
+                return <ProductAddons />;
+
+            case "combos":
+                return <Combos />;
+
+            case "combo-products":
+                return <ComboProducts />;
 
             case "restaurant-profile":
 

@@ -23,7 +23,9 @@ import {
     CupHotFill,
     LayersFill,
     PlusSquareFill,
+    Link45deg,
     CollectionFill,
+    Diagram3Fill,
     Percent,
     ClockFill,
 } from "react-bootstrap-icons";
@@ -134,6 +136,13 @@ const menuItems = [
                 label: "Addons",
                 icon: <PlusSquareFill />,
             },
+            
+            // ======================================
+            {
+                key: "product-addons",
+                label: "Product Addons",
+                icon: <Link45deg />,
+            },
 
             // ======================================
             // COMBOS
@@ -142,6 +151,12 @@ const menuItems = [
                 key: "combos",
                 label: "Combos",
                 icon: <CollectionFill />,
+            },
+
+            {
+                key: "combo-products",
+                label: "Combo Products",
+                icon: <Diagram3Fill />,
             },
 
             // ======================================

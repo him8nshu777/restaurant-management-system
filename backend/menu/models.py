@@ -222,7 +222,7 @@ class ProductVariant(models.Model):
 
     class Meta:
 
-        ordering = ["id"]
+        ordering = ["product", "id"]
 
         # =================================================
         # SAME VARIANT NAME CANNOT REPEAT
@@ -336,7 +336,7 @@ class ProductAddon(models.Model):
 class Combo(models.Model):
 
     # =====================================================
-    # COMBO BELONGS TO RESTAURANT
+    # RESTAURANT
     # =====================================================
     restaurant = models.ForeignKey(
         Restaurant,
@@ -345,33 +345,45 @@ class Combo(models.Model):
     )
 
     # =====================================================
-    # COMBO NAME
+    # NAME
     # =====================================================
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=150)
 
     # =====================================================
-    # COMBO PRICE
+    # DESCRIPTION
     # =====================================================
-    price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-    )
-
-    # =====================================================
-    # COMBO IMAGE
-    # =====================================================
-    image = models.ImageField(
-        upload_to="combos/",
+    description = models.TextField(
         blank=True,
         null=True,
     )
 
     # =====================================================
-    # ACTIVE STATUS
+    # IMAGE
     # =====================================================
-    is_active = models.BooleanField(default=True)
+    image = models.ImageField(
+        upload_to="combo_images/",
+        blank=True,
+        null=True,
+    )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    # =====================================================
+    # COMBO PRICE
+    # =====================================================
+    combo_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+    )
+
+    # =====================================================
+    # STATUS
+    # =====================================================
+    is_active = models.BooleanField(
+        default=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
 
     class Meta:
 
@@ -384,13 +396,13 @@ class Combo(models.Model):
 
     def __str__(self):
 
-        return f"{self.restaurant.name} - {self.name}"
+        return self.name
 
 
 # =========================================================
-# COMBO ITEM MODEL
+# COMBO PRODUCT MAPPING
 # =========================================================
-class ComboItem(models.Model):
+class ComboProduct(models.Model):
 
     # =====================================================
     # COMBO
@@ -398,7 +410,7 @@ class ComboItem(models.Model):
     combo = models.ForeignKey(
         Combo,
         on_delete=models.CASCADE,
-        related_name="combo_items",
+        related_name="combo_products",
     )
 
     # =====================================================
@@ -411,9 +423,11 @@ class ComboItem(models.Model):
     )
 
     # =====================================================
-    # PRODUCT QUANTITY
+    # QUANTITY
     # =====================================================
-    quantity = models.IntegerField(default=1)
+    quantity = models.PositiveIntegerField(
+        default=1,
+    )
 
     class Meta:
 
@@ -425,7 +439,6 @@ class ComboItem(models.Model):
     def __str__(self):
 
         return f"{self.combo.name} - {self.product.name}"
-
 
 # =========================================================
 # TAX MODEL
