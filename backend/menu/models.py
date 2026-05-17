@@ -500,7 +500,7 @@ class ProductTax(models.Model):
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name="product_taxes",
+        related_name="product_tax",
     )
 
     tax = models.ForeignKey(
@@ -509,6 +509,9 @@ class ProductTax(models.Model):
         related_name="tax_products",
     )
 
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
     class Meta:
 
         unique_together = [
@@ -520,7 +523,218 @@ class ProductTax(models.Model):
 
         return f"{self.product.name} - {self.tax.name}"
 
+# =========================================================
+# SERVICE CHARGE MODEL
+# ex: 
+    # Service fee
+    # Packaging fee
+    # Convenience fee
+    # Dining charge
+    # Delivery charge
 
+# =========================================================
+class ServiceCharge(models.Model):
+
+    # =====================================================
+    # SERVICE TYPES
+    # =====================================================
+    PERCENTAGE = "percentage"
+
+    FIXED = "fixed"
+
+    SERVICE_TYPES = [
+        (PERCENTAGE, "Percentage"),
+        (FIXED, "Fixed"),
+    ]
+
+    # =====================================================
+    # RELATION
+    # =====================================================
+    restaurant = models.ForeignKey(
+        Restaurant,
+        on_delete=models.CASCADE,
+        related_name="service_charges",
+    )
+
+    # =====================================================
+    # BASIC INFO
+    # =====================================================
+    name = models.CharField(
+        max_length=120,
+    )
+
+    description = models.TextField(
+        blank=True,
+        null=True,
+    )
+
+    # =====================================================
+    # CHARGE TYPE
+    # =====================================================
+    charge_type = models.CharField(
+        max_length=20,
+        choices=SERVICE_TYPES,
+        default=PERCENTAGE,
+    )
+
+    # =====================================================
+    # VALUE
+    # =====================================================
+    value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+    )
+
+    # =====================================================
+    # STATUS
+    # =====================================================
+    is_active = models.BooleanField(
+        default=True,
+    )
+
+    # =====================================================
+    # AUTO APPLY
+    # =====================================================
+    auto_apply = models.BooleanField(
+        default=False,
+    )
+
+    # =====================================================
+    # TIMESTAMPS
+    # =====================================================
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+
+        ordering = ["-id"]
+
+        unique_together = (
+            "restaurant",
+            "name",
+        )
+
+    def __str__(self):
+
+        return f"{self.name} - {self.restaurant.name}"
+
+# =========================================================
+# DYNAMIC PRICING
+# =========================================================
+class DynamicPricing(models.Model):
+
+    PRICE_TYPE_CHOICES = (
+        ("percentage_increase", "Percentage Increase"),
+        ("flat_increase", "Flat Increase"),
+        ("percentage_discount", "Percentage Discount"),
+        ("flat_discount", "Flat Discount"),
+    )
+
+    restaurant = models.ForeignKey(
+        Restaurant,
+        on_delete=models.CASCADE,
+        related_name="dynamic_pricings",
+    )
+
+    name = models.CharField(
+        max_length=255,
+    )
+
+    description = models.TextField(
+        blank=True,
+        null=True,
+    )
+
+    pricing_type = models.CharField(
+        max_length=50,
+        choices=PRICE_TYPE_CHOICES,
+    )
+
+    value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+    )
+
+    start_date = models.DateField(
+        blank=True,
+        null=True,
+    )
+
+    end_date = models.DateField(
+        blank=True,
+        null=True,
+    )
+
+    start_time = models.TimeField(
+        blank=True,
+        null=True,
+    )
+
+    end_time = models.TimeField(
+        blank=True,
+        null=True,
+    )
+
+    days = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="mon,tue,wed",
+    )
+
+    priority = models.PositiveIntegerField(
+        default=1,
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    def __str__(self):
+
+        return self.name
+
+
+# =========================================================
+# PRODUCT DYNAMIC PRICING
+# =========================================================
+class ProductDynamicPricing(models.Model):
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="dynamic_pricings",
+    )
+
+    dynamic_pricing = models.ForeignKey(
+        DynamicPricing,
+        on_delete=models.CASCADE,
+        related_name="products",
+    )
+
+    class Meta:
+
+        unique_together = (
+            "product",
+            "dynamic_pricing",
+        )
+
+    def __str__(self):
+
+        return (
+            f"{self.product.name} - "
+            f"{self.dynamic_pricing.name}"
+        )
+    
 # =========================================================
 # OFFER MODEL
 # =========================================================

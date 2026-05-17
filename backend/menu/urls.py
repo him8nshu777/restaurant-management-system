@@ -40,6 +40,21 @@ from .views import (
     ComboProductUpdateView,
     ComboProductDeleteView,
 
+    TaxListCreateView,
+    TaxDetailView,
+    ToggleTaxStatusView,
+    ProductTaxListCreateView,
+    ProductTaxDetailView,
+
+    ServiceChargeListCreateView,
+    ServiceChargeUpdateView,
+    ServiceChargeDeleteView,
+    ToggleServiceChargeStatusView,
+
+    DynamicPricingListCreateView,
+    DynamicPricingDetailView,
+    ProductDynamicPricingListCreateView,
+    ProductDynamicPricingDetailView,
 )
 
 urlpatterns = [
@@ -90,9 +105,7 @@ urlpatterns = [
     # COMBOS
     # =========================================================
     path("combos/", ComboListCreateView.as_view(), name="combo-list-create"),
-
     path("combos/<int:pk>/", ComboDetailView.as_view(), name="combo-detail"),
-
     path("combos/<int:pk>/toggle-status/", ToggleComboStatusView.as_view(), name="toggle-combo-status"),
 
     # =========================================================
@@ -101,4 +114,36 @@ urlpatterns = [
     path("combo-products/", ComboProductListCreateView.as_view(), name="combo-product-list-create"),
     path("combo-products/<int:pk>/update/", ComboProductUpdateView.as_view(), name="combo-product-update"),
     path("combo-products/<int:pk>/delete/", ComboProductDeleteView.as_view(), name="combo-product-delete"),
+
+    # =========================================================
+    # TAX
+    # =========================================================
+    path("taxes/",TaxListCreateView.as_view(), name="tax-list-create"),
+    path("taxes/<int:pk>/",TaxDetailView.as_view(), name="tax-detail"),
+    path("taxes/<int:pk>/toggle-status/",ToggleTaxStatusView.as_view(), name="toggle-tax-status"),
+
+    # =========================================================
+    # PRODUCT TAX
+    # =========================================================
+    path("product-taxes/",ProductTaxListCreateView.as_view(), name="product-tax-list-create"),
+    path("product-taxes/<int:pk>/",ProductTaxDetailView.as_view(), name="product-tax-detail"),
+
+    # =========================================================
+    # SERVICE CHARGES
+    # =========================================================
+    path("service-charges/", ServiceChargeListCreateView.as_view(), name="service-charge-list-create"),
+    path("service-charges/<int:pk>/update/", ServiceChargeUpdateView.as_view(), name="service-charge-update"),
+    path("service-charges/<int:pk>/delete/", ServiceChargeDeleteView.as_view(), name="service-charge-delete"),
+    path("service-charges/<int:pk>/toggle-status/", ToggleServiceChargeStatusView.as_view(), name="service-charge-toggle-status"),
+
+    # =========================================================
+    # DYNAMIC PRICING
+    # =========================================================
+    path("dynamic-pricing/", DynamicPricingListCreateView.as_view(), name="dynamic-pricing-list-create" ),
+    path("dynamic-pricing/<int:pk>/", DynamicPricingDetailView.as_view(), name="dynamic-pricing-detail" ),
+    # =========================================================
+    # PRODUCT DYNAMIC PRICING
+    # =========================================================
+    path("product-dynamic-pricing/", ProductDynamicPricingListCreateView.as_view(), name="product-dynamic-pricing-list-create" ),
+    path("product-dynamic-pricing/<int:pk>/", ProductDynamicPricingDetailView.as_view(), name="product-dynamic-pricing-detail" ),
 ]

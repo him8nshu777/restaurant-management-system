@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from .models import Category, Product, ProductVariant, Addon, ProductAddon, Combo, ComboProduct
+from .models import Category, Product, ProductVariant, Addon, ProductAddon, Combo, ComboProduct, Tax, ProductTax, ServiceCharge, DynamicPricing, ProductDynamicPricing
 
 # =========================================================
 # CATEGORY SERIALIZER
@@ -300,3 +300,173 @@ class ComboProductSerializer(
             "product_name",
             "quantity",
         ]
+
+
+# =========================================================
+# TAX SERIALIZER
+# =========================================================
+class TaxSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = Tax
+
+        fields = [
+            "id",
+            "restaurant",
+            "name",
+            "percentage",
+            "is_active",
+            "created_at",
+        ]
+
+
+# =========================================================
+# PRODUCT TAX SERIALIZER
+# =========================================================
+class ProductTaxSerializer(
+    serializers.ModelSerializer
+):
+
+    product_name = serializers.CharField(
+        source="product.name",
+        read_only=True,
+    )
+
+    tax_name = serializers.CharField(
+        source="tax.name",
+        read_only=True,
+    )
+
+    tax_percentage = serializers.DecimalField(
+        source="tax.percentage",
+        max_digits=5,
+        decimal_places=2,
+        read_only=True,
+    )
+
+    class Meta:
+
+        model = ProductTax
+
+        fields = [
+            "id",
+            "product",
+            "product_name",
+            "tax",
+            "tax_name",
+            "tax_percentage",
+        ]
+
+# =========================================================
+# SERVICE CHARGE SERIALIZER
+# =========================================================
+class ServiceChargeSerializer(
+    serializers.ModelSerializer
+):
+
+    class Meta:
+
+        model = ServiceCharge
+
+        fields = [
+            "id",
+            "restaurant",
+            "name",
+            "description",
+            "charge_type",
+            "value",
+            "is_active",
+            "auto_apply",
+        ]
+
+from rest_framework import serializers
+
+# =========================================================
+# DYNAMIC PRICING SERIALIZER
+# =========================================================
+class DynamicPricingSerializer(
+    serializers.ModelSerializer
+):
+
+    class Meta:
+
+        model = DynamicPricing
+
+        fields = "__all__"
+
+
+# =========================================================
+# PRODUCT DYNAMIC PRICING SERIALIZER
+# =========================================================
+class ProductDynamicPricingSerializer(
+    serializers.ModelSerializer
+):
+
+    product_name = serializers.CharField(
+        source="product.name",
+        read_only=True,
+    )
+
+    dynamic_pricing_name = serializers.CharField(
+        source="dynamic_pricing.name",
+        read_only=True,
+    )
+
+    pricing_type = serializers.CharField(
+        source="dynamic_pricing.pricing_type",
+        read_only=True,
+    )
+
+    pricing_value = serializers.DecimalField(
+        source="dynamic_pricing.value",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+    )
+
+    class Meta:
+
+        model = ProductDynamicPricing
+
+        fields = [
+            "id",
+            "product",
+            "product_name",
+            "dynamic_pricing",
+            "dynamic_pricing_name",
+            "pricing_type",
+            "pricing_value",
+        ]
+
+    # =====================================================
+    # VALIDATE DUPLICATE
+    # =====================================================
+    def validate(self, attrs):
+
+        product = attrs.get("product")
+        dynamic_pricing = attrs.get(
+            "dynamic_pricing"
+        )
+
+        queryset = ProductDynamicPricing.objects.filter(
+            product=product,
+            dynamic_pricing=dynamic_pricing,
+        )
+
+        if self.instance:
+
+            queryset = queryset.exclude(
+                id=self.instance.id
+            )
+
+        if queryset.exists():
+
+            raise serializers.ValidationError(
+                {
+                    "message":
+                    "This pricing rule is already mapped to this product."
+                }
+            )
+
+        return attrs

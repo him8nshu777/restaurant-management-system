@@ -3,10 +3,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
 from django.shortcuts import get_object_or_404
 
-from .models import Category, Product, ProductVariant, Addon, ProductAddon, Combo, ComboProduct
+from .models import Category, Product, ProductVariant, Addon, ProductAddon, Combo, ComboProduct, Tax, ProductTax, ServiceCharge, DynamicPricing, ProductDynamicPricing
 from .serializers import (
     CategorySerializer,
     ProductSerializer,
@@ -15,7 +14,11 @@ from .serializers import (
     ProductAddonSerializer,
     ComboSerializer,
     ComboProductSerializer,
-
+    TaxSerializer,
+    ProductTaxSerializer,
+    ServiceChargeSerializer,
+    DynamicPricingSerializer,
+    ProductDynamicPricingSerializer,
 )
 
 from restaurants.models import Restaurant
@@ -1247,6 +1250,671 @@ class ComboProductDeleteView(APIView):
         return Response(
             {
                 "message": "Mapping removed"
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+    
+
+# =========================================================
+# TAX LIST CREATE
+# =========================================================
+class TaxListCreateView(APIView):
+
+    def get(self, request):
+
+        restaurant_id = request.GET.get(
+            "restaurant"
+        )
+
+        taxes = Tax.objects.filter(
+            restaurant_id=restaurant_id
+        )
+
+        serializer = TaxSerializer(
+            taxes,
+            many=True,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            }
+        )
+
+    def post(self, request):
+
+        serializer = TaxSerializer(
+            data=request.data
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+# =========================================================
+# TAX UPDATE DELETE
+# =========================================================
+class TaxDetailView(APIView):
+
+    def patch(self, request, pk):
+
+        tax = get_object_or_404(
+            Tax,
+            pk=pk,
+        )
+
+        serializer = TaxSerializer(
+            tax,
+            data=request.data,
+            partial=True,
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(
+                serializer.data
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    def delete(self, request, pk):
+
+        tax = get_object_or_404(
+            Tax,
+            pk=pk,
+        )
+
+        tax.delete()
+
+        return Response(
+            {
+                "message": "Tax deleted"
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+
+# =========================================================
+# TOGGLE TAX STATUS
+# =========================================================
+class ToggleTaxStatusView(APIView):
+
+    def patch(self, request, pk):
+
+        tax = get_object_or_404(
+            Tax,
+            pk=pk,
+        )
+
+        tax.is_active = (
+            not tax.is_active
+        )
+
+        tax.save()
+
+        return Response(
+            {
+                "success": True,
+                "is_active": tax.is_active,
+            }
+        )
+
+
+# =========================================================
+# PRODUCT TAX LIST CREATE
+# =========================================================
+class ProductTaxListCreateView(APIView):
+
+    def get(self, request):
+
+        restaurant_id = request.GET.get(
+            "restaurant"
+        )
+
+        mappings = ProductTax.objects.filter(
+            product__restaurant_id=restaurant_id
+        ).select_related(
+            "product",
+            "tax",
+        )
+
+        serializer = ProductTaxSerializer(
+            mappings,
+            many=True,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            }
+        )
+
+    def post(self, request):
+        product = request.data.get("product")
+
+        tax = request.data.get("tax")
+
+        # =================================================
+        # CHECK DUPLICATE MAPPING
+        # =================================================
+        already_exists = ProductTax.objects.filter(
+            product=product,
+            tax=tax,
+        ).exists()
+
+        if already_exists:
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "This tax is already mapped to this product",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+        serializer = ProductTaxSerializer(
+            data=request.data
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Tax mapped successfully",
+                    "data": serializer.data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(
+        {
+            "success": False,
+            "errors": serializer.errors,
+        },
+        status=status.HTTP_400_BAD_REQUEST,
+    )
+
+
+# =========================================================
+# PRODUCT TAX UPDATE DELETE
+# =========================================================
+class ProductTaxDetailView(APIView):
+
+    def patch(self, request, pk):
+
+        mapping = get_object_or_404(
+            ProductTax,
+            pk=pk,
+        )
+        product = request.data.get("product")
+
+        tax = request.data.get("tax")
+
+        # =================================================
+        # CHECK DUPLICATE EXCLUDING CURRENT RECORD
+        # =================================================
+        already_exists = ProductTax.objects.filter(
+            product=product,
+            tax=tax,
+        ).exclude(
+            id=pk,
+        ).exists()
+
+        if already_exists:
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "This tax is already mapped to this product",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = ProductTaxSerializer(
+            mapping,
+            data=request.data,
+            partial=True,
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(
+                serializer.data
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    def delete(self, request, pk):
+
+        mapping = get_object_or_404(
+            ProductTax,
+            pk=pk,
+        )
+
+        mapping.delete()
+
+        return Response(
+            {
+                "message": "Mapping removed"
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+    
+# =========================================================
+# SERVICE CHARGE LIST CREATE
+# =========================================================
+class ServiceChargeListCreateView(APIView):
+
+    def get(self, request):
+
+        restaurant_id = request.GET.get(
+            "restaurant"
+        )
+
+        charges = ServiceCharge.objects.filter(
+            restaurant_id=restaurant_id
+        )
+
+        serializer = ServiceChargeSerializer(
+            charges,
+            many=True,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            }
+        )
+
+    def post(self, request):
+
+        restaurant = request.data.get(
+            "restaurant"
+        )
+
+        name = request.data.get("name")
+
+        # =================================================
+        # DUPLICATE CHECK
+        # =================================================
+        already_exists = ServiceCharge.objects.filter(
+            restaurant=restaurant,
+            name=name,
+        ).exists()
+
+        if already_exists:
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "Service charge already exists",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = ServiceChargeSerializer(
+            data=request.data
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Service charge created successfully",
+                    "data": serializer.data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+# =========================================================
+# SERVICE CHARGE UPDATE
+# =========================================================
+class ServiceChargeUpdateView(APIView):
+
+    def put(self, request, pk):
+
+        charge = get_object_or_404(
+            ServiceCharge,
+            pk=pk,
+        )
+
+        restaurant = request.data.get(
+            "restaurant"
+        )
+
+        name = request.data.get("name")
+
+        # =================================================
+        # DUPLICATE CHECK
+        # =================================================
+        already_exists = ServiceCharge.objects.filter(
+            restaurant=restaurant,
+            name=name,
+        ).exclude(
+            id=pk
+        ).exists()
+
+        if already_exists:
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "Service charge already exists",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = ServiceChargeSerializer(
+            charge,
+            data=request.data,
+            partial=True,
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Service charge updated successfully",
+                    "data": serializer.data,
+                }
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+# =========================================================
+# SERVICE CHARGE DELETE
+# =========================================================
+class ServiceChargeDeleteView(APIView):
+
+    def delete(self, request, pk):
+
+        charge = get_object_or_404(
+            ServiceCharge,
+            pk=pk,
+        )
+
+        charge.delete()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Service charge deleted successfully",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+
+# =========================================================
+# TOGGLE SERVICE CHARGE STATUS
+# =========================================================
+class ToggleServiceChargeStatusView(APIView):
+
+    def patch(self, request, pk):
+
+        charge = get_object_or_404(
+            ServiceCharge,
+            pk=pk,
+        )
+
+        charge.is_active = (
+            not charge.is_active
+        )
+
+        charge.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Status updated",
+                "is_active": charge.is_active,
+            }
+        )
+    
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+
+# =========================================================
+# DYNAMIC PRICING LIST CREATE
+# =========================================================
+class DynamicPricingListCreateView(APIView):
+
+    def get(self, request):
+
+        restaurant_id = request.GET.get(
+            "restaurant"
+        )
+
+        pricings = DynamicPricing.objects.filter(
+            restaurant_id=restaurant_id
+        ).order_by("-id")
+
+        serializer = DynamicPricingSerializer(
+            pricings,
+            many=True,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            }
+        )
+
+    def post(self, request):
+
+        serializer = DynamicPricingSerializer(
+            data=request.data
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+# =========================================================
+# DYNAMIC PRICING DETAIL
+# =========================================================
+class DynamicPricingDetailView(APIView):
+
+    def put(self, request, pk):
+
+        pricing = get_object_or_404(
+            DynamicPricing,
+            pk=pk,
+        )
+
+        serializer = DynamicPricingSerializer(
+            pricing,
+            data=request.data,
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(serializer.data)
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    def delete(self, request, pk):
+
+        pricing = get_object_or_404(
+            DynamicPricing,
+            pk=pk,
+        )
+
+        pricing.delete()
+
+        return Response(
+            {
+                "message":
+                "Dynamic pricing deleted"
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+
+# =========================================================
+# PRODUCT DYNAMIC PRICING
+# =========================================================
+class ProductDynamicPricingListCreateView(
+    APIView
+):
+
+    def get(self, request):
+
+        restaurant_id = request.GET.get(
+            "restaurant"
+        )
+
+        mappings = ProductDynamicPricing.objects.filter(
+            product__restaurant_id=restaurant_id
+        ).select_related(
+            "product",
+            "dynamic_pricing",
+        )
+
+        serializer = (
+            ProductDynamicPricingSerializer(
+                mappings,
+                many=True,
+            )
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            }
+        )
+
+    def post(self, request):
+
+        serializer = (
+            ProductDynamicPricingSerializer(
+                data=request.data
+            )
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+# =========================================================
+# PRODUCT DYNAMIC PRICING DETAIL
+# =========================================================
+class ProductDynamicPricingDetailView(
+    APIView
+):
+
+    def put(self, request, pk):
+
+        mapping = get_object_or_404(
+            ProductDynamicPricing,
+            pk=pk,
+        )
+
+        serializer = (
+            ProductDynamicPricingSerializer(
+                mapping,
+                data=request.data,
+            )
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(serializer.data)
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    def delete(self, request, pk):
+
+        mapping = get_object_or_404(
+            ProductDynamicPricing,
+            pk=pk,
+        )
+
+        mapping.delete()
+
+        return Response(
+            {
+                "message":
+                "Mapping removed"
             },
             status=status.HTTP_204_NO_CONTENT,
         )
