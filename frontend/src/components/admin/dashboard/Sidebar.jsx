@@ -29,6 +29,18 @@ import {
   Percent,
   GraphUpArrow,
   ClockFill,
+
+  // ==========================================
+  // INVENTORY ICONS
+  // ==========================================
+  BoxSeamFill,
+  ArchiveFill,
+  Truck,
+  CartCheckFill,
+  ArrowLeftRight,
+
+  Clipboard2DataFill,
+  
 } from "react-bootstrap-icons";
 
 import { getRestaurants } from "../../../services/adminService";
@@ -200,13 +212,13 @@ const menuItems = [
             icon: <GraphUpArrow />,
           },
           // ==================================
-            // PRODUCT DYNAMIC PRICING
-            // ==================================
-            {
-                key: "product-dynamic-pricing",
-                label: "Product Dynamic Pricing",
-                icon: <Link45deg />,
-            },
+          // PRODUCT DYNAMIC PRICING
+          // ==================================
+          {
+            key: "product-dynamic-pricing",
+            label: "Product Dynamic Pricing",
+            icon: <Link45deg />,
+          },
         ],
       },
 
@@ -217,6 +229,71 @@ const menuItems = [
         key: "offers",
         label: "Offers",
         icon: <ClockFill />,
+      },
+    ],
+  },
+
+  // ==========================================
+  // INVENTORY MANAGEMENT DROPDOWN
+  // ==========================================
+  {
+    key: "inventory-management",
+    label: "Inventory",
+    icon: <BoxSeamFill />,
+
+    children: [
+      // ======================================
+      // UNITS
+      // ======================================
+      {
+        key: "units",
+        label: "Units",
+        icon: <ArchiveFill />,
+      },
+
+      // ======================================
+      // INGREDIENTS
+      // ======================================
+      {
+        key: "ingredients",
+        label: "Ingredients",
+        icon: <BoxSeamFill />,
+      },
+
+      // ======================================
+      // SUPPLIERS
+      // ======================================
+      {
+        key: "suppliers",
+        label: "Suppliers",
+        icon: <Truck />,
+      },
+
+      // ======================================
+      // PURCHASES
+      // ======================================
+      {
+        key: "purchases",
+        label: "Purchases",
+        icon: <CartCheckFill />,
+      },
+
+      {
+        key: "inventory-transaction",
+        label: "Inventory Transaction",
+        icon: <ArrowLeftRight />,
+      },
+
+      {
+        key: "product-recipes",
+        label: "Product Recipes",
+        icon: <Clipboard2DataFill />,
+      },
+
+      {
+        key: "combo-recipes",
+        label: "Combo Recipes",
+        icon: <Diagram3Fill />,
       },
     ],
   },

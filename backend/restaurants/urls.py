@@ -46,11 +46,7 @@ urlpatterns = [
     path("floors/<int:pk>/", FloorDetailView.as_view(), name="floor-detail"),
     path("floors/<int:pk>/", FloorDetailView.as_view(), name="floor-detail"),
     # ACTIVE / INACTIVE
-    path(
-        "floors/<int:pk>/toggle-status/",
-        FloorToggleStatusView.as_view(),
-        name="floor-toggle-status",
-    ),
+    path("floors/<int:pk>/toggle-status/", FloorToggleStatusView.as_view(), name="floor-toggle-status"),
     # DELETE
     path("floors/<int:pk>/delete/", FloorDeleteView.as_view(), name="floor-delete"),
     # ==========================================

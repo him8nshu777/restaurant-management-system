@@ -32,6 +32,7 @@ urlpatterns = [
     path("api/auth/refresh/",TokenRefreshView.as_view(),name="token_refresh"),
 
     path("api/menu/", include("menu.urls")),
+    path("api/inventory/", include("inventory.urls")),
 ]
 # =========================================================
 # MEDIA FILES

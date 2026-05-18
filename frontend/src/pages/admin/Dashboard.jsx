@@ -22,6 +22,13 @@ import ProductTaxes from "../dashboard/menu/ProductTaxes";
 import ServiceCharges from "../dashboard/menu/ServiceCharges";
 import DynamicPricing from "../dashboard/menu/DynamicPricing";
 import ProductDynamicPricing from "../dashboard/menu/ProductDynamicPricing";
+import Units from "../dashboard/inventory/Units";
+import Ingredients from "../dashboard/inventory/Ingredients";
+import Suppliers from "../dashboard/inventory/Suppliers";
+import Purchases from "../dashboard/inventory/Purchases";
+import InventoryTransactions from "../dashboard/inventory/InventoryTransactions";
+import ProductRecipes from "../dashboard/inventory/ProductRecipes";
+import ComboRecipes from "../dashboard/inventory/ComboRecipes";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -155,6 +162,27 @@ useEffect(() => {
 
             case "product-dynamic-pricing":
                 return <ProductDynamicPricing />;
+
+            case "units":
+                return <Units />;
+
+            case "ingredients":
+                return <Ingredients />;
+
+            case "suppliers":
+                return <Suppliers />;
+                
+            case "purchases":
+                return <Purchases />;
+
+            case "inventory-transaction":
+                return <InventoryTransactions />;
+
+            case "product-recipes":
+                return <ProductRecipes />;
+
+            case "combo-recipes":
+                return <ComboRecipes />;
 
             case "restaurant-profile":
 
