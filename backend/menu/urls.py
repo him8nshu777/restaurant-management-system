@@ -55,6 +55,9 @@ from .views import (
     DynamicPricingDetailView,
     ProductDynamicPricingListCreateView,
     ProductDynamicPricingDetailView,
+
+    ComboDynamicPricingListCreateView,
+    ComboDynamicPricingDetailView,
 )
 
 urlpatterns = [
@@ -146,4 +149,8 @@ urlpatterns = [
     # =========================================================
     path("product-dynamic-pricing/", ProductDynamicPricingListCreateView.as_view(), name="product-dynamic-pricing-list-create" ),
     path("product-dynamic-pricing/<int:pk>/", ProductDynamicPricingDetailView.as_view(), name="product-dynamic-pricing-detail" ),
+
+    path("combo-dynamic-pricing/", ComboDynamicPricingListCreateView.as_view(), name="combo-dynamic-pricing-list-create"),
+    path("combo-dynamic-pricing/<int:pk>/", ComboDynamicPricingDetailView.as_view(), name="combo-dynamic-pricing-detail"),
+
 ]

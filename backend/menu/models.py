@@ -734,7 +734,38 @@ class ProductDynamicPricing(models.Model):
             f"{self.product.name} - "
             f"{self.dynamic_pricing.name}"
         )
-    
+
+# =========================================================
+# COMBO DYNAMIC PRICING
+# =========================================================
+class ComboDynamicPricing(models.Model):
+
+    combo = models.ForeignKey(
+        Combo,
+        on_delete=models.CASCADE,
+        related_name="dynamic_pricings",
+    )
+
+    dynamic_pricing = models.ForeignKey(
+        DynamicPricing,
+        on_delete=models.CASCADE,
+        related_name="combos",
+    )
+
+    class Meta:
+
+        unique_together = (
+            "combo",
+            "dynamic_pricing",
+        )
+
+    def __str__(self):
+
+        return (
+            f"{self.combo.name} - "
+            f"{self.dynamic_pricing.name}"
+        ) 
+
 # =========================================================
 # OFFER MODEL
 # =========================================================

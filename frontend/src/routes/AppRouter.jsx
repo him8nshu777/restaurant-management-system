@@ -20,7 +20,7 @@ import AccountStatusPage from "../pages/auth/AccountStatusPage";
 import Dashboard from "../pages/admin/Dashboard";
 
 import CashierPage from "../pages/cashier/CashierPage";
-import POSPage from "../pages/pos/POSPage";
+import POSDashboard from "../pages/pos/POSDashboard";
 
 import KitchenPage from "../pages/kitchen/KitchenPage";
 
@@ -88,7 +88,7 @@ export default function AppRouter() {
                     path="/pos"
                     element={
                         <ProtectedRoute>
-                            <POSPage />
+                            <POSDashboard />
                         </ProtectedRoute>
                     }
                 />

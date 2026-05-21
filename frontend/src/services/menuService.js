@@ -828,3 +828,61 @@ export const deleteProductDynamicPricing =
 
     return response.data;
   };
+
+// ==========================================
+// GET COMBO DYNAMIC PRICING
+// ==========================================
+export const getComboDynamicPricingList =
+  async (restaurantId) => {
+
+    const response =
+      await axiosInstance.get(
+        `/menu/combo-dynamic-pricing/?restaurant=${restaurantId}`
+      );
+
+    return response.data;
+  };
+
+// ==========================================
+// CREATE COMBO DYNAMIC PRICING
+// ==========================================
+export const createComboDynamicPricing =
+  async (data) => {
+
+    const response =
+      await axiosInstance.post(
+        "/menu/combo-dynamic-pricing/",
+        data
+      );
+
+    return response.data;
+  };
+
+// ==========================================
+// UPDATE COMBO DYNAMIC PRICING
+// ==========================================
+export const updateComboDynamicPricing =
+  async (id, data) => {
+
+    const response =
+      await axiosInstance.put(
+        `/menu/combo-dynamic-pricing/${id}/`,
+        data
+      );
+
+    return response.data;
+  };
+
+// ==========================================
+// DELETE COMBO DYNAMIC PRICING
+// ==========================================
+export const deleteComboDynamicPricing =
+  async (id) => {
+
+    const response =
+      await axiosInstance.delete(
+        `/menu/combo-dynamic-pricing/${id}/`
+      );
+
+    return response.data;
+  };

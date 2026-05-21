@@ -40,6 +40,11 @@ import {
   ArrowLeftRight,
 
   Clipboard2DataFill,
+
+  // ==========================================
+  // POSH DASHBOARD
+  // ==========================================
+  Shop
   
 } from "react-bootstrap-icons";
 
@@ -64,6 +69,15 @@ const menuItems = [
     icon: <BarChartFill />,
   },
 
+  // ==========================================
+  // POS DASHBOARD 
+  // ==========================================
+  {
+    key: "pos-dashboard",
+    label: "POS Dashboard",
+    icon: <Shop />,
+  },
+  
   // ==========================================
   // STAFF
   // ==========================================
@@ -217,6 +231,15 @@ const menuItems = [
           {
             key: "product-dynamic-pricing",
             label: "Product Dynamic Pricing",
+            icon: <Link45deg />,
+          },
+
+          // ==================================
+          // CMOBO DYNAMIC PRICING
+          // ==================================
+          {
+            key: "combo-dynamic-pricing",
+            label: "Combo Dynamic Pricing",
             icon: <Link45deg />,
           },
         ],

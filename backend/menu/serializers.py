@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from .models import Category, Product, ProductVariant, Addon, ProductAddon, Combo, ComboProduct, Tax, ProductTax, ServiceCharge, DynamicPricing, ProductDynamicPricing
+from .models import Category, Product, ProductVariant, Addon, ProductAddon, Combo, ComboProduct, Tax, ProductTax, ServiceCharge, DynamicPricing, ProductDynamicPricing, ComboDynamicPricing
 
 # =========================================================
 # CATEGORY SERIALIZER
@@ -380,8 +380,6 @@ class ServiceChargeSerializer(
             "auto_apply",
         ]
 
-from rest_framework import serializers
-
 # =========================================================
 # DYNAMIC PRICING SERIALIZER
 # =========================================================
@@ -466,6 +464,82 @@ class ProductDynamicPricingSerializer(
                 {
                     "message":
                     "This pricing rule is already mapped to this product."
+                }
+            )
+
+        return attrs
+    
+# =========================================================
+# COMBO DYNAMIC PRICING SERIALIZER
+# =========================================================
+class ComboDynamicPricingSerializer(
+    serializers.ModelSerializer
+):
+
+    combo_name = serializers.CharField(
+        source="combo.name",
+        read_only=True,
+    )
+
+    dynamic_pricing_name = serializers.CharField(
+        source="dynamic_pricing.name",
+        read_only=True,
+    )
+
+    pricing_type = serializers.CharField(
+        source="dynamic_pricing.pricing_type",
+        read_only=True,
+    )
+
+    pricing_value = serializers.DecimalField(
+        source="dynamic_pricing.value",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+    )
+
+    class Meta:
+
+        model = ComboDynamicPricing
+
+        fields = [
+            "id",
+            "combo",
+            "combo_name",
+            "dynamic_pricing",
+            "dynamic_pricing_name",
+            "pricing_type",
+            "pricing_value",
+        ]
+
+    # =====================================================
+    # VALIDATE DUPLICATE
+    # =====================================================
+    def validate(self, attrs):
+
+        combo = attrs.get("combo")
+
+        dynamic_pricing = attrs.get(
+            "dynamic_pricing"
+        )
+
+        queryset = ComboDynamicPricing.objects.filter(
+            combo=combo,
+            dynamic_pricing=dynamic_pricing,
+        )
+
+        if self.instance:
+
+            queryset = queryset.exclude(
+                id=self.instance.id
+            )
+
+        if queryset.exists():
+
+            raise serializers.ValidationError(
+                {
+                    "message":
+                    "This pricing rule is already mapped to this combo."
                 }
             )
 

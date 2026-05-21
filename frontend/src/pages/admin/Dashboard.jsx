@@ -29,6 +29,9 @@ import Purchases from "../dashboard/inventory/Purchases";
 import InventoryTransactions from "../dashboard/inventory/InventoryTransactions";
 import ProductRecipes from "../dashboard/inventory/ProductRecipes";
 import ComboRecipes from "../dashboard/inventory/ComboRecipes";
+import POSDashboard from "../pos/POSDashboard";
+import ComboDynamicPricing from "../dashboard/menu/ComboDynamicPricing";
+import OrderList from "../dashboard/orders/OrderList";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -112,6 +115,9 @@ useEffect(() => {
 
         switch (activePage.type) {
 
+            case "pos-dashboard":
+                return <POSDashboard />;
+
             case "staff":
                 return <Staff />;
 
@@ -163,6 +169,9 @@ useEffect(() => {
             case "product-dynamic-pricing":
                 return <ProductDynamicPricing />;
 
+            case "combo-dynamic-pricing":
+                return <ComboDynamicPricing />;
+
             case "units":
                 return <Units />;
 
@@ -183,6 +192,9 @@ useEffect(() => {
 
             case "combo-recipes":
                 return <ComboRecipes />;
+                
+            case "orders":
+                return <OrderList />;
 
             case "restaurant-profile":
 

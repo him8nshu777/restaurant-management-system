@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 
-from .models import Category, Product, ProductVariant, Addon, ProductAddon, Combo, ComboProduct, Tax, ProductTax, ServiceCharge, DynamicPricing, ProductDynamicPricing
+from .models import Category, Product, ProductVariant, Addon, ProductAddon, Combo, ComboProduct, Tax, ProductTax, ServiceCharge, DynamicPricing, ProductDynamicPricing, ComboDynamicPricing
 from .serializers import (
     CategorySerializer,
     ProductSerializer,
@@ -19,6 +19,7 @@ from .serializers import (
     ServiceChargeSerializer,
     DynamicPricingSerializer,
     ProductDynamicPricingSerializer,
+    ComboDynamicPricingSerializer,
 )
 
 from restaurants.models import Restaurant
@@ -1714,11 +1715,6 @@ class ToggleServiceChargeStatusView(APIView):
             }
         )
     
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.shortcuts import get_object_or_404
-
 # =========================================================
 # DYNAMIC PRICING LIST CREATE
 # =========================================================
@@ -1915,6 +1911,113 @@ class ProductDynamicPricingDetailView(
             {
                 "message":
                 "Mapping removed"
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+
+# =========================================================
+# COMBO DYNAMIC PRICING
+# =========================================================
+class ComboDynamicPricingListCreateView(
+    APIView
+):
+
+    def get(self, request):
+
+        restaurant_id = request.GET.get(
+            "restaurant"
+        )
+
+        mappings = ComboDynamicPricing.objects.filter(
+            combo__restaurant_id=restaurant_id
+        ).select_related(
+            "combo",
+            "dynamic_pricing",
+        )
+
+        serializer = (
+            ComboDynamicPricingSerializer(
+                mappings,
+                many=True,
+            )
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            }
+        )
+
+    def post(self, request):
+
+        serializer = (
+            ComboDynamicPricingSerializer(
+                data=request.data
+            )
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+# =========================================================
+# COMBO DYNAMIC PRICING DETAIL
+# =========================================================
+class ComboDynamicPricingDetailView(
+    APIView
+):
+
+    def put(self, request, pk):
+
+        mapping = get_object_or_404(
+            ComboDynamicPricing,
+            pk=pk,
+        )
+
+        serializer = (
+            ComboDynamicPricingSerializer(
+                mapping,
+                data=request.data,
+            )
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(serializer.data)
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    def delete(self, request, pk):
+
+        mapping = get_object_or_404(
+            ComboDynamicPricing,
+            pk=pk,
+        )
+
+        mapping.delete()
+
+        return Response(
+            {
+                "message":
+                "Combo pricing mapping removed"
             },
             status=status.HTTP_204_NO_CONTENT,
         )
