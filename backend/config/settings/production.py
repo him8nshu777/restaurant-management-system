@@ -45,4 +45,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["https://restaurant-management-system-q1q4gkcw7-himanshu-s-projects124.vercel.app/"]
+CORS_ALLOWED_ORIGINS = [
+    "https://restaurant-management-system-q1q4gkcw7-himanshu-s-projects124.vercel.app/",
+]
