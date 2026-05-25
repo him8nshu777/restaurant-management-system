@@ -47,7 +47,7 @@ MIDDLEWARE = [
 
 ALLOWED_HOSTS = ["restaurant-management-system-gfjs.onrender.com"]
 CORS_ALLOWED_ORIGINS = [
-    "https://restaurant-management-system-sigma-six.vercel.app/",
+    "https://restaurant-management-system-sigma-six.vercel.app",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://restaurant-management-system-sigma-six.vercel.app",
