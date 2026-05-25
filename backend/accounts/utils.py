@@ -1,17 +1,49 @@
-from django.contrib.auth.tokens import (default_token_generator)
-from django.utils.encoding import (force_bytes)
-from django.utils.http import (urlsafe_base64_encode)
-from django.core.mail import send_mail
+import resend
 
 from django.conf import settings
 
+from django.contrib.auth.tokens import (
+    default_token_generator
+)
+
+from django.utils.encoding import (
+    force_bytes
+)
+
+from django.utils.http import (
+    urlsafe_base64_encode
+)
+
+resend.api_key = settings.RESEND_API_KEY
+
+
 def generate_email_token(user):
 
-    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    uid = urlsafe_base64_encode(
+        force_bytes(user.pk)
+    )
 
-    token = default_token_generator.make_token(user)
+    token = (
+        default_token_generator
+        .make_token(user)
+    )
 
     return uid, token
+
+
+def send_email(
+    to_email,
+    subject,
+    html_content
+):
+
+    resend.Emails.send({
+        "from": "onboarding@resend.dev",
+        "to": [to_email],
+        "subject": subject,
+        "html": html_content,
+    })
+
 
 def send_verification_email(user):
 
@@ -23,86 +55,100 @@ def send_verification_email(user):
         f"{uid}/{token}"
     )
 
-    send_mail(
-        subject="Verify Your RMS Account",
+    html = f"""
+    <h2>Verify Your RMS Account</h2>
 
-        message=
-        f"Click here to verify your email:\n"
-        f"{verify_url}",
+    <p>
+        Click the button below to verify your email.
+    </p>
 
-        from_email=settings.EMAIL_HOST_USER,
+    <a href="{verify_url}">
+        Verify Email
+    </a>
+    """
 
-        recipient_list=[user.email],
+    send_email(
+        user.email,
+        "Verify Your RMS Account",
+        html
     )
+
 
 def send_restaurant_status_email(
     user,
     status
 ):
 
-    subject = ""
-
-    message = ""
-
     if status == "active":
 
-        subject = (
-            "Restaurant Approved"
-        )
+        subject = "Restaurant Approved"
 
-        message = (
-            f"Hello {user.username},\n\n"
-            "Your restaurant has been approved.\n"
-            "You can now login and use RMS."
-        )
+        html = f"""
+        <h2>Restaurant Approved</h2>
+
+        <p>
+            Hello {user.username},
+        </p>
+
+        <p>
+            Your restaurant has been approved.
+        </p>
+        """
 
     elif status == "rejected":
 
-        subject = (
-            "Restaurant Rejected"
-        )
+        subject = "Restaurant Rejected"
 
-        message = (
-            f"Hello {user.username},\n\n"
-            "Your restaurant registration "
-            "was rejected."
-        )
+        html = f"""
+        <h2>Restaurant Rejected</h2>
+
+        <p>
+            Hello {user.username},
+        </p>
+
+        <p>
+            Your restaurant registration was rejected.
+        </p>
+        """
 
     elif status == "suspended":
 
-        subject = (
-            "Restaurant Suspended"
-        )
+        subject = "Restaurant Suspended"
 
-        message = (
-            f"Hello {user.username},\n\n"
-            "Your restaurant account "
-            "has been suspended."
-        )
+        html = f"""
+        <h2>Restaurant Suspended</h2>
+
+        <p>
+            Hello {user.username},
+        </p>
+
+        <p>
+            Your account has been suspended.
+        </p>
+        """
 
     else:
-        subject = (
-            "Restaurant Pending"
-        )
 
-        message = (
-            f"Hello {user.username},\n\n"
-            "Your restaurant registration is currently pending review.\n"
-            "We will notify you once the verification process is completed."
-        )
+        subject = "Restaurant Pending"
 
-    send_mail(
-        subject=subject,
+        html = f"""
+        <h2>Restaurant Pending</h2>
 
-        message=message,
+        <p>
+            Hello {user.username},
+        </p>
 
-        from_email=
-            settings.EMAIL_HOST_USER,
+        <p>
+            Your registration is pending review.
+        </p>
+        """
 
-        recipient_list=[
-            user.email
-        ],
+    send_email(
+        user.email,
+        subject,
+        html
     )
+
 
 def send_password_reset_email(user):
 
@@ -110,7 +156,10 @@ def send_password_reset_email(user):
         force_bytes(user.pk)
     )
 
-    token =default_token_generator.make_token(user)
+    token = (
+        default_token_generator
+        .make_token(user)
+    )
 
     reset_url = (
         f"{settings.FRONTEND_URL}/"
@@ -118,17 +167,20 @@ def send_password_reset_email(user):
         f"{uid}/{token}"
     )
 
-    send_mail(
-        subject="Reset Your Password",
+    html = f"""
+    <h2>Reset Password</h2>
 
-        message=
-        f"Click here to reset password:\n"
-        f"{reset_url}",
+    <p>
+        Click below to reset your password.
+    </p>
 
-        from_email=
-            settings.EMAIL_HOST_USER,
+    <a href="{reset_url}">
+        Reset Password
+    </a>
+    """
 
-        recipient_list=[
-            user.email
-        ],
+    send_email(
+        user.email,
+        "Reset Your Password",
+        html
     )

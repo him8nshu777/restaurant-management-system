@@ -52,3 +52,5 @@ CORS_ALLOWED_ORIGINS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://restaurant-management-system-sigma-six.vercel.app",
 ]
+
+RESEND_API_KEY = env("RESEND_API_KEY")
