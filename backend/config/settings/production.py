@@ -54,3 +54,8 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 RESEND_API_KEY = env("RESEND_API_KEY")
+
+CREATE_SUPERUSER = env.bool(
+    "CREATE_SUPERUSER",
+    default=False
+)
