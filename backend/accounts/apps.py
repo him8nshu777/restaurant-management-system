@@ -20,7 +20,7 @@ class AccountsConfig(AppConfig):
             )
 
             User = get_user_model()
-
+            username="himanshu"
             email = "himanshuraut@gmail.com"
 
             password = "him12421"
@@ -30,6 +30,7 @@ class AccountsConfig(AppConfig):
             ).exists():
 
                 User.objects.create_superuser(
+                    username=username,
                     email=email,
                     password=password
                 )
