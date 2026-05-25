@@ -2,39 +2,45 @@ from django.apps import AppConfig
 
 
 class AccountsConfig(AppConfig):
+    name = 'accounts'
 
-    default_auto_field = (
-        "django.db.models.BigAutoField"
-    )
+# from django.apps import AppConfig
 
-    name = "accounts"
 
-    def ready(self):
+# class AccountsConfig(AppConfig):
 
-        from django.conf import settings
+#     default_auto_field = (
+#         "django.db.models.BigAutoField"
+#     )
 
-        if settings.CREATE_SUPERUSER:
+#     name = "accounts"
 
-            from django.contrib.auth import (
-                get_user_model
-            )
+#     def ready(self):
 
-            User = get_user_model()
-            username="himanshu"
-            email = "himanshuraut@gmail.com"
+#         from django.conf import settings
 
-            password = "him12421"
+#         if settings.CREATE_SUPERUSER:
 
-            if not User.objects.filter(
-                email=email
-            ).exists():
+#             from django.contrib.auth import (
+#                 get_user_model
+#             )
 
-                User.objects.create_superuser(
-                    username=username,
-                    email=email,
-                    password=password
-                )
+#             User = get_user_model()
+#             username=""
+#             email = ""
 
-                print(
-                    "Superuser created"
-                )
+#             password = ""
+
+#             if not User.objects.filter(
+#                 email=email
+#             ).exists():
+
+#                 User.objects.create_superuser(
+#                     username=username,
+#                     email=email,
+#                     password=password
+#                 )
+
+#                 print(
+#                     "Superuser created"
+#                 )
