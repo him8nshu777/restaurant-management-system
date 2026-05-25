@@ -3,7 +3,9 @@ from .base import *
 DEBUG = True
 
 FRONTEND_URL = env("FRONTEND_URL")
-
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
 # =========================================================
 # MEDIA CONFIGURATION
 # =========================================================
