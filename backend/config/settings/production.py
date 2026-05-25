@@ -45,12 +45,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ALLOWED_HOSTS = ["restaurant-management-system-gfjs.onrender.com"]
+ALLOWED_HOSTS = ["restaurant-management-system-gfjs.onrender.com",
+                 "https://restaurant-management-system-gfjs.onrender.com"]
 CORS_ALLOWED_ORIGINS = [
     "https://restaurant-management-system-sigma-six.vercel.app",
+    "https://restaurant-management-system-gfjs.onrender.com",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://restaurant-management-system-sigma-six.vercel.app",
+    "https://restaurant-management-system-gfjs.onrender.com",
 ]
 
 RESEND_API_KEY = env("RESEND_API_KEY")
