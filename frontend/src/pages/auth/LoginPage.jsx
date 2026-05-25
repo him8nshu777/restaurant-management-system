@@ -100,7 +100,7 @@ export default function LoginPage() {
             break;
 
           case "cashier":
-            navigate("/cashier");
+            navigate("/pos");
             break;
 
           case "manager":

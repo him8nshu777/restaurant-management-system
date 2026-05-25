@@ -41,17 +41,28 @@ export default function Addons() {
     (state) => state.restaurant.activeRestaurant
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
   // ====================================================
   // FETCH ADDONS
   // ====================================================
   useEffect(() => {
 
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
 
       fetchAddonList();
     }
 
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ====================================================
   // GET ADDON LIST
@@ -61,7 +72,7 @@ export default function Addons() {
     try {
 
       const data = await getAddonList(
-        activeRestaurant.id
+        restaurantId
       );
 
       setAddonList(data);
@@ -96,7 +107,7 @@ export default function Addons() {
     try {
 
       await createAddon({
-        restaurant: activeRestaurant.id,
+        restaurant: restaurantId,
         name: formData.name,
         price: formData.price,
       });

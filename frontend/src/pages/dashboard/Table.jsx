@@ -45,7 +45,7 @@ export default function Table() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const [showEditModal, setShowEditModal] = useState(false);
-
+  const [selectedTable, setSelectedTable] = useState(null);
   // ==========================================
   // FORM STATE
   // ==========================================
@@ -65,24 +65,36 @@ export default function Table() {
     (state) => state.restaurant.activeRestaurant,
   );
 
+  const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
   // ==========================================
   // FETCH DATA
   // ==========================================
   useEffect(() => {
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
       fetchTableList();
 
       fetchAreaList();
       fetchFloorList();
     }
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ==========================================
   // FETCH TABLES
   // ==========================================
   const fetchTableList = async () => {
     try {
-      const data = await getTableList(activeRestaurant.id);
+      const data = await getTableList(restaurantId);
 
       setTableList(data.tables || []);
       setWaiterList(data.waiters || []);
@@ -101,7 +113,7 @@ export default function Table() {
   // ==========================================
   const fetchFloorList = async () => {
     try {
-      const data = await getFloorList(activeRestaurant.id);
+      const data = await getFloorList(restaurantId);
 
       setFloorList(data);
     } catch (error) {
@@ -114,7 +126,7 @@ export default function Table() {
   // ==========================================
   const fetchAreaList = async () => {
     try {
-      const data = await getAreaList(activeRestaurant.id);
+      const data = await getAreaList(restaurantId);
 
       setAreaList(data);
     } catch (error) {
@@ -143,7 +155,7 @@ export default function Table() {
       await createTable({
         ...formData,
 
-        restaurant_id: activeRestaurant.id,
+        restaurant_id: restaurantId,
       });
 
       fetchTableList();

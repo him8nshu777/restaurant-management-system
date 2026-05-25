@@ -25,6 +25,17 @@ STAFF_ACCESS_ROLES = [
     ROLE_RESTAURANT_ADMIN,
 
     ROLE_MANAGER,
+
+]
+# ==========================================
+# STAFF LIST ACCESS
+# ==========================================
+STAFF_LIST_ACCESS_ROLES = [
+
+    ROLE_RESTAURANT_ADMIN,
+
+    ROLE_MANAGER,
+    ROLE_CASHIER,
 ]
 
 
@@ -37,6 +48,8 @@ FLOOR_ACCESS_ROLES = [
     ROLE_RESTAURANT_ADMIN,
 
     ROLE_MANAGER,
+    ROLE_WAITER,
+    ROLE_CASHIER,
 ]
 
 
@@ -47,7 +60,7 @@ FLOOR_ACCESS_ROLES = [
 TABLE_ACCESS_ROLES = [
 
     ROLE_RESTAURANT_ADMIN,
-
+    ROLE_WAITER,
     ROLE_MANAGER,
 ]
 

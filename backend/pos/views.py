@@ -9,6 +9,7 @@ from django.db.models import Q
 from menu.models import (
     ProductVariant,
     Combo,
+    ServiceCharge
 )
 
 from .serializers import (
@@ -111,11 +112,34 @@ class POSDashboardView(APIView):
             context={"request": request},
         ).data
 
+        # ==========================================
+        # SERVICE CHARGES
+        # ==========================================
+        service_charges = (
+            ServiceCharge.objects
+            .filter(
+                restaurant_id=restaurant_id,
+                is_active=True,
+            )
+        )
         print("1",product_data)
         print("2",combo_data)
+        print("2",service_charges)
         # ==========================================
         # FINAL RESPONSE
         # ==========================================
-        return Response(
-            product_data + combo_data
-        )
+        return Response({
+            "products": product_data,
+            "combos": combo_data,
+
+            "service_charges": [
+                {
+                    "id": charge.id,
+                    "name": charge.name,
+                    "charge_type": charge.charge_type,
+                    "value": charge.value,
+                    "auto_apply": charge.auto_apply,
+                }
+                for charge in service_charges
+            ]
+        })

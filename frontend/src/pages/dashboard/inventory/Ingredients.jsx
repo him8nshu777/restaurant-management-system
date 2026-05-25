@@ -35,17 +35,29 @@ export default function Ingredients() {
   const activeRestaurant = useSelector(
     (state) => state.restaurant.activeRestaurant,
   );
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
 
   useEffect(() => {
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
       fetchIngredientList();
       fetchUnitList();
     }
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   const fetchIngredientList = async () => {
     try {
-      const data = await getIngredientList(activeRestaurant.id);
+      const data = await getIngredientList(restaurantId);
 
       setIngredientList(data);
     } catch (error) {
@@ -58,7 +70,7 @@ export default function Ingredients() {
 
   const fetchUnitList = async () => {
     try {
-      const data = await getUnitList(activeRestaurant.id);
+      const data = await getUnitList(restaurantId);
 
       setUnitList(data);
     } catch (error) {
@@ -81,7 +93,7 @@ export default function Ingredients() {
       await createIngredient({
         ...formData,
 
-        restaurant_id: activeRestaurant.id,
+        restaurant_id: restaurantId,
       });
 
       fetchIngredientList();

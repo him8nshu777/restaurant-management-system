@@ -20,10 +20,11 @@ import AccountStatusPage from "../pages/auth/AccountStatusPage";
 import Dashboard from "../pages/admin/Dashboard";
 
 import CashierPage from "../pages/cashier/CashierPage";
-import POSDashboard from "../pages/pos/POSDashboard";
+import POSMainDashboard from "../pages/pos/POSMainDashboard";
 
-import KitchenPage from "../pages/kitchen/KitchenPage";
-
+import WaiterDashboard from "../pages/waiter/WaiterDashboard";
+import KitchenDashboard from "../pages/kitchen/KitchenDashboard";
+import ManagerDashboard from "../pages/manager/ManagerDashboard";
 // import WaiterPage from "../pages/waiter/WaiterPage";
 
 // import ReportsPage from "../pages/manager/ReportsPage";
@@ -88,7 +89,7 @@ export default function AppRouter() {
                     path="/pos"
                     element={
                         <ProtectedRoute>
-                            <POSDashboard />
+                            <POSMainDashboard />
                         </ProtectedRoute>
                     }
                 />
@@ -96,7 +97,7 @@ export default function AppRouter() {
                     path="/kitchen"
                     element={
                         <ProtectedRoute>
-                            <KitchenPage />
+                            <KitchenDashboard />
                         </ProtectedRoute>
                     }
                 />
@@ -105,6 +106,22 @@ export default function AppRouter() {
                     element={
                         <ProtectedRoute>
                             <CashierPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/waiter"
+                    element={
+                        <ProtectedRoute>
+                            <WaiterDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/manager"
+                    element={
+                        <ProtectedRoute>
+                            <ManagerDashboard />
                         </ProtectedRoute>
                     }
                 />

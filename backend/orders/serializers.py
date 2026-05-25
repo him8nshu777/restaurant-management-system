@@ -1,10 +1,6 @@
 from rest_framework import serializers
 
-from .models import (
-    Order,
-    OrderItem,
-    OrderItemAddon,
-)
+from .models import Order, OrderItem,OrderItemAddon, OrderTax,OrderServiceCharge
 
 
 # =========================================================
@@ -13,6 +9,10 @@ from .models import (
 class OrderItemAddonCreateSerializer(
     serializers.Serializer
 ):
+
+    id = serializers.IntegerField(
+        required=False
+    )
 
     addon_id = serializers.IntegerField()
 
@@ -27,6 +27,12 @@ class OrderItemAddonCreateSerializer(
         default=1
     )
 
+    total_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+    )
+
 
 # =========================================================
 # ORDER ITEM SERIALIZER
@@ -34,6 +40,13 @@ class OrderItemAddonCreateSerializer(
 class OrderItemCreateSerializer(
     serializers.Serializer
 ):
+
+    # =========================================
+    # FOR UPDATE
+    # =========================================
+    id = serializers.IntegerField(
+        required=False
+    )
 
     item_type = serializers.CharField()
 
@@ -67,6 +80,12 @@ class OrderItemCreateSerializer(
 
     quantity = serializers.IntegerField()
 
+    total_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+    )
+
     notes = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -80,13 +99,73 @@ class OrderItemCreateSerializer(
 
 
 # =========================================================
-# CREATE ORDER SERIALIZER
+# ORDER TAX SERIALIZER
+# =========================================================
+class OrderTaxCreateSerializer(
+    serializers.Serializer
+):
+
+    id = serializers.IntegerField(
+        required=False
+    )
+
+    name = serializers.CharField()
+
+    percentage = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+    )
+
+    amount = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+    )
+
+
+# =========================================================
+# ORDER SERVICE CHARGE SERIALIZER
+# =========================================================
+class OrderServiceChargeCreateSerializer(
+    serializers.Serializer
+):
+
+    id = serializers.IntegerField(
+        required=False
+    )
+
+    name = serializers.CharField()
+
+    charge_type = serializers.CharField()
+
+    value = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+    )
+
+    amount = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+    )
+
+
+# =========================================================
+# CREATE / UPDATE ORDER SERIALIZER
 # =========================================================
 class CreateOrderSerializer(
     serializers.Serializer
 ):
 
-    order_type = serializers.CharField()
+    order_type = serializers.CharField(
+        required=False
+    )
+
+    # =========================================
+    # WAITER
+    # =========================================
+    waiter_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+    )
 
     floor_id = serializers.IntegerField(
         required=False,
@@ -119,8 +198,56 @@ class CreateOrderSerializer(
         allow_null=True,
     )
 
+    status = serializers.CharField(
+        required=False
+    )
+
+    payment_status = serializers.CharField(
+        required=False
+    )
+
+    # =========================================
+    # DISCOUNT
+    # =========================================
+    discount_amount = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+    )
+
+    # =========================================
+    # ROUND OFF
+    # =========================================
+    round_off_amount = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+    )
+
+    # =========================================
+    # TAXES
+    # =========================================
+    taxes = OrderTaxCreateSerializer(
+        many=True,
+        required=False,
+    )
+
+    # =========================================
+    # SERVICE CHARGES
+    # =========================================
+    service_charges = (
+        OrderServiceChargeCreateSerializer(
+            many=True,
+            required=False,
+        )
+    )
+
+    # =========================================
+    # ITEMS
+    # =========================================
     items = OrderItemCreateSerializer(
-        many=True
+        many=True,
+        required=False,
     )
 
 
@@ -130,12 +257,45 @@ class CreateOrderSerializer(
 class OrderListSerializer(
     serializers.ModelSerializer
 ):
-
-    table_name = serializers.CharField(
-        source="table.table_number",
+    
+    waiter_id = serializers.IntegerField(
+        source="waiter.id",
         read_only=True,
     )
 
+    waiter_name = serializers.SerializerMethodField()
+
+    floor_name = serializers.CharField(
+        source="floor.name",
+        read_only=True
+    )
+
+    area_name = serializers.CharField(
+        source="area.name",
+        read_only=True
+    )
+
+    table_name = serializers.CharField(
+        source="table.table_number",
+        read_only=True
+    )
+
+    items = OrderItemCreateSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    taxes = OrderTaxCreateSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    service_charges = (
+        OrderServiceChargeCreateSerializer(
+            many=True,
+            read_only=True,
+        )
+    )
     class Meta:
 
         model = Order
@@ -146,7 +306,34 @@ class OrderListSerializer(
             "order_type",
             "status",
             "payment_status",
+            "payment_method",
+            "subtotal",
+            "discount_amount",
+            "tax_amount",
+            "service_charge_amount",
+            "round_off_amount",
             "grand_total",
+            "notes",
+            "floor_name",
+            "area_name",
             "table_name",
             "created_at",
+
+            # nested
+            "items",
+            "taxes",
+            "service_charges",
+
+            "waiter_id",
+            "waiter_name",
         ]
+    
+    def get_waiter_name(self, obj):
+
+        if obj.waiter:
+
+            full_name = obj.waiter.username
+            return full_name or obj.waiter.email
+
+        return None
+    

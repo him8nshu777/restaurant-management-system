@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    
+    "daphne",
+
     'django.contrib.staticfiles',
 
     # third party
@@ -52,6 +55,7 @@ INSTALLED_APPS = [
     "channels",
     "django_filters",
     "drf_spectacular",
+
 
     # local apps
     "accounts",
@@ -99,7 +103,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
-
+ASGI_APPLICATION = "core.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases

@@ -34,16 +34,27 @@ export default function Units() {
   const activeRestaurant = useSelector(
     (state) => state.restaurant.activeRestaurant,
   );
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
 
   useEffect(() => {
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
       fetchUnitList();
     }
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   const fetchUnitList = async () => {
     try {
-      const data = await getUnitList(activeRestaurant.id);
+      const data = await getUnitList(restaurantId);
 
       setUnitList(data);
     } catch (error) {
@@ -68,7 +79,7 @@ export default function Units() {
     try {
       await createUnit({
         ...formData,
-        restaurant_id: activeRestaurant.id,
+        restaurant_id: restaurantId,
       });
 
       fetchUnitList();

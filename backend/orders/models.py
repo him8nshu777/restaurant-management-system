@@ -7,12 +7,14 @@ from django.utils import timezone
 
 from restaurants.models import Restaurant
 from accounts.models import User
-
+from django.db import IntegrityError
 from menu.models import (
     ProductVariant,
     Combo,
     Addon,
 )
+from django.db.models import Count
+from django.db import transaction
 
 from restaurants.models import (
     RestaurantTable,
@@ -88,6 +90,17 @@ class Order(models.Model):
         related_name="customer_orders",
     )
 
+    # =====================================================
+    # WAITER
+    # =====================================================
+    waiter = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="waiter_orders",
+        limit_choices_to={"role": "waiter"},
+    )
     # =====================================================
     # CREATED BY STAFF
     # =====================================================
@@ -203,9 +216,9 @@ class Order(models.Model):
     )
 
     # =====================================================
-    # DELIVERY CHARGE
+    # SERVICE CHARGE TOTAL
     # =====================================================
-    delivery_charge = models.DecimalField(
+    service_charge_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
@@ -237,6 +250,11 @@ class Order(models.Model):
         null=True,
     )
 
+    cancel_reason = models.TextField(
+    blank=True,
+    null=True,
+    )
+
     # =====================================================
     # SAVE TIME
     # =====================================================
@@ -251,6 +269,12 @@ class Order(models.Model):
     confirmed_at = models.DateTimeField(
         blank=True,
         null=True,
+    )
+
+    payment_method = models.CharField(
+    max_length=20,
+    blank=True,
+    null=True,
     )
 
     # =====================================================
@@ -313,9 +337,8 @@ class Order(models.Model):
 
         self.grand_total = (
             subtotal
-            - self.discount_amount
             + self.tax_amount
-            + self.delivery_charge
+            + self.service_charge_amount
             + self.round_off_amount
         )
 
@@ -333,32 +356,38 @@ class Order(models.Model):
     # =====================================================
     # AUTO ORDER NUMBER
     # =====================================================
+    
     def save(self, *args, **kwargs):
 
+        # =========================================
+        # GENERATE ORDER NUMBER
+        # =========================================
         if not self.order_number:
 
-            last_order = (
-                Order.objects
-                .filter(
-                    restaurant=self.restaurant
+            today = timezone.now().strftime("%Y%m%d")
+
+            for attempt in range(1, 1000):
+
+                order_number = (
+                    f"ORD-"
+                    f"{self.restaurant.id}-"
+                    f"{today}-"
+                    f"{attempt:04d}"
                 )
-                .order_by("-id")
-                .first()
-            )
 
-            next_id = 1
+                exists = Order.objects.filter(
+                    order_number=order_number
+                ).exists()
 
-            if last_order:
+                if not exists:
 
-                next_id = last_order.id + 1
+                    self.order_number = order_number
+                    break
 
-            self.order_number = (
-                f"ORD-{next_id:05d}"
-            )
-
+        # =========================================
+        # SAVE
+        # =========================================
         super().save(*args, **kwargs)
-
-
 # =========================================================
 # ORDER ITEM
 # =========================================================
@@ -675,3 +704,90 @@ class OrderStatusHistory(models.Model):
             f" - "
             f"{self.new_status}"
         )
+    
+# =========================================================
+# ORDER TAX
+# =========================================================
+class OrderTax(models.Model):
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="taxes",
+    )
+
+    name = models.CharField(
+        max_length=255,
+    )
+
+    percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+    )
+
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+    )
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+
+        return (
+            f"{self.order.order_number}"
+            f" - "
+            f"{self.name}"
+        )
+    
+# =========================================================
+# ORDER SERVICE CHARGE
+# =========================================================
+class OrderServiceCharge(models.Model):
+
+    CHARGE_TYPE_CHOICES = (
+        ("percentage", "Percentage"),
+        ("fixed", "Fixed"),
+    )
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="service_charges",
+    )
+
+    name = models.CharField(
+        max_length=255,
+    )
+
+    charge_type = models.CharField(
+        max_length=20,
+        choices=CHARGE_TYPE_CHOICES,
+    )
+
+    value = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+    )
+
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+    )
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+
+        return (
+            f"{self.order.order_number}"
+            f" - "
+            f"{self.name}"
+        )
+    

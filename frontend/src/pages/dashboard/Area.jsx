@@ -58,23 +58,35 @@ export default function Area() {
     (state) => state.restaurant.activeRestaurant,
   );
 
+  const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
   // ==========================================
   // FETCH DATA
   // ==========================================
   useEffect(() => {
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
       fetchAreaList();
 
       fetchFloorList();
     }
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ==========================================
   // FETCH AREAS
   // ==========================================
   const fetchAreaList = async () => {
     try {
-      const data = await getAreaList(activeRestaurant.id);
+      const data = await getAreaList(restaurantId);
 
       setAreaList(data);
     } catch (error) {
@@ -90,7 +102,7 @@ export default function Area() {
   // ==========================================
   const fetchFloorList = async () => {
     try {
-      const data = await getFloorList(activeRestaurant.id);
+      const data = await getFloorList(restaurantId);
 
       setFloorList(data);
     } catch (error) {
@@ -119,7 +131,7 @@ export default function Area() {
       await createArea({
         ...formData,
 
-        restaurant_id: activeRestaurant.id,
+        restaurant_id: restaurantId,
       });
 
       fetchAreaList();

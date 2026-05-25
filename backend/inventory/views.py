@@ -76,10 +76,14 @@ class UnitListView(ListAPIView):
     def get_queryset(self):
 
         restaurant_id = self.request.GET.get("restaurant_id")
-
+        if self.request.user.role == "restaurant_admin":
+            return Unit.objects.filter(
+                restaurant_id=restaurant_id,
+                restaurant__owner=self.request.user,
+            )
         return Unit.objects.filter(
             restaurant_id=restaurant_id,
-            restaurant__owner=self.request.user,
+            restaurant=self.request.user.restaurant,
         )
 
 
@@ -91,8 +95,9 @@ class UnitDetailView(RetrieveUpdateAPIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def get_queryset(self):
-
-        return Unit.objects.filter(restaurant__owner=self.request.user)
+        if self.request.user.role == "restaurant_admin":
+            return Unit.objects.filter(restaurant__owner=self.request.user)
+        return Unit.objects.filter(restaurant=self.request.user.restaurant)
 
     def get_serializer_class(self):
 
@@ -114,13 +119,18 @@ class UnitToggleStatusView(APIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def patch(self, request, pk):
-
-        unit = get_object_or_404(
-            Unit,
-            pk=pk,
-            restaurant__owner=request.user,
-        )
-
+        if self.request.user.role == "restaurant_admin":
+            unit = get_object_or_404(
+                Unit,
+                pk=pk,
+                restaurant__owner=request.user,
+            )
+        elif self.request.user.role == "manager":
+            unit = get_object_or_404(
+                Unit,
+                pk=pk,
+                restaurant=request.user.restaurant,
+            )
         unit.is_active = not unit.is_active
 
         unit.save()
@@ -142,12 +152,18 @@ class UnitDeleteView(APIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def delete(self, request, pk):
-
-        unit = get_object_or_404(
-            Unit,
-            pk=pk,
-            restaurant__owner=request.user,
-        )
+        if self.request.user.role == "restaurant_admin":
+            unit = get_object_or_404(
+                Unit,
+                pk=pk,
+                restaurant__owner=request.user,
+            )
+        elif self.request.user.role == "manager":
+            unit = get_object_or_404(
+                Unit,
+                pk=pk,
+                restaurant=request.user.restaurant,
+            )
 
         unit.delete()
 
@@ -176,10 +192,14 @@ class IngredientListView(ListAPIView):
     def get_queryset(self):
 
         restaurant_id = self.request.GET.get("restaurant_id")
-
+        if self.request.user.role == "restaurant_admin":
+            return Ingredient.objects.filter(
+                restaurant_id=restaurant_id,
+                restaurant__owner=self.request.user,
+            )
         return Ingredient.objects.filter(
             restaurant_id=restaurant_id,
-            restaurant__owner=self.request.user,
+            restaurant=self.request.user.restaurant,
         )
 
 
@@ -191,8 +211,9 @@ class IngredientDetailView(RetrieveUpdateAPIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def get_queryset(self):
-
-        return Ingredient.objects.filter(restaurant__owner=self.request.user)
+        if self.request.user.role == "restaurant_admin":
+            return Ingredient.objects.filter(restaurant__owner=self.request.user)
+        return Ingredient.objects.filter(restaurant=self.request.user.restaurant)
 
     def get_serializer_class(self):
 
@@ -214,12 +235,18 @@ class IngredientToggleStatusView(APIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def patch(self, request, pk):
-
-        ingredient = get_object_or_404(
-            Ingredient,
-            pk=pk,
-            restaurant__owner=request.user,
-        )
+        if self.request.user.role == "restaurant_admin":
+            ingredient = get_object_or_404(
+                Ingredient,
+                pk=pk,
+                restaurant__owner=request.user,
+            )
+        elif self.request.user.role == "manager":
+            ingredient = get_object_or_404(
+                Ingredient,
+                pk=pk,
+                restaurant=request.user.restaurant,
+            )
 
         ingredient.is_active = not ingredient.is_active
 
@@ -242,12 +269,18 @@ class IngredientDeleteView(APIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def delete(self, request, pk):
-
-        ingredient = get_object_or_404(
-            Ingredient,
-            pk=pk,
-            restaurant__owner=request.user,
-        )
+        if self.request.user.role == "restaurant_admin":
+            ingredient = get_object_or_404(
+                Ingredient,
+                pk=pk,
+                restaurant__owner=request.user,
+            )
+        elif self.request.user.role == "manager":
+            ingredient = get_object_or_404(
+                Ingredient,
+                pk=pk,
+                restaurant=request.user.restaurant,
+            )
 
         ingredient.delete()
 
@@ -276,10 +309,14 @@ class SupplierListView(ListAPIView):
     def get_queryset(self):
 
         restaurant_id = self.request.GET.get("restaurant_id")
-
+        if self.request.user.role == "restaurant_admin":
+            return Supplier.objects.filter(
+                restaurant_id=restaurant_id,
+                restaurant__owner=self.request.user,
+            )
         return Supplier.objects.filter(
             restaurant_id=restaurant_id,
-            restaurant__owner=self.request.user,
+            restaurant=self.request.user.restaurant,
         )
 
 
@@ -291,8 +328,9 @@ class SupplierDetailView(RetrieveUpdateAPIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def get_queryset(self):
-
-        return Supplier.objects.filter(restaurant__owner=self.request.user)
+        if self.request.user.role == "restaurant_admin":
+            return Supplier.objects.filter(restaurant__owner=self.request.user)
+        return Supplier.objects.filter(restaurant=self.request.user.restaurant)
 
     def get_serializer_class(self):
 
@@ -314,12 +352,18 @@ class SupplierToggleStatusView(APIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def patch(self, request, pk):
-
-        supplier = get_object_or_404(
-            Supplier,
-            pk=pk,
-            restaurant__owner=request.user,
-        )
+        if self.request.user.role == "restaurant_admin":
+            supplier = get_object_or_404(
+                Supplier,
+                pk=pk,
+                restaurant__owner=request.user,
+            )
+        elif self.request.user.role == "manager":
+            supplier = get_object_or_404(
+                Supplier,
+                pk=pk,
+                restaurant=request.user.restaurant,
+            )
 
         supplier.is_active = not supplier.is_active
 
@@ -342,12 +386,18 @@ class SupplierDeleteView(APIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def delete(self, request, pk):
-
-        supplier = get_object_or_404(
-            Supplier,
-            pk=pk,
-            restaurant__owner=request.user,
-        )
+        if self.request.user.role == "restaurant_admin":
+            supplier = get_object_or_404(
+                Supplier,
+                pk=pk,
+                restaurant__owner=request.user,
+            )
+        elif self.request.user.role == "manager":
+            supplier = get_object_or_404(
+                Supplier,
+                pk=pk,
+                restaurant=request.user.restaurant,
+            )
 
         supplier.delete()
 
@@ -376,11 +426,22 @@ class InventoryTransactionListView(ListAPIView):
     def get_queryset(self):
 
         restaurant_id = self.request.GET.get("restaurant_id")
-
+        if self.request.user.role == "restaurant_admin":
+            return (
+                InventoryTransaction.objects.filter(
+                    restaurant_id=restaurant_id,
+                    restaurant__owner=self.request.user,
+                )
+                .select_related(
+                    "ingredient",
+                    "ingredient__unit",
+                )
+                .order_by("-created_at")
+            )
         return (
             InventoryTransaction.objects.filter(
                 restaurant_id=restaurant_id,
-                restaurant__owner=self.request.user,
+                restaurant=self.request.user.restaurant,
             )
             .select_related(
                 "ingredient",
@@ -412,11 +473,19 @@ class PurchaseListView(ListAPIView):
     def get_queryset(self):
 
         restaurant_id = self.request.GET.get("restaurant_id")
-
+        if self.request.user.role == "restaurant_admin":
+            return (
+                Purchase.objects.filter(
+                    restaurant_id=restaurant_id,
+                    restaurant__owner=self.request.user,
+                )
+                .select_related("supplier")
+                .order_by("-purchase_date")
+            )
         return (
             Purchase.objects.filter(
                 restaurant_id=restaurant_id,
-                restaurant__owner=self.request.user,
+                restaurant=self.request.user.restaurant,
             )
             .select_related("supplier")
             .order_by("-purchase_date")
@@ -431,8 +500,9 @@ class PurchaseDetailView(RetrieveUpdateAPIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def get_queryset(self):
-
-        return Purchase.objects.filter(restaurant__owner=self.request.user)
+        if self.request.user.role == "restaurant_admin":
+            return Purchase.objects.filter(restaurant__owner=self.request.user)
+        return Purchase.objects.filter(restaurant=self.request.user.restaurant)
 
     def get_serializer_class(self):
 
@@ -454,12 +524,18 @@ class PurchaseDeleteView(APIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def delete(self, request, pk):
-
-        purchase = get_object_or_404(
-            Purchase,
-            pk=pk,
-            restaurant__owner=request.user,
-        )
+        if self.request.user.role == "restaurant_admin":
+            purchase = get_object_or_404(
+                Purchase,
+                pk=pk,
+                restaurant__owner=request.user,
+            )
+        elif self.request.user.role == "manager":
+            purchase = get_object_or_404(
+                Purchase,
+                pk=pk,
+                restaurant=request.user.restaurant,
+            )
 
         purchase.delete()
 
@@ -488,11 +564,23 @@ class ProductRecipeListView(ListAPIView):
     def get_queryset(self):
 
         restaurant_id = self.request.GET.get("restaurant_id")
-
+        if self.request.user.role == "restaurant_admin":
+            return (
+                ProductRecipe.objects.filter(
+                    restaurant_id=restaurant_id,
+                    restaurant__owner=self.request.user,
+                )
+                .select_related(
+                    "ingredient",
+                    "ingredient__unit",
+                    "product_variant",
+                )
+                .order_by("-created_at")
+            )
         return (
             ProductRecipe.objects.filter(
                 restaurant_id=restaurant_id,
-                restaurant__owner=self.request.user,
+                restaurant=self.request.user.restaurant,
             )
             .select_related(
                 "ingredient",
@@ -511,8 +599,9 @@ class ProductRecipeDetailView(RetrieveUpdateAPIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def get_queryset(self):
-
-        return ProductRecipe.objects.filter(restaurant__owner=self.request.user)
+        if self.request.user.role == "restaurant_admin":
+            return ProductRecipe.objects.filter(restaurant__owner=self.request.user)
+        return ProductRecipe.objects.filter(restaurant=self.request.user.restaurant)
 
     def get_serializer_class(self):
 
@@ -534,12 +623,18 @@ class ProductRecipeDeleteView(APIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def delete(self, request, pk):
-
-        recipe = get_object_or_404(
-            ProductRecipe,
-            pk=pk,
-            restaurant__owner=request.user,
-        )
+        if self.request.user.role == "restaurant_admin":
+            recipe = get_object_or_404(
+                ProductRecipe,
+                pk=pk,
+                restaurant__owner=request.user,
+            )
+        elif self.request.user.role == "manager":
+            recipe = get_object_or_404(
+                ProductRecipe,
+                pk=pk,
+                restaurant=request.user.restaurant,
+            )
 
         recipe.delete()
 
@@ -568,11 +663,22 @@ class ComboRecipeListView(ListAPIView):
     def get_queryset(self):
 
         restaurant_id = self.request.GET.get("restaurant_id")
-
+        if self.request.user.role == "restaurant_admin":
+            return (
+                ComboRecipe.objects.filter(
+                    restaurant_id=restaurant_id,
+                    restaurant__owner=self.request.user,
+                )
+                .select_related(
+                    "combo",
+                    "product_variant",
+                )
+                .order_by("-created_at")
+            )
         return (
             ComboRecipe.objects.filter(
                 restaurant_id=restaurant_id,
-                restaurant__owner=self.request.user,
+                restaurant=self.request.user.restaurant,
             )
             .select_related(
                 "combo",
@@ -590,8 +696,9 @@ class ComboRecipeDetailView(RetrieveUpdateAPIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def get_queryset(self):
-
-        return ComboRecipe.objects.filter(restaurant__owner=self.request.user)
+        if self.request.user.role == "restaurant_admin":
+            return ComboRecipe.objects.filter(restaurant__owner=self.request.user)
+        return ComboRecipe.objects.filter(restaurant=self.request.user.restaurant)
 
     def get_serializer_class(self):
 
@@ -613,12 +720,18 @@ class ComboRecipeDeleteView(APIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def delete(self, request, pk):
-
-        recipe = get_object_or_404(
-            ComboRecipe,
-            pk=pk,
-            restaurant__owner=request.user,
-        )
+        if self.request.user.role == "restaurant_admin":
+            recipe = get_object_or_404(
+                ComboRecipe,
+                pk=pk,
+                restaurant__owner=request.user,
+            )
+        elif self.request.user.role == "manager":
+            recipe = get_object_or_404(
+                ComboRecipe,
+                pk=pk,
+                restaurant=request.user.restaurant,
+            )
 
         recipe.delete()
 

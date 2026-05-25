@@ -41,14 +41,26 @@ export default function ProductAddons() {
     (state) => state.restaurant.activeRestaurant,
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
   // ====================================================
   // FETCH DATA
   // ====================================================
   useEffect(() => {
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
       fetchInitialData();
     }
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ====================================================
   // FETCH PRODUCTS + ADDONS
@@ -57,16 +69,16 @@ export default function ProductAddons() {
   try {
 
     const products = await getProductList(
-      activeRestaurant.id,
+      restaurantId
     );
 
     const addons = await getAddonList(
-      activeRestaurant.id,
+      restaurantId
     );
 
     const mappings =
       await getProductAddonList(
-        activeRestaurant.id,
+        restaurantId
       );
 
     setProductList(products);

@@ -18,22 +18,18 @@ import { getStaffList } from "../../services/adminService";
 // ==========================================
 // POS DASHBOARD
 // ==========================================
-export default function POSDashboard() {
+export default function WaiterPOSDashboard() {
   // ==========================================
-  // ACTIVE RESTAURANT
-  // ==========================================
-  const activeRestaurant = useSelector(
-    (state) => state.restaurant.activeRestaurant,
-  );
-
-  const user = useSelector(
-  (state) => state.auth.user
+// USER
+// ==========================================
+const user = useSelector(
+  (state) => state.auth.user,
 );
 
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId = user?.restaurant_id;
 
   // ==========================================
   // PRODUCT LIST
@@ -110,15 +106,6 @@ const restaurantId =
   // ==========================================
   const [paymentMethod, setPaymentMethod] = useState("cash");
 
-  // ==========================================
-  // WAITER LIST
-  // ==========================================
-  const [waiterList, setWaiterList] = useState([]);
-
-  // ==========================================
-  // SELECTED WAITER
-  // ==========================================
-  const [selectedWaiter, setSelectedWaiter] = useState("");
 
   // ==========================================
   // SHOW TABLE MODAL
@@ -139,35 +126,6 @@ const restaurantId =
 
   const [showBreakdown, setShowBreakdown ] = useState(false);
   const [selectedServiceCharges, setSelectedServiceCharges] = useState([]);
-
-  // ==========================================
-// FETCH WAITERS
-// ==========================================
-const fetchWaiters = async () => {
-  try {
-
-    const data = await getStaffList(
-      restaurantId
-    );
-
-    const staffArray = Array.isArray(data)
-      ? data
-      : data.results || [];
-
-    const onlyWaiters = staffArray.filter(
-      (staff) => staff.role === "waiter"
-    );
-
-    setWaiterList(onlyWaiters);
-
-  } catch (error) {
-
-    console.log(error);
-
-    setWaiterList([]);
-
-  }
-};
 
 
   // ==========================================
@@ -248,8 +206,6 @@ const fetchWaiters = async () => {
       fetchFloors();
 
       fetchAreas();
-
-      fetchWaiters();
     }
   }, [restaurantId, selectedCategory, search]);
 
@@ -284,8 +240,6 @@ useEffect(() => {
   if (orderType !== "dine_in") {
 
     setSelectedTable("");
-
-    setSelectedWaiter("");
 
   }
 
@@ -523,15 +477,7 @@ const handleServiceChargeToggle = (chargeId) => {
 
         return;
       }
-      if (orderType === "dine_in" && !selectedWaiter) {
-  setAlert({
-    type: "danger",
-    message: "Please select waiter",
-  });
-
-  return;
-}
-
+   
       const payload = {
   order_type: orderType,
 
@@ -541,10 +487,7 @@ const handleServiceChargeToggle = (chargeId) => {
 
   table_id: selectedTable,
 
-  waiter_id:
-  orderType === "dine_in"
-    ? selectedWaiter
-    : null,
+  waiter_id: null,
 
   notes: orderNotes,
 
@@ -665,7 +608,6 @@ const handleServiceChargeToggle = (chargeId) => {
       setOrderNotes("");
 
       setSelectedTable("");
-      setSelectedWaiter("");
       setShowCart(false);
 
       fetchTables();
@@ -1389,47 +1331,6 @@ const handleServiceChargeToggle = (chargeId) => {
             </div>
           )}
 
-          {/* ==========================================
-    WAITER SELECTION
-========================================== */}
-{
-  orderType === "dine_in" && (
-    <div className="mt-3">
-
-      <label className="fw-semibold mb-2">
-        Assign Waiter
-      </label>
-
-      <select
-        className="form-select"
-        value={selectedWaiter}
-        onChange={(e) =>
-          setSelectedWaiter(e.target.value)
-        }
-      >
-
-        <option value="">
-          Select Waiter
-        </option>
-
-        {
-          waiterList.map((waiter) => (
-
-            <option
-              key={waiter.id}
-              value={waiter.id}
-            >
-              {waiter.username}
-            </option>
-
-          ))
-        }
-
-      </select>
-
-    </div>
-  )
-}
 
           {/* ==========================================
     ORDER NOTES

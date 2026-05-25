@@ -43,22 +43,33 @@ export default function DynamicPricing() {
   const activeRestaurant = useSelector(
     (state) => state.restaurant.activeRestaurant,
   );
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
 
   // ====================================================
   // FETCH DATA
   // ====================================================
   useEffect(() => {
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
       fetchPricingList();
     }
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ====================================================
   // FETCH LIST
   // ====================================================
   const fetchPricingList = async () => {
     try {
-      const data = await getDynamicPricingList(activeRestaurant.id);
+      const data = await getDynamicPricingList(restaurantId);
 
       setPricingList(data);
     } catch (error) {
@@ -90,7 +101,7 @@ export default function DynamicPricing() {
     try {
       await createDynamicPricing({
         ...formData,
-        restaurant: activeRestaurant.id,
+        restaurant: restaurantId,
       });
 
       fetchPricingList();

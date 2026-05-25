@@ -5,6 +5,7 @@ from .constants import (
     STAFF_ACCESS_ROLES,
 
     FLOOR_ACCESS_ROLES,
+    STAFF_LIST_ACCESS_ROLES,
 )
 
 
@@ -26,6 +27,26 @@ class CanManageStaff(BasePermission):
             and
 
             request.user.role in STAFF_ACCESS_ROLES
+        )
+    
+# ==========================================
+# STAFF MANAGEMENT PERMISSION
+# ==========================================
+class CanGetStaff(BasePermission):
+
+    """
+    Allow only staff list access roles.
+    """
+
+    def has_permission(self, request, view):
+
+        return (
+
+            request.user.is_authenticated
+
+            and
+
+            request.user.role in STAFF_LIST_ACCESS_ROLES
         )
 
 

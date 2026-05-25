@@ -11,7 +11,7 @@ from rest_framework.response import Response
 
 from accounts.models import User
 
-from .permissions import IsRestaurantAdmin, IsRestaurantAdminOrManager
+from .permissions import IsRestaurantAdmin, IsRestaurantAdminOrManager, CanGetStaff, CanManageStaff
 from .serializers import (
     StaffCreateSerializer,
     StaffListSerializer,
@@ -115,7 +115,7 @@ class StaffCreateView(CreateAPIView):
     """
 
     serializer_class = StaffCreateSerializer
-    permission_classes = [IsRestaurantAdmin]
+    permission_classes = [CanManageStaff]
 
 
 class StaffListView(ListAPIView):
@@ -124,33 +124,54 @@ class StaffListView(ListAPIView):
     """
 
     serializer_class = StaffListSerializer
-    permission_classes = [IsRestaurantAdmin]
+    permission_classes = [CanGetStaff]
 
     def get_queryset(self):
 
         restaurant_id = self.request.GET.get("restaurant_id")
+    
+        if self.request.user.role == "restaurant_admin":
 
+            return (
+                User.objects.filter(
+                    restaurant_id=restaurant_id, restaurant__owner=self.request.user
+                )
+                .exclude(role="restaurant_admin")
+                .order_by("-id")
+            )
         return (
             User.objects.filter(
-                restaurant_id=restaurant_id, restaurant__owner=self.request.user
+                restaurant_id=restaurant_id, restaurant=self.request.user.restaurant,
             )
             .exclude(role="restaurant_admin")
             .order_by("-id")
         )
-
+        
 
 class StaffDetailView(RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update and soft delete staff users.
     """
 
-    permission_classes = [IsRestaurantAdmin]
+    permission_classes = [CanManageStaff]
 
     def get_queryset(self):
 
-        # return User.objects.filter(restaurant=self.request.user.restaurant)
-        return User.objects.filter(restaurant__owner=self.request.user)
+        # ======================================
+        # RESTAURANT ADMIN
+        # ======================================
+        if self.request.user.role == "restaurant_admin":
 
+            return User.objects.filter(
+                restaurant__owner=self.request.user
+            )
+
+        # ======================================
+        # MANAGER
+        # ======================================
+        return User.objects.filter(
+            restaurant=self.request.user.restaurant
+        )
     def get_serializer_class(self):
 
         # Use update serializer for PUT/PATCH
@@ -186,7 +207,7 @@ class FloorCreateView(CreateAPIView):
 
     serializer_class = FloorCreateSerializer
 
-    permission_classes = [CanManageFloor]
+    permission_classes = [IsRestaurantAdminOrManager]
 
 
 # ==========================================
@@ -202,22 +223,38 @@ class FloorListView(ListAPIView):
 
         restaurant_id = self.request.GET.get("restaurant_id")
 
-        return Floor.objects.filter(
-            restaurant_id=restaurant_id, restaurant__owner=self.request.user
-        )
+        if self.request.user.role == "restaurant_admin":
 
+            return Floor.objects.filter(
+                restaurant_id=restaurant_id,
+                restaurant__owner=self.request.user,
+            )
+
+        return Floor.objects.filter(
+            restaurant_id=restaurant_id,
+            restaurant=self.request.user.restaurant,
+        )
 
 # ==========================================
 # FLOOR DETAIL VIEW
 # ==========================================
 class FloorDetailView(RetrieveUpdateAPIView):
 
-    permission_classes = [CanManageFloor]
+    permission_classes = [IsRestaurantAdminOrManager]
 
     def get_queryset(self):
+        # ======================================
+        # RESTAURANT ADMIN
+        # ======================================
+        if self.request.user.role == "restaurant_admin":
 
-        return Floor.objects.filter(restaurant__owner=self.request.user)
-
+            return Floor.objects.filter(restaurant__owner=self.request.user)
+        # ======================================
+        # MANAGER
+        # ======================================
+        return Floor.objects.filter(
+            restaurant=self.request.user.restaurant
+        )
     def get_serializer_class(self):
 
         if self.request.method in [
@@ -235,12 +272,17 @@ class FloorDetailView(RetrieveUpdateAPIView):
 # ==========================================
 class FloorToggleStatusView(APIView):
 
-    permission_classes = [CanManageFloor]
+    permission_classes = [IsRestaurantAdminOrManager]
 
     def patch(self, request, pk):
+        # ======================================
+        # RESTAURANT ADMIN
+        # ======================================
+        if self.request.user.role == "restaurant_admin":
 
-        floor = get_object_or_404(Floor, pk=pk, restaurant__owner=request.user)
-
+            floor = get_object_or_404(Floor, pk=pk, restaurant__owner=request.user)
+        elif self.request.user.role == "manager":
+            floor = get_object_or_404(Floor, pk=pk, restaurant=request.user.restaurant)
         floor.is_active = not floor.is_active
 
         floor.save()
@@ -259,11 +301,18 @@ class FloorToggleStatusView(APIView):
 # ==========================================
 class FloorDeleteView(APIView):
 
-    permission_classes = [CanManageFloor]
+    permission_classes = [IsRestaurantAdminOrManager]
 
     def delete(self, request, pk):
+        # ======================================
+        # RESTAURANT ADMIN
+        # ======================================
+        if self.request.user.role == "restaurant_admin":
 
-        floor = get_object_or_404(Floor, pk=pk, restaurant__owner=request.user)
+            floor = get_object_or_404(Floor, pk=pk, restaurant__owner=request.user)
+        elif self.request.user.role == "manager":
+
+            floor = get_object_or_404(Floor, pk=pk, restaurant=request.user.restaurant)
 
         floor.delete()
 
@@ -287,14 +336,22 @@ class AreaListView(ListAPIView):
 
     serializer_class = AreaListSerializer
 
-    permission_classes = [IsRestaurantAdminOrManager]
+    permission_classes = [CanManageFloor]
 
     def get_queryset(self):
 
         restaurant_id = self.request.GET.get("restaurant_id")
 
+        if self.request.user.role == "restaurant_admin":
+
+            return Area.objects.filter(
+                restaurant_id=restaurant_id,
+                restaurant__owner=self.request.user,
+            ).order_by("-id")
+
         return Area.objects.filter(
-            restaurant_id=restaurant_id, restaurant__owner=self.request.user
+            restaurant_id=restaurant_id,
+            restaurant=self.request.user.restaurant,
         ).order_by("-id")
 
 
@@ -303,11 +360,13 @@ class AreaListView(ListAPIView):
 # ==========================================
 class AreaDetailView(RetrieveUpdateDestroyAPIView):
 
-    permission_classes = [IsRestaurantAdminOrManager]
+    permission_classes = [CanManageFloor]
 
     def get_queryset(self):
+        if self.request.user.role == "restaurant_admin":
 
-        return Area.objects.filter(restaurant__owner=self.request.user)
+            return Area.objects.filter(restaurant__owner=self.request.user)
+        return Area.objects.filter(restaurant=self.request.user.restaurant)
 
     def get_serializer_class(self):
 
@@ -393,14 +452,22 @@ class TableListView(ListAPIView):
 
     serializer_class = TableListSerializer
 
-    permission_classes = [IsRestaurantAdminOrManager]
+    permission_classes = [CanManageFloor]
 
     def get_queryset(self):
 
         restaurant_id = self.request.GET.get("restaurant_id")
 
+        if self.request.user.role == "restaurant_admin":
+
+            return RestaurantTable.objects.filter(
+                restaurant_id=restaurant_id,
+                restaurant__owner=self.request.user,
+            ).order_by("table_number")
+
         return RestaurantTable.objects.filter(
-            restaurant_id=restaurant_id, restaurant__owner=self.request.user
+            restaurant_id=restaurant_id,
+            restaurant=self.request.user.restaurant,
         ).order_by("table_number")
 
     # ==========================================
@@ -416,7 +483,7 @@ class TableListView(ListAPIView):
             role="waiter",
             is_active=True,
             restaurant_id=restaurant_id,
-        ).distinct()
+        )
         print("w->", waiters)
         waiter_data = [
             {
@@ -435,11 +502,13 @@ class TableListView(ListAPIView):
 # ==========================================
 class TableDetailView(RetrieveUpdateDestroyAPIView):
 
-    permission_classes = [IsRestaurantAdminOrManager]
+    permission_classes = [CanManageFloor]
 
     def get_queryset(self):
+        if self.request.user.role == "restaurant_admin":
 
-        return RestaurantTable.objects.filter(restaurant__owner=self.request.user)
+            return RestaurantTable.objects.filter(restaurant__owner=self.request.user)
+        return RestaurantTable.objects.filter(restaurant=self.request.user.resataurant)
 
     def get_serializer_class(self):
 
@@ -461,8 +530,11 @@ class ToggleTableStatusView(APIView):
     permission_classes = [IsRestaurantAdminOrManager]
 
     def patch(self, request, pk):
+        if self.request.user.role == "restaurant_admin":
 
-        table = RestaurantTable.objects.get(pk=pk, restaurant__owner=request.user)
+            table = RestaurantTable.objects.get(pk=pk, restaurant__owner=request.user)
+        elif self.request.user.role == "manager":
+            table = RestaurantTable.objects.get(pk=pk, restaurant=request.user.restaurant)
 
         table.is_active = not table.is_active
 

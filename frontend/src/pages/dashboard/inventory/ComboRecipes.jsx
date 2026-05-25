@@ -23,6 +23,19 @@ export default function ComboRecipes() {
     (state) => state.restaurant.activeRestaurant
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
+
   const [recipeList, setRecipeList] =
     useState([]);
 
@@ -54,7 +67,7 @@ export default function ComboRecipes() {
   // ==========================================
   useEffect(() => {
 
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
 
       fetchRecipes();
 
@@ -63,7 +76,7 @@ export default function ComboRecipes() {
       fetchVariants();
     }
 
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   const fetchRecipes = async () => {
 
@@ -71,7 +84,7 @@ export default function ComboRecipes() {
 
       const data =
         await getComboRecipeList(
-          activeRestaurant.id
+          restaurantId
         );
 
       setRecipeList(data);
@@ -88,7 +101,7 @@ export default function ComboRecipes() {
 
       const data =
         await getComboList(
-          activeRestaurant.id
+          restaurantId
         );
 
       setComboList(data);
@@ -105,7 +118,7 @@ export default function ComboRecipes() {
 
       const data =
         await getVariantList(
-          activeRestaurant.id
+          restaurantId
         );
 
       setVariantList(data);
@@ -138,7 +151,7 @@ export default function ComboRecipes() {
 
       await createComboRecipe({
         ...formData,
-        restaurant_id: activeRestaurant.id,
+        restaurant_id: restaurantId
       });
 
       fetchRecipes();

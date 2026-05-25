@@ -45,17 +45,29 @@ export default function Taxes() {
     (state) => state.restaurant.activeRestaurant,
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
   // ====================================================
   // FETCH TAXES
   // ====================================================
   useEffect(() => {
 
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
 
       fetchTaxes();
     }
 
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ====================================================
   // GET TAX LIST
@@ -65,7 +77,7 @@ export default function Taxes() {
     try {
 
       const data = await getTaxList(
-        activeRestaurant.id,
+        restaurantId
       );
 
       setTaxList(data);
@@ -100,7 +112,7 @@ export default function Taxes() {
     try {
 
       await createTax({
-        restaurant: activeRestaurant.id,
+        restaurant: restaurantId,
         name: formData.name,
         percentage: formData.percentage,
       });

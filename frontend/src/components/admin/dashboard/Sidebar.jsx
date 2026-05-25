@@ -1,51 +1,12 @@
 import { useState, useEffect } from "react";
 
 import {
-  BarChartFill,
-  PeopleFill,
-  ReceiptCutoff,
-  ClipboardCheck,
   List,
   ChevronDown,
   ChevronRight,
   PlusCircle,
   CheckCircleFill,
   Building,
-  GridFill,
-  BoundingBox,
-  Table,
-
-  // ==========================================
-  // MENU ICONS
-  // ==========================================
-  MenuButtonWideFill,
-  TagsFill,
-  CupHotFill,
-  LayersFill,
-  PlusSquareFill,
-  Link45deg,
-  CollectionFill,
-  Diagram3Fill,
-  Percent,
-  GraphUpArrow,
-  ClockFill,
-
-  // ==========================================
-  // INVENTORY ICONS
-  // ==========================================
-  BoxSeamFill,
-  ArchiveFill,
-  Truck,
-  CartCheckFill,
-  ArrowLeftRight,
-
-  Clipboard2DataFill,
-
-  // ==========================================
-  // POSH DASHBOARD
-  // ==========================================
-  Shop
-  
 } from "react-bootstrap-icons";
 
 import { getRestaurants } from "../../../services/adminService";
@@ -56,289 +17,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { setActiveRestaurant } from "../../../features/restaurants/restaurantSlice";
 
-// ==========================================
-// SIDEBAR MENU CONFIGURATION
-// ==========================================
-const menuItems = [
-  // ==========================================
-  // REPORTS
-  // ==========================================
-  {
-    key: "reports",
-    label: "Reports",
-    icon: <BarChartFill />,
-  },
-
-  // ==========================================
-  // POS DASHBOARD 
-  // ==========================================
-  {
-    key: "pos-dashboard",
-    label: "POS Dashboard",
-    icon: <Shop />,
-  },
-  
-  // ==========================================
-  // STAFF
-  // ==========================================
-  {
-    key: "staff",
-    label: "Staff",
-    icon: <PeopleFill />,
-  },
-
-  // ==========================================
-  // FLOOR MANAGEMENT
-  // ==========================================
-  {
-    key: "floors",
-    label: "Floors",
-    icon: <GridFill />,
-  },
-
-  // ==========================================
-  // AREA MANAGEMENT
-  // ==========================================
-  {
-    key: "areas",
-    label: "Areas",
-    icon: <BoundingBox />,
-  },
-
-  // ==========================================
-  // TABLE MANAGEMENT
-  // ==========================================
-  {
-    key: "tables",
-    label: "Tables",
-    icon: <Table />,
-  },
-
-  // ==========================================
-  // MENU MANAGEMENT DROPDOWN
-  // ==========================================
-  {
-    key: "menu-management",
-    label: "Menu Management",
-    icon: <MenuButtonWideFill />,
-
-    children: [
-      // ======================================
-      // CATEGORIES
-      // ======================================
-      {
-        key: "categories",
-        label: "Categories",
-        icon: <TagsFill />,
-      },
-
-      // ======================================
-      // PRODUCTS
-      // ======================================
-      {
-        key: "products",
-        label: "Products",
-        icon: <CupHotFill />,
-      },
-
-      // ======================================
-      // PRODUCT VARIANTS
-      // ======================================
-      {
-        key: "product-variants",
-        label: "Variants",
-        icon: <LayersFill />,
-      },
-
-      // ======================================
-      // ADDONS
-      // ======================================
-      {
-        key: "addons",
-        label: "Addons",
-        icon: <PlusSquareFill />,
-      },
-
-      // ======================================
-      {
-        key: "product-addons",
-        label: "Product Addons",
-        icon: <Link45deg />,
-      },
-
-      // ======================================
-      // COMBOS
-      // ======================================
-      {
-        key: "combos",
-        label: "Combos",
-        icon: <CollectionFill />,
-      },
-
-      {
-        key: "combo-products",
-        label: "Combo Products",
-        icon: <Diagram3Fill />,
-      },
-
-      // ======================================
-      // TAXES
-      // ======================================
-      {
-        key: "tax-pricing",
-        label: "Tax & Pricing",
-        icon: <Percent />,
-
-        children: [
-          // ==================================
-          // TAX MANAGEMENT
-          // ==================================
-          {
-            key: "taxes",
-            label: "Taxes",
-            icon: <Percent />,
-          },
-
-          // ==================================
-          // PRODUCT TAX MAPPING
-          // ==================================
-          {
-            key: "product-taxes",
-            label: "Product Taxes",
-            icon: <Link45deg />,
-          },
-
-          // ==================================
-          // SERVICE CHARGES
-          // ==================================
-          {
-            key: "service-charges",
-            label: "Service Charges",
-            icon: <ReceiptCutoff />,
-          },
-
-          // ==================================
-          // DYNAMIC PRICING
-          // ==================================
-          {
-            key: "dynamic-pricing",
-            label: "Dynamic Pricing",
-            icon: <GraphUpArrow />,
-          },
-          // ==================================
-          // PRODUCT DYNAMIC PRICING
-          // ==================================
-          {
-            key: "product-dynamic-pricing",
-            label: "Product Dynamic Pricing",
-            icon: <Link45deg />,
-          },
-
-          // ==================================
-          // CMOBO DYNAMIC PRICING
-          // ==================================
-          {
-            key: "combo-dynamic-pricing",
-            label: "Combo Dynamic Pricing",
-            icon: <Link45deg />,
-          },
-        ],
-      },
-
-      // ======================================
-      // OFFERS / HAPPY HOURS
-      // ======================================
-      {
-        key: "offers",
-        label: "Offers",
-        icon: <ClockFill />,
-      },
-    ],
-  },
-
-  // ==========================================
-  // INVENTORY MANAGEMENT DROPDOWN
-  // ==========================================
-  {
-    key: "inventory-management",
-    label: "Inventory",
-    icon: <BoxSeamFill />,
-
-    children: [
-      // ======================================
-      // UNITS
-      // ======================================
-      {
-        key: "units",
-        label: "Units",
-        icon: <ArchiveFill />,
-      },
-
-      // ======================================
-      // INGREDIENTS
-      // ======================================
-      {
-        key: "ingredients",
-        label: "Ingredients",
-        icon: <BoxSeamFill />,
-      },
-
-      // ======================================
-      // SUPPLIERS
-      // ======================================
-      {
-        key: "suppliers",
-        label: "Suppliers",
-        icon: <Truck />,
-      },
-
-      // ======================================
-      // PURCHASES
-      // ======================================
-      {
-        key: "purchases",
-        label: "Purchases",
-        icon: <CartCheckFill />,
-      },
-
-      {
-        key: "inventory-transaction",
-        label: "Inventory Transaction",
-        icon: <ArrowLeftRight />,
-      },
-
-      {
-        key: "product-recipes",
-        label: "Product Recipes",
-        icon: <Clipboard2DataFill />,
-      },
-
-      {
-        key: "combo-recipes",
-        label: "Combo Recipes",
-        icon: <Diagram3Fill />,
-      },
-    ],
-  },
-
-  // ==========================================
-  // ORDERS
-  // ==========================================
-  {
-    key: "orders",
-    label: "Orders",
-    icon: <ClipboardCheck />,
-  },
-
-  // ==========================================
-  // BILLING
-  // ==========================================
-  {
-    key: "billing",
-    label: "Billing",
-    icon: <ReceiptCutoff />,
-  },
-];
+import { getMenuByRole } from "./menuConfig";
 
 // ==========================================
 // REUSABLE SIDEBAR
@@ -374,6 +53,26 @@ export default function Sidebar({ activePage, setActivePage }) {
   );
 
   // ==========================================
+  // AUTH USER
+  // ==========================================
+  const user = useSelector(
+    (state) => state.auth.user
+  );
+
+  // ==========================================
+  // ROLE BASED MENU
+  // ==========================================
+  const menuItems = getMenuByRole(
+    user?.role || "restaurant_admin"
+  );
+
+  // ==========================================
+  // ROLE CHECK
+  // ==========================================
+  const isRestaurantAdmin =
+    user?.role === "restaurant_admin";
+
+  // ==========================================
   // TOGGLE DROPDOWN MENU
   // ==========================================
   const toggleMenu = (menuKey) => {
@@ -392,14 +91,18 @@ export default function Sidebar({ activePage, setActivePage }) {
     // ======================================
     // SAVE IN LOCAL STORAGE
     // ======================================
-    localStorage.setItem("activeRestaurant", JSON.stringify(restaurant));
+    localStorage.setItem(
+      "activeRestaurant",
+      JSON.stringify(restaurant)
+    );
 
     // ======================================
     // RELOAD DASHBOARD
     // ======================================
     window.location.reload();
   };
-
+console.log("ROLE:", user?.role);
+console.log("MENU:", menuItems);
   // ==========================================
   // FETCH RESTAURANTS
   // ==========================================
@@ -422,50 +125,186 @@ export default function Sidebar({ activePage, setActivePage }) {
       if (data.length > 0 && !activeRestaurant) {
         dispatch(setActiveRestaurant(data[0]));
 
-        localStorage.setItem("activeRestaurant", JSON.stringify(data[0]));
+        localStorage.setItem(
+          "activeRestaurant",
+          JSON.stringify(data[0])
+        );
       }
     } catch (error) {
       console.log(error);
     }
   };
 
+  // ==========================================
+  // RENDER MENU ITEMS
+  // ==========================================
+  const renderMenuItems = (items, isChild = false) => {
+    return items.map((item) => (
+      <div key={item.key}>
+        {/* ==================================
+            NORMAL MENU ITEM
+        ================================== */}
+        {!item.children && (
+          <button
+            onClick={() =>
+              setActivePage({
+                type: item.key,
+              })
+            }
+            className={`
+              btn
+              d-flex
+              align-items-center
+              gap-${isChild ? "2" : "3"}
+              py-2
+              text-start
+              w-100
+
+              ${
+                isChild
+                  ? activePage.type === item.key
+                    ? "btn-primary"
+                    : "btn-outline-secondary"
+                  : activePage.type === item.key
+                    ? "btn-primary"
+                    : "btn-outline-light"
+              }
+            `}
+          >
+            {/* ICON */}
+            <span className="fs-5">
+              {item.icon}
+            </span>
+
+            {/* LABEL */}
+            {!collapsed && (
+              <span>{item.label}</span>
+            )}
+          </button>
+        )}
+
+        {/* ==================================
+            DROPDOWN MENU
+        ================================== */}
+        {item.children && (
+          <>
+            {/* MAIN BUTTON */}
+            <button
+              onClick={() => toggleMenu(item.key)}
+              className={`
+                btn
+                d-flex
+                align-items-center
+                justify-content-between
+                w-100
+                py-2
+
+                ${
+                  isChild
+                    ? "btn-outline-secondary"
+                    : "btn-outline-light"
+                }
+              `}
+            >
+              {/* LEFT */}
+              <div
+                className="
+                  d-flex
+                  align-items-center
+                  gap-3
+                "
+              >
+                <span className="fs-5">
+                  {item.icon}
+                </span>
+
+                {!collapsed && (
+                  <span>{item.label}</span>
+                )}
+              </div>
+
+              {/* RIGHT ICON */}
+              {!collapsed &&
+                (openMenus[item.key] ? (
+                  <ChevronDown />
+                ) : (
+                  <ChevronRight />
+                ))}
+            </button>
+
+            {/* ==================================
+                DROPDOWN CHILDREN
+            ================================== */}
+            {openMenus[item.key] &&
+              !collapsed && (
+                <div
+                  className="
+                    ms-3
+                    mt-2
+                    d-flex
+                    flex-column
+                    gap-2
+                  "
+                >
+                  {renderMenuItems(
+                    item.children,
+                    true
+                  )}
+                </div>
+              )}
+          </>
+        )}
+      </div>
+    ));
+  };
+
   return (
     <div
       className={`
-                sidebar
-                text-white
-                p-3
-                d-flex
-                flex-column
-                justify-content-between
-                ${collapsed ? "sidebar-collapsed" : "sidebar-expanded"}
-            `}
+        sidebar
+        text-white
+        p-3
+        d-flex
+        flex-column
+        justify-content-between
+        ${
+          collapsed
+            ? "sidebar-collapsed"
+            : "sidebar-expanded"
+        }
+      `}
     >
       {/* ======================================
-                TOP SECTION
-            ====================================== */}
+          TOP SECTION
+      ====================================== */}
       <div>
         {/* ======================================
-                    HEADER
-                ====================================== */}
+            HEADER
+        ====================================== */}
         <div
           className="
-                        d-flex
-                        justify-content-between
-                        align-items-center
-                        mb-4
-                    "
+            d-flex
+            justify-content-between
+            align-items-center
+            mb-4
+          "
         >
-          {!collapsed && <h4 className="fw-bold mb-0">ERP</h4>}
+          {!collapsed && (
+            <h4 className="fw-bold mb-0">
+              ERP
+            </h4>
+          )}
 
           {/* COLLAPSE BUTTON */}
           <button
             className="
-                            btn
-                            btn-outline-light
-                            btn-sm
-                        "
-            onClick={() => setCollapsed(!collapsed)}
+              btn
+              btn-outline-light
+              btn-sm
+            "
+            onClick={() =>
+              setCollapsed(!collapsed)
+            }
           >
             <List size={20} />
           </button>
@@ -474,256 +313,48 @@ export default function Sidebar({ activePage, setActivePage }) {
         <hr />
 
         {/* ======================================
-                    SIDEBAR MENU
-                ====================================== */}
+            SIDEBAR MENU
+        ====================================== */}
         <div
           className="
-                        d-flex
-                        flex-column
-                        gap-2
-                    "
+            d-flex
+            flex-column
+            gap-2
+          "
         >
-          {menuItems.map((item) => (
-            <div key={item.key}>
-              {/* ==================================
-                                NORMAL MENU ITEM
-                            ================================== */}
-              {!item.children && (
-                <button
-                  onClick={() =>
-                    setActivePage({
-                      type: item.key,
-                    })
-                  }
-                  className={`
-                                        sidebar-button
-                                        btn
-                                        d-flex
-                                        align-items-center
-                                        gap-3
-                                        py-2
-                                        w-100
-
-                                        ${
-                                          activePage.type === item.key
-                                            ? "btn-primary"
-                                            : "btn-outline-light"
-                                        }
-                                    `}
-                >
-                  {/* ICON */}
-                  <span className="fs-5">{item.icon}</span>
-
-                  {/* LABEL */}
-                  {!collapsed && <span>{item.label}</span>}
-                </button>
-              )}
-
-              {/* ==================================
-                                DROPDOWN MENU
-                            ================================== */}
-              {item.children && (
-                <>
-                  {/* MAIN BUTTON */}
-                  <button
-                    onClick={() => toggleMenu(item.key)}
-                    className="
-                                            sidebar-button
-                                            btn
-                                            btn-outline-light
-                                            d-flex
-                                            align-items-center
-                                            justify-content-between
-                                            w-100
-                                            py-2
-                                        "
-                  >
-                    {/* LEFT */}
-                    <div
-                      className="
-                                                d-flex
-                                                align-items-center
-                                                gap-3
-                                            "
-                    >
-                      <span className="fs-5">{item.icon}</span>
-
-                      {!collapsed && <span>{item.label}</span>}
-                    </div>
-
-                    {/* RIGHT ICON */}
-                    {!collapsed &&
-                      (openMenus[item.key] ? (
-                        <ChevronDown />
-                      ) : (
-                        <ChevronRight />
-                      ))}
-                  </button>
-
-                  {/* ==================================
-    DROPDOWN CHILDREN
-================================== */}
-                  {openMenus[item.key] && !collapsed && (
-                    <div
-                      className="
-                ms-3
-                mt-2
-                d-flex
-                flex-column
-                gap-2
-            "
-                    >
-                      {item.children.map((child) => (
-                        <div key={child.key}>
-                          {/* =========================
-                        NORMAL CHILD
-                    ========================= */}
-                          {!child.children && (
-                            <button
-                              onClick={() =>
-                                setActivePage({
-                                  type: child.key,
-                                })
-                              }
-                              className={`
-                                btn
-                                d-flex
-                                align-items-center
-                                gap-2
-                                text-start
-                                w-100
-
-                                ${
-                                  activePage.type === child.key
-                                    ? "btn-primary"
-                                    : "btn-outline-secondary"
-                                }
-                            `}
-                            >
-                              <span>{child.icon}</span>
-
-                              <span>{child.label}</span>
-                            </button>
-                          )}
-
-                          {/* =========================
-                        NESTED DROPDOWN
-                    ========================= */}
-                          {child.children && (
-                            <>
-                              {/* PARENT BUTTON */}
-                              <button
-                                onClick={() => toggleMenu(child.key)}
-                                className="
-                                    btn
-                                    btn-outline-secondary
-                                    d-flex
-                                    align-items-center
-                                    justify-content-between
-                                    w-100
-                                "
-                              >
-                                <div
-                                  className="
-                                        d-flex
-                                        align-items-center
-                                        gap-2
-                                    "
-                                >
-                                  <span>{child.icon}</span>
-
-                                  <span>{child.label}</span>
-                                </div>
-
-                                {openMenus[child.key] ? (
-                                  <ChevronDown />
-                                ) : (
-                                  <ChevronRight />
-                                )}
-                              </button>
-
-                              {/* =====================
-                                SUB CHILDREN
-                            ===================== */}
-                              {openMenus[child.key] && (
-                                <div
-                                  className="
-                                        ms-3
-                                        mt-2
-                                        d-flex
-                                        flex-column
-                                        gap-2
-                                    "
-                                >
-                                  {child.children.map((subChild) => (
-                                    <button
-                                      key={subChild.key}
-                                      onClick={() =>
-                                        setActivePage({
-                                          type: subChild.key,
-                                        })
-                                      }
-                                      className={`
-                                                btn
-                                                d-flex
-                                                align-items-center
-                                                gap-2
-                                                text-start
-                                                w-100
-
-                                                ${
-                                                  activePage.type ===
-                                                  subChild.key
-                                                    ? "btn-primary"
-                                                    : "btn-outline-secondary"
-                                                }
-                                            `}
-                                    >
-                                      <span>{subChild.icon}</span>
-
-                                      <span>{subChild.label}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          ))}
+          {renderMenuItems(menuItems)}
         </div>
       </div>
 
       {/* ======================================
-                PROFILE / RESTAURANT SECTION
-            ====================================== */}
+          PROFILE / RESTAURANT SECTION
+      ====================================== */}
       <div className="mt-4">
         <hr />
 
         {/* PROFILE BUTTON */}
         <button
           className="
-                        btn
-                        btn-outline-light
-                        w-100
-                        d-flex
-                        align-items-center
-                        justify-content-between
-                    "
-          onClick={() => setShowProfileMenu(!showProfileMenu)}
+            btn
+            btn-outline-light
+            w-100
+            d-flex
+            align-items-center
+            justify-content-between
+          "
+          onClick={() =>
+            setShowProfileMenu(
+              !showProfileMenu
+            )
+          }
         >
           {/* LEFT */}
           <div
             className="
-                            d-flex
-                            align-items-center
-                            gap-2
-                        "
+              d-flex
+              align-items-center
+              gap-2
+            "
           >
             {/* ICON */}
             <Building size={18} />
@@ -733,18 +364,18 @@ export default function Sidebar({ activePage, setActivePage }) {
               <div className="text-start">
                 <div
                   className="
-                                        small
-                                        fw-bold
-                                    "
+                    small
+                    fw-bold
+                  "
                 >
                   {activeRestaurant?.name}
                 </div>
 
                 <div
                   className="
-                                        text-secondary
-                                        small
-                                    "
+                    text-secondary
+                    small
+                  "
                 >
                   Branch
                 </div>
@@ -757,113 +388,151 @@ export default function Sidebar({ activePage, setActivePage }) {
         </button>
 
         {/* ======================================
-                    DROPDOWN MENU
-                ====================================== */}
-        {showProfileMenu && !collapsed && (
-          <div
-            className="
-                            bg-dark
-                            border
-                            border-secondary
-                            rounded
-                            mt-2
-                            p-2
-                        "
-          >
-            {/* TITLE */}
-            <div className="mb-2">
-              <small className="text-secondary">Your Branches</small>
-            </div>
+            DROPDOWN MENU
+        ====================================== */}
+        {showProfileMenu &&
+          !collapsed && (
+            <div
+              className="
+                bg-dark
+                border
+                border-secondary
+                rounded
+                mt-2
+                p-2
+              "
+            >
+              {/* ==================================
+                  ONLY ADMIN CAN SWITCH BRANCH
+              ================================== */}
+              {isRestaurantAdmin ? (
+                <>
+                  {/* TITLE */}
+                  <div className="mb-2">
+                    <small className="text-secondary">
+                      Your Branches
+                    </small>
+                  </div>
 
-            {/* RESTAURANTS */}
-            {restaurants.map((restaurant) => (
-              <div
-                key={restaurant.id}
-                className="
-                                    d-flex
-                                    justify-content-between
-                                    align-items-center
-                                    p-2
-                                    rounded
-                                    mb-1
-                                    restaurant-item
-                                "
-              >
-                {/* LEFT */}
-                <div
-                  className="
-                                        d-flex
-                                        align-items-center
-                                        gap-2
-                                    "
-                >
-                  {/* ACTIVE ICON */}
-                  {activeRestaurant?.id === restaurant.id && (
-                    <CheckCircleFill className="text-success" />
+                  {/* RESTAURANTS */}
+                  {restaurants.map(
+                    (restaurant) => (
+                      <div
+                        key={restaurant.id}
+                        className="
+                          d-flex
+                          justify-content-between
+                          align-items-center
+                          p-2
+                          rounded
+                          mb-1
+                          restaurant-item
+                        "
+                      >
+                        {/* LEFT */}
+                        <div
+                          className="
+                            d-flex
+                            align-items-center
+                            gap-2
+                          "
+                        >
+                          {/* ACTIVE ICON */}
+                          {activeRestaurant?.id ===
+                            restaurant.id && (
+                            <CheckCircleFill className="text-success" />
+                          )}
+
+                          {/* NAME */}
+                          <div
+                            style={{
+                              cursor: "pointer",
+                            }}
+                            onClick={() =>
+                              setActivePage({
+                                type:
+                                  "restaurant-profile",
+                                restaurant,
+                              })
+                            }
+                          >
+                            <div className="small fw-semibold">
+                              {restaurant.name}
+                            </div>
+
+                            <div
+                              className="
+                                text-secondary
+                                small
+                              "
+                            >
+                              {
+                                restaurant.status
+                              }
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ACTION */}
+                        <button
+                          className="
+                            btn
+                            btn-sm
+                            btn-outline-primary
+                          "
+                          onClick={() =>
+                            handleSwitchRestaurant(
+                              restaurant
+                            )
+                          }
+                        >
+                          Switch
+                        </button>
+                      </div>
+                    )
                   )}
 
-                  {/* NAME */}
-                  <div
-                    style={{
-                      cursor: "pointer",
-                    }}
+                  {/* CREATE BUTTON */}
+                  <button
+                    className="
+                      btn
+                      btn-primary
+                      w-100
+                      mt-2
+                      d-flex
+                      align-items-center
+                      justify-content-center
+                      gap-2
+                    "
                     onClick={() =>
                       setActivePage({
-                        type: "restaurant-profile",
-                        restaurant,
+                        type:
+                          "create-restaurant",
                       })
                     }
                   >
-                    <div className="small fw-semibold">{restaurant.name}</div>
-
-                    <div
-                      className="
-                                                text-secondary
-                                                small
-                                            "
-                    >
-                      {restaurant.status}
-                    </div>
+                    <PlusCircle size={16} />
+                    Create Branch
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="small fw-semibold">
+                    {user?.full_name}
                   </div>
-                </div>
 
-                {/* ACTION */}
-                <button
-                  className="
-                                        btn
-                                        btn-sm
-                                        btn-outline-primary
-                                    "
-                  onClick={() => handleSwitchRestaurant(restaurant)}
-                >
-                  Switch
-                </button>
-              </div>
-            ))}
-
-            {/* CREATE BUTTON */}
-            <button
-              className="
-                                btn
-                                btn-primary
-                                w-100
-                                mt-2
-                                d-flex
-                                align-items-center
-                                justify-content-center
-                                gap-2
-                            "
-              onClick={() =>
-                setActivePage({
-                  type: "create-restaurant",
-                })
-              }
-            >
-              <PlusCircle size={16} />
-              Create Branch
-            </button>
-          </div>
-        )}
+                  <div
+                    className="
+                      text-secondary
+                      small
+                    "
+                  >
+                    {user?.role}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );

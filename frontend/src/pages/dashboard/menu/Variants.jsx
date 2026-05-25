@@ -61,23 +61,35 @@ export default function Variants() {
     (state) => state.restaurant.activeRestaurant,
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
   // ==================================================
   // FETCH DATA
   // ==================================================
   useEffect(() => {
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
       fetchVariants();
 
       fetchProducts();
     }
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ==================================================
   // FETCH VARIANTS
   // ==================================================
   const fetchVariants = async () => {
     try {
-      const data = await getVariantList(activeRestaurant.id);
+      const data = await getVariantList(restaurantId);
 
       setVariantList(data);
     } catch (error) {
@@ -93,7 +105,7 @@ export default function Variants() {
   // ==================================================
   const fetchProducts = async () => {
     try {
-      const data = await getProductList(activeRestaurant.id);
+      const data = await getProductList(restaurantId);
 
       setProductList(data);
     } catch (error) {
@@ -133,7 +145,7 @@ export default function Variants() {
 
     try {
       await createVariant({
-        restaurant: activeRestaurant.id,
+        restaurant: restaurantId,
         product: formData.product,
         name: formData.name,
         price: Number(formData.price),

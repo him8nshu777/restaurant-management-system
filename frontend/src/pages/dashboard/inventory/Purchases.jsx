@@ -39,17 +39,28 @@ export default function Purchases() {
   const activeRestaurant = useSelector(
     (state) => state.restaurant.activeRestaurant,
   );
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
 
   useEffect(() => {
 
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
 
       fetchPurchaseList();
 
       fetchSupplierList();
     }
 
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   const fetchPurchaseList = async () => {
 
@@ -57,7 +68,7 @@ export default function Purchases() {
 
       const data =
         await getPurchaseList(
-          activeRestaurant.id
+          restaurantId
         );
 
       setPurchaseList(data);
@@ -77,7 +88,7 @@ export default function Purchases() {
 
       const data =
         await getSupplierList(
-          activeRestaurant.id
+          restaurantId
         );
 
       setSupplierList(data);
@@ -106,7 +117,7 @@ export default function Purchases() {
       await createPurchase({
         ...formData,
 
-        restaurant_id: activeRestaurant.id,
+        restaurant_id: restaurantId
       });
 
       fetchPurchaseList();

@@ -32,16 +32,28 @@ export default function InventoryTransactions() {
     (state) => state.restaurant.activeRestaurant,
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
   useEffect(() => {
 
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
 
       fetchTransactionList();
 
       fetchIngredientList();
     }
 
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   const fetchTransactionList = async () => {
 
@@ -49,7 +61,7 @@ export default function InventoryTransactions() {
 
       const data =
         await getInventoryTransactionList(
-          activeRestaurant.id
+          restaurantId
         );
 
       setTransactionList(data);
@@ -69,7 +81,7 @@ export default function InventoryTransactions() {
 
       const data =
         await getIngredientList(
-          activeRestaurant.id
+          restaurantId
         );
 
       setIngredientList(data);
@@ -98,7 +110,7 @@ export default function InventoryTransactions() {
       await createInventoryTransaction({
         ...formData,
 
-        restaurant_id: activeRestaurant.id,
+        restaurant_id: restaurantId,
       });
 
       fetchTransactionList();

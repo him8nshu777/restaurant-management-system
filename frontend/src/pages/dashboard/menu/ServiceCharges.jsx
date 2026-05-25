@@ -52,17 +52,29 @@ export default function ServiceCharges() {
       state.restaurant.activeRestaurant,
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
   // ====================================================
   // FETCH DATA
   // ====================================================
   useEffect(() => {
 
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
 
       fetchCharges();
     }
 
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ====================================================
   // FETCH CHARGES
@@ -73,7 +85,7 @@ export default function ServiceCharges() {
 
       const data =
         await getServiceChargeList(
-          activeRestaurant.id,
+          restaurantId
         );
 
       setChargeList(data);
@@ -135,7 +147,7 @@ export default function ServiceCharges() {
       await createServiceCharge({
         ...formData,
         restaurant:
-          activeRestaurant.id,
+          restaurantId
       });
 
       fetchCharges();
@@ -196,7 +208,7 @@ export default function ServiceCharges() {
         {
           ...formData,
           restaurant:
-            activeRestaurant.id,
+            restaurantId
         },
       );
 

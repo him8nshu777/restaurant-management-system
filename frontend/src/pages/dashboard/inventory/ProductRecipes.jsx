@@ -27,6 +27,18 @@ export default function ProductRecipes() {
     (state) => state.restaurant.activeRestaurant
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
   // ==========================================
   // STATES
   // ==========================================
@@ -61,7 +73,7 @@ export default function ProductRecipes() {
   // ==========================================
   useEffect(() => {
 
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
 
       fetchRecipes();
 
@@ -70,7 +82,7 @@ export default function ProductRecipes() {
       fetchVariants();
     }
 
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ==========================================
   // FETCH RECIPES
@@ -81,7 +93,7 @@ export default function ProductRecipes() {
 
       const data =
         await getProductRecipeList(
-          activeRestaurant.id
+          restaurantId
         );
 
       setRecipeList(data);
@@ -104,7 +116,7 @@ export default function ProductRecipes() {
 
       const data =
         await getIngredientList(
-          activeRestaurant.id
+          restaurantId
         );
 
       setIngredientList(data);
@@ -124,7 +136,7 @@ export default function ProductRecipes() {
 
       const data =
         await getVariantList(
-          activeRestaurant.id
+          restaurantId
         );
 
       setVariantList(data);
@@ -157,7 +169,7 @@ export default function ProductRecipes() {
 
       await createProductRecipe({
         ...formData,
-        restaurant_id: activeRestaurant.id,
+        restaurant_id: restaurantId
       });
 
       fetchRecipes();

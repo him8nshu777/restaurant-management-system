@@ -208,5 +208,7 @@ class CustomLoginSerializer(serializers.Serializer):
                 "role": authenticated_user.role,
 
                 "restaurant_status": restaurant.status,
+
+                "restaurant_id": restaurant.id,
             }
         }

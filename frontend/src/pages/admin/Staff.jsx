@@ -66,16 +66,26 @@ export default function Staff() {
         (state) =>
             state.restaurant.activeRestaurant
     );
+const user = useSelector(
+  (state) => state.auth.user
+);
 
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
 
     // ==========================================
     // FETCH STAFF ON LOAD
     // ==========================================
     useEffect(() => {
-        if (activeRestaurant?.id) {
+        if (restaurantId) {
             fetchStaffList();
         }
-    }, [activeRestaurant]);
+    }, [restaurantId]);
 
 
     // ==========================================
@@ -85,7 +95,7 @@ export default function Staff() {
 
         try {
 
-            const data = await getStaffList(activeRestaurant?.id);
+            const data = await getStaffList(restaurantId);
 
             setStaffList(data);
 
@@ -124,7 +134,7 @@ export default function Staff() {
 
             await createStaff({
                 ...formData,
-                restaurant_id:activeRestaurant.id,});
+                restaurant_id:restaurantId});
 
             fetchStaffList();
 

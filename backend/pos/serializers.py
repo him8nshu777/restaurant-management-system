@@ -11,6 +11,7 @@ from menu.models import (
     Combo,
     ProductDynamicPricing,
     ComboDynamicPricing,
+    ProductTax,
 )
 
 
@@ -240,6 +241,7 @@ class POSProductListSerializer(
     
     addons = serializers.SerializerMethodField()
 
+    taxes = serializers.SerializerMethodField()
     class Meta:
 
         model = ProductVariant
@@ -259,6 +261,7 @@ class POSProductListSerializer(
             "is_veg",
             "is_available",
             "addons",
+            "taxes",
         )
 
     # ==========================================
@@ -367,6 +370,32 @@ class POSProductListSerializer(
         pricing = self.get_active_pricing(obj)
 
         return pricing is not None
+
+    # ==========================================
+    # GET TAXES
+    # ==========================================
+    def get_taxes(self, obj):
+
+        tax_mappings = (
+            ProductTax.objects
+            .select_related("tax")
+            .filter(
+                product=obj.product,
+                tax__is_active=True,
+            )
+        )
+
+        taxes = []
+
+        for mapping in tax_mappings:
+
+            taxes.append({
+                "id": mapping.tax.id,
+                "name": mapping.tax.name,
+                "percentage": mapping.tax.percentage,
+            })
+
+        return taxes
 
     # ==========================================
     # GET ADDONS

@@ -56,21 +56,32 @@ export default function Categories() {
     (state) => state.restaurant.activeRestaurant,
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
   // ==================================================
   // FETCH CATEGORIES
   // ==================================================
   useEffect(() => {
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
       fetchCategoryList();
     }
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ==================================================
   // GET CATEGORY LIST
   // ==================================================
   const fetchCategoryList = async () => {
     try {
-      const data = await getCategoryList(activeRestaurant.id);
+      const data = await getCategoryList(restaurantId);
 
       setCategoryList(data);
     } catch (error) {
@@ -117,7 +128,7 @@ export default function Categories() {
     try {
       const payload = new FormData();
 
-      payload.append("restaurant", activeRestaurant.id);
+      payload.append("restaurant", restaurantId);
 
       payload.append("name", formData.name);
 

@@ -45,17 +45,29 @@ export default function ComboProducts() {
     (state) => state.restaurant.activeRestaurant,
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
   // ====================================================
   // FETCH DATA
   // ====================================================
   useEffect(() => {
 
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
 
       fetchInitialData();
     }
 
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ====================================================
   // FETCH INITIAL DATA
@@ -65,16 +77,16 @@ export default function ComboProducts() {
     try {
 
       const combos = await getComboList(
-        activeRestaurant.id,
+        restaurantId
       );
 
       const products = await getProductList(
-        activeRestaurant.id,
+        restaurantId
       );
 
       const mappings =
         await getComboProductList(
-          activeRestaurant.id,
+          restaurantId
         );
 
       setComboList(combos);

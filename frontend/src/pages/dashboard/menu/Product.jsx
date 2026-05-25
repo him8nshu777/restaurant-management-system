@@ -63,24 +63,35 @@ export default function Products() {
   const activeRestaurant = useSelector(
     (state) => state.restaurant.activeRestaurant,
   );
+  const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
 
   // ==================================================
   // FETCH DATA
   // ==================================================
   useEffect(() => {
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
       fetchProductList();
 
       fetchCategoryList();
     }
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ==================================================
   // FETCH PRODUCTS
   // ==================================================
   const fetchProductList = async () => {
     try {
-      const data = await getProductList(activeRestaurant.id);
+      const data = await getProductList(restaurantId);
 
       setProductList(data);
     } catch (error) {
@@ -96,7 +107,7 @@ export default function Products() {
   // ==================================================
   const fetchCategoryList = async () => {
     try {
-      const data = await getCategoryList(activeRestaurant.id);
+      const data = await getCategoryList(restaurantId);
 
       setCategoryList(data);
     } catch (error) {
@@ -127,7 +138,7 @@ export default function Products() {
     try {
       const payload = new FormData();
 
-      payload.append("restaurant", activeRestaurant.id);
+      payload.append("restaurant", restaurantId);
 
       payload.append("category", formData.category);
 

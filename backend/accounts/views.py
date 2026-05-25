@@ -273,5 +273,6 @@ class CurrentUserAPIView(APIView):
                 "role": user.role,
                 # Used for frontend route control
                 "restaurant_status": restaurant.status,
+                "restaurant_id": restaurant.id,
             }
         )

@@ -44,17 +44,29 @@ export default function Combos() {
     (state) => state.restaurant.activeRestaurant,
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
   // ====================================================
   // FETCH COMBOS
   // ====================================================
   useEffect(() => {
 
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
 
       fetchComboList();
     }
 
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ====================================================
   // FETCH COMBO LIST
@@ -64,7 +76,7 @@ export default function Combos() {
     try {
 
       const data = await getComboList(
-        activeRestaurant.id,
+        restaurantId
       );
 
       setComboList(data);
@@ -112,7 +124,7 @@ export default function Combos() {
 
       payload.append(
         "restaurant",
-        activeRestaurant.id,
+        restaurantId
       );
 
       payload.append(

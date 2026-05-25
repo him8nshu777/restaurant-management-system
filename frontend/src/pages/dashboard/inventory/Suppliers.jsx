@@ -61,14 +61,27 @@ export default function Suppliers() {
     (state) => state.restaurant.activeRestaurant,
   );
 
+    const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
+
   // ==========================================
   // FETCH SUPPLIERS
   // ==========================================
   useEffect(() => {
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
       fetchSupplierList();
     }
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ==========================================
   // GET SUPPLIER LIST
@@ -76,7 +89,7 @@ export default function Suppliers() {
   const fetchSupplierList = async () => {
     try {
       const data = await getSupplierList(
-        activeRestaurant.id,
+        restaurantId
       );
 
       setSupplierList(data);
@@ -109,7 +122,7 @@ export default function Suppliers() {
       await createSupplier({
         ...formData,
 
-        restaurant_id: activeRestaurant.id,
+        restaurant_id: restaurantId
       });
 
       fetchSupplierList();

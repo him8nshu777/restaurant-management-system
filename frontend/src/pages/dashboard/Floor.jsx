@@ -54,6 +54,18 @@ export default function Floor() {
     (state) => state.restaurant.activeRestaurant,
   );
 
+  const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+
   // ==========================================
   // TOGGLE FLOOR STATUS
   // ==========================================
@@ -79,17 +91,17 @@ export default function Floor() {
   // FETCH FLOORS
   // ==========================================
   useEffect(() => {
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
       fetchFloorList();
     }
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ==========================================
   // GET FLOOR LIST
   // ==========================================
   const fetchFloorList = async () => {
     try {
-      const data = await getFloorList(activeRestaurant.id);
+      const data = await getFloorList(restaurantId);
 
       setFloorList(data);
     } catch (error) {
@@ -122,7 +134,7 @@ export default function Floor() {
       await createFloor({
         ...formData,
 
-        restaurant_id: activeRestaurant.id,
+        restaurant_id: restaurantId,
       });
 
       fetchFloorList();

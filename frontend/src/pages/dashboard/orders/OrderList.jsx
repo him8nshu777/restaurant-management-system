@@ -20,6 +20,34 @@ export default function OrderList() {
     (state) =>
       state.restaurant.activeRestaurant
   );
+  
+  const user = useSelector(
+  (state) => state.auth.user
+);
+
+// ==========================================
+// RESTAURANT ID
+// ==========================================
+const restaurantId =
+  user?.role === "restaurant_admin"
+    ? activeRestaurant?.id
+    : user?.restaurant_id;
+console.log("USER:", user);
+
+console.log(
+  "USER RESTAURANT:",
+  user?.restaurant
+);
+
+console.log(
+  "ACTIVE RESTAURANT:",
+  activeRestaurant
+);
+
+console.log(
+  "RESTAURANT ID:",
+  restaurantId
+);
 
   // ==========================================
   // ORDER LIST
@@ -53,6 +81,7 @@ export default function OrderList() {
       status: "",
       payment_status: "",
       notes: "",
+      items: [],
     });
 
   // ==========================================
@@ -61,12 +90,10 @@ export default function OrderList() {
   const fetchOrders = async () => {
 
     try {
-
       const data =
         await getOrderList(
-          activeRestaurant.id
+          restaurantId
         );
-
       setOrderList(data);
 
     }
@@ -90,31 +117,109 @@ export default function OrderList() {
   // ==========================================
   useEffect(() => {
 
-    if (activeRestaurant?.id) {
+    if (restaurantId) {
 
       fetchOrders();
 
     }
 
-  }, [activeRestaurant]);
+  }, [restaurantId]);
 
   // ==========================================
-  // OPEN EDIT MODAL
-  // ==========================================
-  const openEditModal = (order) => {
+// OPEN EDIT MODAL
+// ==========================================
+const openEditModal = (order) => {
 
-    setSelectedOrder(order);
+  setSelectedOrder(order);
 
-    setFormData({
-      status: order.status,
-      payment_status:
-        order.payment_status,
-      notes: order.notes || "",
-    });
+  setFormData({
 
-    setShowEditModal(true);
+    status: order.status,
 
-  };
+    payment_status:
+      order.payment_status,
+
+    payment_method:
+      order.payment_method || "",
+
+    notes: order.notes || "",
+
+    discount_amount:
+      order.discount_amount || 0,
+
+    // round_off_amount:
+    //   order.round_off_amount || 0,
+
+    tax_amount:
+      order.tax_amount || 0,
+
+    service_charge_amount:
+      order.service_charge_amount || 0,
+
+    subtotal:
+      order.subtotal || 0,
+
+    grand_total:
+      order.grand_total || 0,
+
+    taxes:
+      order.taxes || [],
+
+    service_charges:
+      order.service_charges || [],
+
+    items:
+      order.items?.map((item) => ({
+
+        id: item.id,
+
+        item_name: item.item_name,
+
+        item_type: item.item_type,
+
+        quantity: item.quantity,
+
+        final_price: item.final_price,
+
+        original_price:
+          item.original_price,
+
+        total_price:
+          item.total_price,
+
+        notes: item.notes || "",
+
+        dynamic_pricing_name:
+          item.dynamic_pricing_name,
+
+        addons:
+          item.addons?.map(
+            (addon) => ({
+
+              id: addon.id,
+
+              addon_name:
+                addon.addon_name,
+
+              addon_price:
+                addon.addon_price,
+
+              quantity:
+                addon.quantity,
+
+              total_price:
+                addon.total_price,
+
+            })
+          ) || [],
+
+      })) || [],
+
+  });
+
+  setShowEditModal(true);
+
+};
 
   // ==========================================
   // HANDLE INPUT CHANGE
@@ -130,96 +235,298 @@ export default function OrderList() {
   };
 
   // ==========================================
-  // UPDATE ORDER
-  // ==========================================
-  const handleUpdateOrder = async (e) => {
+// HANDLE ITEM CHANGE
+// ==========================================
+const handleItemChange = (
+  index,
+  field,
+  value
+) => {
 
-    e.preventDefault();
+  const updatedItems = [
+    ...formData.items,
+  ];
 
-    try {
+  updatedItems[index][field] =
+    field === "quantity"
+      ? Number(value)
+      : value;
 
-      await updateOrder(
-        selectedOrder.id,
-        formData
+  // ========================================
+  // AUTO TOTAL
+  // ========================================
+  updatedItems[index].total_price =
+    (
+      Number(
+        updatedItems[index]
+          .final_price
+      ) *
+      Number(
+        updatedItems[index]
+          .quantity
+      )
+    ).toFixed(2);
+
+  setFormData({
+    ...formData,
+    items: updatedItems,
+  });
+
+};
+
+// ==========================================
+// HANDLE ADDON CHANGE
+// ==========================================
+const handleAddonQuantityChange = (
+  itemIndex,
+  addonIndex,
+  value
+) => {
+
+  const updatedItems = [
+    ...formData.items,
+  ];
+
+  const addon =
+    updatedItems[itemIndex]
+      .addons[addonIndex];
+
+  addon.quantity = Number(value);
+
+  addon.total_price =
+    (
+      Number(addon.addon_price) *
+      Number(addon.quantity)
+    ).toFixed(2);
+
+  setFormData({
+    ...formData,
+    items: updatedItems,
+  });
+
+};
+
+// ==========================================
+// REMOVE ADDON
+// ==========================================
+const removeAddon = (
+  itemIndex,
+  addonIndex
+) => {
+
+  const updatedItems = [
+    ...formData.items,
+  ];
+
+  updatedItems[itemIndex].addons =
+    updatedItems[itemIndex]
+      .addons.filter(
+        (_, i) =>
+          i !== addonIndex
       );
 
-      fetchOrders();
+  setFormData({
+    ...formData,
+    items: updatedItems,
+  });
 
-      setShowEditModal(false);
+};
 
-      setAlert({
-        type: "success",
-        message:
-          "Order updated successfully.",
-      });
+  // ==========================================
+  // INCREASE QUANTITY
+  // ==========================================
+  const increaseQuantity = (
+    index
+  ) => {
 
-    }
+    const item =
+      formData.items[index];
 
-    catch (error) {
-
-      console.log(error);
-
-      setAlert({
-        type: "danger",
-        message:
-          "Failed to update order.",
-      });
-
-    }
+    handleItemChange(
+      index,
+      "quantity",
+      item.quantity + 1
+    );
 
   };
+
+  // ==========================================
+  // DECREASE QUANTITY
+  // ==========================================
+  const decreaseQuantity = (
+    index
+  ) => {
+
+    const item =
+      formData.items[index];
+
+    if (item.quantity <= 1) {
+      return;
+    }
+
+    handleItemChange(
+      index,
+      "quantity",
+      item.quantity - 1
+    );
+
+  };
+
+  // ==========================================
+  // REMOVE ITEM
+  // ==========================================
+  const removeItem = (
+    index
+  ) => {
+
+    const updatedItems =
+      formData.items.filter(
+        (_, i) => i !== index
+      );
+
+    setFormData({
+      ...formData,
+      items: updatedItems,
+    });
+
+  };
+
+  // ==========================================
+// CALCULATE GRAND TOTAL
+// ==========================================
+const calculateGrandTotal =
+  () => {
+
+    let subtotal = 0;
+
+    formData.items.forEach(
+      (item) => {
+
+        subtotal += Number(
+          item.total_price
+        );
+
+        item.addons?.forEach(
+          (addon) => {
+
+            subtotal += Number(
+              addon.total_price
+            );
+
+          }
+        );
+
+      }
+    );
+
+    return (
+      subtotal
+      - Number(
+          formData.discount_amount || 0
+        )
+      + Number(
+          formData.tax_amount || 0
+        )
+      + Number(
+          formData.service_charge_amount || 0
+        )
+      // + Number(
+      //     formData.round_off_amount || 0
+      //   )
+    ).toFixed(2);
+
+  };
+
+  // ==========================================
+  // UPDATE ORDER
+  // ==========================================
+  const handleUpdateOrder =
+    async (e) => {
+
+      e.preventDefault();
+
+      try {
+
+        await updateOrder(
+          selectedOrder.id,
+          formData
+        );
+
+    
+        await fetchOrders();
+        setShowEditModal(false);
+
+
+        setAlert({
+          type: "success",
+          message:
+            "Order updated successfully.",
+        });
+
+      }
+
+      catch (error) {
+
+        console.log(error);
+
+        setAlert({
+          type: "danger",
+          message:
+            "Failed to update order.",
+        });
+
+      }
+
+    };
 
   // ==========================================
   // DELETE ORDER
   // ==========================================
-  const handleDeleteOrder = async (
-    orderId
-  ) => {
+  const handleDeleteOrder =
+    async (orderId) => {
 
-    const confirmDelete =
-      window.confirm(
-        "Delete this order?"
-      );
+      const confirmDelete =
+        window.confirm(
+          "Delete this order?"
+        );
 
-    if (!confirmDelete) {
-      return;
-    }
+      if (!confirmDelete) {
+        return;
+      }
 
-    try {
+      try {
 
-      await deleteOrder(orderId);
+        await deleteOrder(orderId);
 
-      fetchOrders();
+        fetchOrders();
 
-      setAlert({
-        type: "success",
-        message:
-          "Order deleted successfully.",
-      });
+        setAlert({
+          type: "success",
+          message:
+            "Order deleted successfully.",
+        });
 
-    }
+      }
 
-    catch (error) {
+      catch (error) {
 
-      console.log(error);
+        console.log(error);
 
-      setAlert({
-        type: "danger",
-        message:
-          "Failed to delete order.",
-      });
+        setAlert({
+          type: "danger",
+          message:
+            "Failed to delete order.",
+        });
 
-    }
+      }
 
-  };
+    };
 
   return (
 
     <div className="container-fluid">
 
-      {/* ==========================================
-          ALERT
-      ========================================== */}
+      {/* ALERT */}
       {alert && (
 
         <div
@@ -230,9 +537,7 @@ export default function OrderList() {
 
       )}
 
-      {/* ==========================================
-          HEADER
-      ========================================== */}
+      {/* HEADER */}
       <div
         className="
           d-flex
@@ -248,9 +553,7 @@ export default function OrderList() {
 
       </div>
 
-      {/* ==========================================
-          TABLE
-      ========================================== */}
+      {/* TABLE */}
       <div
         className="
           card
@@ -274,7 +577,7 @@ export default function OrderList() {
                   <th>Type</th>
 
                   <th>Table</th>
-
+                  <th>Waiter</th>
                   <th>Status</th>
 
                   <th>Payment</th>
@@ -305,6 +608,12 @@ export default function OrderList() {
 
                     <td>
                       {order.table_name || "-"}
+                    </td>
+
+                    <td>
+                      {order.order_type === "dine_in"
+                        ? order.waiter_name || "Not Assigned"
+                        : "-"}
                     </td>
 
                     <td>
@@ -346,7 +655,9 @@ export default function OrderList() {
                           }
                         `}
                       >
-                        {order.payment_status}
+                        {
+                          order.payment_status
+                        }
                       </span>
 
                     </td>
@@ -365,7 +676,6 @@ export default function OrderList() {
 
                     <td>
 
-                      {/* EDIT */}
                       <button
                         className="
                           btn
@@ -380,7 +690,6 @@ export default function OrderList() {
                         Edit
                       </button>
 
-                      {/* DELETE */}
                       <button
                         className="
                           btn
@@ -412,9 +721,7 @@ export default function OrderList() {
 
       </div>
 
-      {/* ==========================================
-          EDIT MODAL
-      ========================================== */}
+      {/* EDIT MODAL */}
       {showEditModal && (
 
         <ModalWrapper
@@ -532,6 +839,538 @@ export default function OrderList() {
 
           </div>
 
+          {/* ITEMS */}
+<div className="mb-4">
+
+  <h5 className="fw-bold mb-3">
+    Order Items
+  </h5>
+
+  {formData.items.map(
+    (item, index) => (
+
+      <div
+        key={item.id}
+        className="
+          card
+          border-0
+          shadow-sm
+          mb-3
+        "
+      >
+
+        <div className="card-body">
+
+          {/* HEADER */}
+          <div
+            className="
+              d-flex
+              justify-content-between
+              align-items-start
+              mb-3
+            "
+          >
+
+            <div>
+
+              <h6 className="fw-bold mb-1">
+                {item.item_name}
+              </h6>
+
+              <small className="text-muted">
+
+                ₹{item.final_price}
+                {" "}
+                each
+
+              </small>
+
+              {item.dynamic_pricing_name && (
+
+                <div>
+
+                  <span
+                    className="
+                      badge
+                      bg-warning
+                      text-dark
+                      mt-1
+                    "
+                  >
+
+                    {
+                      item.dynamic_pricing_name
+                    }
+
+                  </span>
+
+                </div>
+
+              )}
+
+            </div>
+
+            <button
+              type="button"
+              className="
+                btn
+                btn-sm
+                btn-danger
+              "
+              onClick={() =>
+                removeItem(index)
+              }
+            >
+              Delete
+            </button>
+
+          </div>
+
+          {/* QUANTITY */}
+          <div className="mb-3">
+
+            <label className="form-label">
+              Quantity
+            </label>
+
+            <div
+              className="
+                d-flex
+                align-items-center
+              "
+            >
+
+              <button
+                type="button"
+                className="
+                  btn
+                  btn-outline-secondary
+                "
+                onClick={() =>
+                  decreaseQuantity(
+                    index
+                  )
+                }
+              >
+                -
+              </button>
+
+              <input
+                type="number"
+                className="
+                  form-control
+                  mx-2
+                  text-center
+                "
+                style={{
+                  width: "80px",
+                }}
+                value={item.quantity}
+                onChange={(e) =>
+                  handleItemChange(
+                    index,
+                    "quantity",
+                    e.target.value
+                  )
+                }
+              />
+
+              <button
+                type="button"
+                className="
+                  btn
+                  btn-outline-secondary
+                "
+                onClick={() =>
+                  increaseQuantity(
+                    index
+                  )
+                }
+              >
+                +
+              </button>
+
+            </div>
+
+          </div>
+
+          {/* NOTES */}
+          <div className="mb-3">
+
+            <label className="form-label">
+              Item Notes
+            </label>
+
+            <textarea
+              rows={2}
+              className="form-control"
+              value={item.notes || ""}
+              onChange={(e) =>
+                handleItemChange(
+                  index,
+                  "notes",
+                  e.target.value
+                )
+              }
+            />
+
+          </div>
+
+          {/* ADDONS */}
+          {item.addons?.length > 0 && (
+
+            <div className="mb-3">
+
+              <h6 className="fw-bold">
+                Addons
+              </h6>
+
+              {item.addons.map(
+                (
+                  addon,
+                  addonIndex
+                ) => (
+
+                  <div
+                    key={addon.id}
+                    className="
+                      border
+                      rounded
+                      p-2
+                      mb-2
+                    "
+                  >
+
+                    <div
+                      className="
+                        d-flex
+                        justify-content-between
+                        align-items-center
+                      "
+                    >
+
+                      <div>
+
+                        <div>
+                          {
+                            addon.addon_name
+                          }
+                        </div>
+
+                        <small
+                          className="
+                            text-muted
+                          "
+                        >
+                          ₹
+                          {
+                            addon.addon_price
+                          }
+                        </small>
+
+                      </div>
+
+                      <button
+                        type="button"
+                        className="
+                          btn
+                          btn-sm
+                          btn-outline-danger
+                        "
+                        onClick={() =>
+                          removeAddon(
+                            index,
+                            addonIndex
+                          )
+                        }
+                      >
+                        Remove
+                      </button>
+
+                    </div>
+
+                    <div
+                      className="
+                        d-flex
+                        align-items-center
+                        mt-2
+                      "
+                    >
+
+                      <input
+                        type="number"
+                        min="1"
+                        className="
+                          form-control
+                        "
+                        style={{
+                          width: "90px",
+                        }}
+                        value={
+                          addon.quantity
+                        }
+                        onChange={(e) =>
+                          handleAddonQuantityChange(
+                            index,
+                            addonIndex,
+                            e.target.value
+                          )
+                        }
+                      />
+
+                      <span className="ms-3">
+
+                        Total:
+                        {" "}
+                        ₹
+                        {
+                          addon.total_price
+                        }
+
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                )
+              )}
+
+            </div>
+
+          )}
+
+          {/* TOTAL */}
+          <div
+            className="
+              bg-light
+              rounded
+              p-2
+            "
+          >
+
+            <strong>
+              Item Total:
+            </strong>
+
+            {" "}
+            ₹
+            {item.total_price}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    )
+  )}
+
+</div>
+
+{/* TAXES */}
+<div className="mb-4">
+
+  <h5 className="fw-bold mb-3">
+    Taxes
+  </h5>
+
+  {formData.taxes?.map((tax) => (
+
+    <div
+      key={tax.id}
+      className="
+        d-flex
+        justify-content-between
+        border-bottom
+        py-2
+      "
+    >
+
+      <span>
+        {tax.name}
+        {" "}
+        ({tax.percentage}%)
+      </span>
+
+      <span>
+        ₹{tax.amount}
+      </span>
+
+    </div>
+
+  ))}
+
+</div>
+
+{/* SERVICE CHARGES */}
+<div className="mb-4">
+
+  <h5 className="fw-bold mb-3">
+    Service Charges
+  </h5>
+
+  {formData.service_charges?.map(
+    (charge) => (
+
+      <div
+        key={charge.id}
+        className="
+          d-flex
+          justify-content-between
+          border-bottom
+          py-2
+        "
+      >
+
+        <span>
+          {charge.name}
+        </span>
+
+        <span>
+          ₹{charge.amount}
+        </span>
+
+      </div>
+
+    )
+  )}
+
+</div>
+
+{/* BILL SUMMARY */}
+<div
+  className="
+    bg-light
+    rounded
+    p-3
+    mb-3
+  "
+>
+
+  <div
+    className="
+      d-flex
+      justify-content-between
+      mb-2
+    "
+  >
+    <span>Subtotal</span>
+
+    <span>
+      ₹{formData.subtotal}
+    </span>
+  </div>
+
+  <div
+    className="
+      d-flex
+      justify-content-between
+      mb-2
+    "
+  >
+    <span>Tax</span>
+
+    <span>
+      ₹{formData.tax_amount}
+    </span>
+  </div>
+
+  <div
+    className="
+      d-flex
+      justify-content-between
+      mb-2
+    "
+  >
+    <span>
+      Service Charge
+    </span>
+
+    <span>
+      ₹
+      {
+        formData.service_charge_amount
+      }
+    </span>
+  </div>
+
+  <div
+    className="
+      d-flex
+      justify-content-between
+      mb-2
+    "
+  >
+    <span>Discount</span>
+
+    <span>
+      - ₹
+      {
+        formData.discount_amount
+      }
+    </span>
+  </div>
+
+  <div
+    className="
+      d-flex
+      justify-content-between
+      mb-2
+    "
+  >
+    {/* <span>Round Off</span>
+
+    <span>
+      ₹
+      {
+        formData.round_off_amount
+      }
+    </span> */}
+  </div>
+
+  <hr />
+
+  <div
+    className="
+      d-flex
+      justify-content-between
+      fw-bold
+      fs-5
+    "
+  >
+
+    <span>Grand Total</span>
+
+    <span>
+      ₹
+      {calculateGrandTotal()}
+    </span>
+
+  </div>
+
+</div>
+
+          {/* GRAND TOTAL */}
+          <div
+            className="
+              bg-light
+              p-3
+              rounded
+            "
+          >
+
+            <h5 className="mb-0">
+
+              Grand Total:
+              {" "}
+              ₹
+              {calculateGrandTotal()}
+
+            </h5>
+
+          </div>
+
         </ModalWrapper>
 
       )}
@@ -554,12 +1393,40 @@ function ModalWrapper({
 
   return (
 
-    <div className="modal d-block">
+    <div
+      className="
+        modal
+        d-block
+        fade
+        show
+      "
+      style={{
+        backgroundColor:
+          "rgba(0,0,0,0.5)",
+      }}
+    >
 
-      <div className="modal-dialog">
+      <div
+  className="
+    modal-dialog
+    modal-xl
+    modal-dialog-scrollable
+  "
+  style={{
+    height: "95vh",
+    marginTop: "10px",
+    marginBottom: "10px",
+  }}
+>
 
-        <div className="modal-content">
+        <div
+          className="modal-content"
+          style={{
+            maxHeight: "95vh",
+          }}
+        >
 
+          {/* HEADER */}
           <div className="modal-header">
 
             <h5 className="modal-title">
@@ -567,18 +1434,35 @@ function ModalWrapper({
             </h5>
 
             <button
+              type="button"
               className="btn-close"
               onClick={onClose}
             ></button>
 
           </div>
 
-          <form onSubmit={onSubmit}>
+          {/* FORM */}
+          <form
+            onSubmit={onSubmit}
+            className="
+              d-flex
+              flex-column
+              h-100
+            "
+          >
 
-            <div className="modal-body">
-              {children}
-            </div>
+            {/* BODY */}
+            <div
+  className="modal-body"
+  style={{
+    overflowY: "auto",
+    maxHeight: "calc(95vh - 140px)",
+  }}
+>
+  {children}
+</div>
 
+            {/* FOOTER */}
             <div className="modal-footer">
 
               <button
@@ -599,7 +1483,7 @@ function ModalWrapper({
                   btn-primary
                 "
               >
-                Save
+                Save Changes
               </button>
 
             </div>
