@@ -1,6 +1,7 @@
 from .base import *
-
-DEBUG = True
+import dj_database_url
+import os
+DEBUG = False
 
 FRONTEND_URL = env("FRONTEND_URL")
 
@@ -21,8 +22,7 @@ CHANNEL_LAYERS = {
         },
     },
 }
-import dj_database_url
-import os
+
 
 DATABASES = {
     "default": dj_database_url.config(
