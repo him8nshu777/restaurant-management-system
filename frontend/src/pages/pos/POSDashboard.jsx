@@ -8,10 +8,7 @@ import {
   getFloorList,
   getAreaList,
 } from "../../services/dashboardService";
-import {
-  ChevronDown,
-  ChevronUp,
-} from "react-bootstrap-icons";
+import { ChevronDown, ChevronUp } from "react-bootstrap-icons";
 import { createOrder } from "../../services/orderService";
 import { getStaffList } from "../../services/adminService";
 
@@ -26,14 +23,12 @@ export default function POSDashboard() {
     (state) => state.restaurant.activeRestaurant,
   );
 
-  const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ==========================================
   // PRODUCT LIST
@@ -124,7 +119,7 @@ const restaurantId =
   // SHOW TABLE MODAL
   // ==========================================
   const [showTableModal, setShowTableModal] = useState(false);
-  
+
   // ==========================================
   // FLOOR FILTER
   // ==========================================
@@ -135,40 +130,43 @@ const restaurantId =
   // ==========================================
   const [selectedArea, setSelectedArea] = useState(null);
 
-  const [serviceCharges, setServiceCharges] = useState([]);
-
-  const [showBreakdown, setShowBreakdown ] = useState(false);
-  const [selectedServiceCharges, setSelectedServiceCharges] = useState([]);
+  // const [serviceCharges, setServiceCharges] = useState([]);
+  const [allServiceCharges, setAllServiceCharges] = useState([]);
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   // ==========================================
-// FETCH WAITERS
-// ==========================================
-const fetchWaiters = async () => {
-  try {
+  // FILTER SERVICE CHARGES BY ORDER TYPE
+  // ==========================================
+  const serviceCharges = allServiceCharges.filter((charge) => {
+    const applicableTypes = charge.applicable_order_types || [];
 
-    const data = await getStaffList(
-      restaurantId
-    );
+    // APPLY TO ALL ORDER TYPES
+    if (applicableTypes.length === 0) {
+      return true;
+    }
 
-    const staffArray = Array.isArray(data)
-      ? data
-      : data.results || [];
+    // MATCH CURRENT ORDER TYPE
+    return applicableTypes.includes(orderType);
+  });
 
-    const onlyWaiters = staffArray.filter(
-      (staff) => staff.role === "waiter"
-    );
+  // ==========================================
+  // FETCH WAITERS
+  // ==========================================
+  const fetchWaiters = async () => {
+    try {
+      const data = await getStaffList(restaurantId);
 
-    setWaiterList(onlyWaiters);
+      const staffArray = Array.isArray(data) ? data : data.results || [];
 
-  } catch (error) {
+      const onlyWaiters = staffArray.filter((staff) => staff.role === "waiter");
 
-    console.log(error);
+      setWaiterList(onlyWaiters);
+    } catch (error) {
+      console.log(error);
 
-    setWaiterList([]);
-
-  }
-};
-
+      setWaiterList([]);
+    }
+  };
 
   // ==========================================
   // FETCH FLOORS
@@ -265,31 +263,16 @@ const fetchWaiters = async () => {
     }
   }, [selectedFloor, areaList]);
 
+  // ==========================================
+  // RESET DINE IN DATA
+  // ==========================================
   useEffect(() => {
+    if (orderType !== "dine_in") {
+      setSelectedTable("");
 
-    
-  const autoCharges = serviceCharges
-    .filter((charge) => charge.auto_apply)
-    .map((charge) => charge.id);
-
-  setSelectedServiceCharges(autoCharges);
-
-}, [serviceCharges]);
-
-// ==========================================
-// RESET DINE IN DATA
-// ==========================================
-useEffect(() => {
-
-  if (orderType !== "dine_in") {
-
-    setSelectedTable("");
-
-    setSelectedWaiter("");
-
-  }
-
-}, [orderType]);
+      setSelectedWaiter("");
+    }
+  }, [orderType]);
 
   // ==========================================
   // GET PRODUCTS
@@ -312,14 +295,18 @@ useEffect(() => {
 
       if (Array.isArray(data)) {
         products = data;
-      } else if (Array.isArray(data.results)) {
-        products = data.results;
-      } else if (Array.isArray(data.products)) {
-        products = data.products;
+      } else {
+        const productItems = Array.isArray(data.products) ? data.products : [];
+
+        const comboItems = Array.isArray(data.combos) ? data.combos : [];
+
+        // MERGE BOTH
+        products = [...productItems, ...comboItems];
       }
 
       setProductList(products);
-      setServiceCharges(data.service_charges || []);
+      // setServiceCharges(data.service_charges || []);
+      setAllServiceCharges(data.service_charges || []);
       // ==========================================
       // CATEGORY LIST
       // ==========================================
@@ -458,48 +445,94 @@ useEffect(() => {
         return item;
       }
 
-      const exists = item.selected_addons.find((a) => a.id === addon.id);
+      const existingAddon = item.selected_addons.find((a) => a.id === addon.id);
 
       // REMOVE
-      if (exists) {
+      if (existingAddon) {
         return {
           ...item,
+
           selected_addons: item.selected_addons.filter(
             (a) => a.id !== addon.id,
           ),
         };
       }
 
-      // ADD
+      // ADD WITH QUANTITY
       return {
         ...item,
-        selected_addons: [...item.selected_addons, addon],
+
+        selected_addons: [
+          ...item.selected_addons,
+
+          {
+            ...addon,
+            quantity: 1,
+          },
+        ],
       };
     });
 
     setCartItems(updatedCart);
   };
 
+  // ==========================================
+  // INCREASE ADDON QTY
+  // ==========================================
+  const increaseAddonQuantity = (cartKey, addonId) => {
+    const updatedCart = cartItems.map((item) => {
+      if (item.cart_key !== cartKey) {
+        return item;
+      }
+
+      return {
+        ...item,
+
+        selected_addons: item.selected_addons.map((addon) => {
+          if (addon.id === addonId) {
+            return {
+              ...addon,
+              quantity: addon.quantity + 1,
+            };
+          }
+
+          return addon;
+        }),
+      };
+    });
+
+    setCartItems(updatedCart);
+  };
 
   // ==========================================
-// TOGGLE SERVICE CHARGE
-// ==========================================
-const handleServiceChargeToggle = (chargeId) => {
+  // DECREASE ADDON QTY
+  // ==========================================
+  const decreaseAddonQuantity = (cartKey, addonId) => {
+    const updatedCart = cartItems.map((item) => {
+      if (item.cart_key !== cartKey) {
+        return item;
+      }
 
-  setSelectedServiceCharges((prev) => {
+      return {
+        ...item,
 
-    // REMOVE
-    if (prev.includes(chargeId)) {
-      return prev.filter((id) => id !== chargeId);
-    }
+        selected_addons: item.selected_addons
+          .map((addon) => {
+            if (addon.id === addonId) {
+              return {
+                ...addon,
+                quantity: addon.quantity - 1,
+              };
+            }
 
-    // ADD
-    return [...prev, chargeId];
+            return addon;
+          })
+          .filter((addon) => addon.quantity > 0),
+      };
+    });
 
-  });
-
-};
-
+    setCartItems(updatedCart);
+  };
 
   // ==========================================
   // SAVE ORDER
@@ -524,133 +557,80 @@ const handleServiceChargeToggle = (chargeId) => {
         return;
       }
       if (orderType === "dine_in" && !selectedWaiter) {
-  setAlert({
-    type: "danger",
-    message: "Please select waiter",
-  });
+        setAlert({
+          type: "danger",
+          message: "Please select waiter",
+        });
 
-  return;
-}
+        return;
+      }
 
       const payload = {
-  order_type: orderType,
+        order_type: orderType,
 
-  floor_id: selectedFloor,
+        floor_id: selectedFloor,
 
-  area_id: selectedArea,
+        area_id: selectedArea,
 
-  table_id: selectedTable,
+        table_id: selectedTable || null,
 
-  waiter_id:
-  orderType === "dine_in"
-    ? selectedWaiter
-    : null,
+        waiter_id: orderType === "dine_in" ? selectedWaiter : null,
 
-  notes: orderNotes,
+        notes: orderNotes,
 
-  payment_method: paymentMethod,
+        payment_method: paymentMethod,
 
-  // ==========================================
-  // TOTALS
-  // ==========================================
-  subtotal: cartSubtotal,
+        // ==========================================
+        // PAYMENT
+        // ==========================================
+        payment_status: "pending",
 
-  tax_total: totalTax,
+        order_status: "pending",
 
-  service_charge_total: totalServiceCharge,
+        // ==========================================
+        // ITEMS
+        // ==========================================
+        items: cartItems.map((item) => ({
+          item_type: item.type,
 
-  grand_total: totalPrice,
+          product_variant_id: item.type === "product" ? item.variant_id : null,
 
-  // ==========================================
-  // PAYMENT
-  // ==========================================
-  payment_status: "pending",
+          combo_id: item.type === "combo" ? item.combo_id : null,
 
-  order_status: "pending",
+          item_name:
+            item.type === "product" ? item.product_name : item.combo_name,
+          original_price: item.original_price,
 
-  // ==========================================
-  // SERVICE CHARGES
-  // ==========================================
-  service_charges: serviceChargeBreakdown.map((charge) => ({
-    name: charge.name,
-    charge_type: charge.charge_type,
-    value: charge.value,
-    amount: charge.amount,
-  })),
+          final_price: item.final_price,
+          dynamic_pricing_name: item.dynamic_pricing_name,
 
-  // ==========================================
-  // TAX BREAKDOWN
-  // ==========================================
-  taxes: taxBreakdown.map((tax) => ({
-    name: tax.name,
-    percentage: tax.percentage,
-    amount: tax.amount,
-  })),
+          quantity: item.quantity,
 
-  // ==========================================
-  // ITEMS
-  // ==========================================
-  items: cartItems.map((item) => ({
-    item_type: item.type,
+          notes: item.item_notes,
+          // ==========================================
+          // ITEM TOTAL
+          // ==========================================
+          total_price:
+            (Number(item.final_price) +
+              item.selected_addons.reduce(
+                (sum, addon) => sum + Number(addon.price),
+                0,
+              )) *
+            item.quantity,
 
-    product_variant_id:
-      item.type === "product"
-        ? item.variant_id
-        : null,
+          // ==========================================
+          // ITEM TAXES
+          // ==========================================
+          taxes: item.taxes || [],
 
-    combo_id:
-      item.type === "combo"
-        ? item.combo_id
-        : null,
-
-    item_name:
-      item.type === "product"
-        ? item.product_name
-        : item.combo_name,
-
-    original_price: item.original_price,
-
-    final_price: item.final_price,
-
-    dynamic_pricing_name:
-      item.dynamic_pricing_name,
-
-    quantity: item.quantity,
-
-    notes: item.item_notes,
-
-    // ==========================================
-    // ITEM TOTAL
-    // ==========================================
-    total_price:
-      (
-        Number(item.final_price) +
-        item.selected_addons.reduce(
-          (sum, addon) =>
-            sum + Number(addon.price),
-          0
-        )
-      ) * item.quantity,
-
-    // ==========================================
-    // ITEM TAXES
-    // ==========================================
-    taxes: item.taxes || [],
-
-    // ==========================================
-    // ADDONS
-    // ==========================================
-    addons: item.selected_addons.map((addon) => ({
-      addon_id: addon.id,
-
-      addon_name: addon.name,
-
-      addon_price: addon.price,
-
-      quantity: 1,
-    })),
-  })),
-};
+          addons: item.selected_addons.map((addon) => ({
+            addon_id: addon.id,
+            addon_name: addon.name,
+            addon_price: addon.price,
+            quantity: addon.quantity,
+          })),
+        })),
+      };
 
       const data = await createOrder(restaurantId, payload);
 
@@ -670,15 +650,15 @@ const handleServiceChargeToggle = (chargeId) => {
 
       fetchTables();
     } catch (error) {
-      console.log(error);
+      console.log("FULL ERROR:", error.response?.data);
 
+      console.log("ITEM ERROR:", error.response?.data?.items?.[0]);
       setAlert({
         type: "danger",
         message: "Failed to save order",
       });
     }
   };
-
   // ==========================================
   // TOTAL CART ITEMS
   // ==========================================
@@ -687,83 +667,110 @@ const handleServiceChargeToggle = (chargeId) => {
     0,
   );
 
-  // ==========================================
-  // TOTAL PRICE
-  // ==========================================
-  // const totalPrice =
-  //   cartItems.reduce(
-  //     (total, item) => {
-
-  //       const addonTotal =
-  //         item.selected_addons.reduce(
-  //           (sum, addon) =>
-  //             sum + Number(addon.price),
-  //           0
-  //         );
-
-  //       const itemTotal =
-  //         (
-  //           Number(item.final_price) +
-  //           addonTotal
-  //         ) * item.quantity;
-
-  //       return total + itemTotal;
-
-  //     },
-  //     0
-  //   );
-
   const cartSubtotal = cartItems.reduce((total, item) => {
-    const addonTotal = item.selected_addons.reduce(
-      (sum, addon) => sum + Number(addon.price),
-      0,
-    );
+    const addonTotal = item.selected_addons.reduce((sum, addon) => {
+      return sum + Number(addon.price) * Number(addon.quantity);
+    }, 0);
 
-    const itemBasePrice = Number(item.final_price) + addonTotal;
+    const itemBasePrice = Number(item.final_price) * item.quantity + addonTotal;
 
-    return total + itemBasePrice * item.quantity;
+    return total + itemBasePrice;
   }, 0);
 
+  // ==========================================
+  // TAX BREAKDOWN
+  // ==========================================
   const taxBreakdown = [];
 
-  cartItems.forEach((item) => {
-    if (!item.taxes || item.taxes.length === 0) {
-      return;
-    }
-
-    const addonTotal = item.selected_addons.reduce(
-      (sum, addon) => sum + Number(addon.price),
-      0,
+  // ==========================================
+  // ADD TAX HELPER
+  // ==========================================
+  const addTaxAmount = (taxName, percentage, amount) => {
+    const existingTax = taxBreakdown.find(
+      (t) => t.name === taxName && Number(t.percentage) === Number(percentage),
     );
 
-    const itemTotal = (Number(item.final_price) + addonTotal) * item.quantity;
+    if (existingTax) {
+      existingTax.amount += amount;
+    } else {
+      taxBreakdown.push({
+        name: taxName,
 
-    item.taxes.forEach((tax) => {
-      const taxAmount = (itemTotal * Number(tax.percentage)) / 100;
+        percentage,
 
-      const existingTax = taxBreakdown.find((t) => t.name === tax.name);
+        amount,
+      });
+    }
+  };
 
-      if (existingTax) {
-        existingTax.amount += taxAmount;
-      } else {
-        taxBreakdown.push({
-          name: tax.name,
-          percentage: tax.percentage,
-          amount: taxAmount,
+  // ==========================================
+  // LOOP CART ITEMS
+  // ==========================================
+  cartItems.forEach((item) => {
+    // ========================================
+    // PRODUCT BASE TOTAL
+    // ========================================
+    const productBaseTotal = Number(item.final_price) * Number(item.quantity);
+
+    // ========================================
+    // PRODUCT TAXES
+    // ========================================
+    if (item.taxes && item.taxes.length > 0) {
+      item.taxes.forEach((tax) => {
+        const taxAmount = (productBaseTotal * Number(tax.percentage)) / 100;
+
+        addTaxAmount(tax.name, tax.percentage, taxAmount);
+      });
+    }
+
+    // ========================================
+    // COMBO TAXES
+    // ========================================
+    if (item.type === "combo") {
+      item.combo_items?.forEach((comboItem) => {
+        // ==================================
+        // IMPORTANT:
+        // MULTIPLY BY CART QUANTITY
+        // ==================================
+        const comboItemTotal =
+          Number(comboItem.allocated_price) *
+          Number(comboItem.quantity) *
+          Number(item.quantity);
+
+        comboItem.taxes?.forEach((tax) => {
+          const taxAmount = (comboItemTotal * Number(tax.percentage)) / 100;
+
+          addTaxAmount(tax.name, tax.percentage, taxAmount);
+        });
+      });
+    }
+
+    // ========================================
+    // ADDON TAXES
+    // ========================================
+    item.selected_addons?.forEach((addon) => {
+      const addonTotal = Number(addon.price) * Number(addon.quantity || 1);
+
+      // IMPORTANT:
+      // addon.taxes must come from backend
+
+      if (addon.taxes && addon.taxes.length > 0) {
+        addon.taxes.forEach((tax) => {
+          const taxAmount = (addonTotal * Number(tax.percentage)) / 100;
+
+          addTaxAmount(tax.name, tax.percentage, taxAmount);
         });
       }
     });
   });
 
+  // ==========================================
+  // TOTAL TAX
+  // ==========================================
   const totalTax = taxBreakdown.reduce((sum, tax) => sum + tax.amount, 0);
-
   const serviceChargeBreakdown = [];
 
-  serviceCharges
-  .filter((charge) =>
-    selectedServiceCharges.includes(charge.id)
-  )
-  .forEach((charge) => {
+  serviceCharges.forEach((charge) => {
     let amount = 0;
 
     if (charge.charge_type === "percentage") {
@@ -1229,27 +1236,28 @@ const handleServiceChargeToggle = (chargeId) => {
                   {/* ==========================================
     ADDONS
 ========================================== */}
-                  {item.available_addons && item.available_addons.length > 0 && (
-                    <div className="mt-3">
-                      <small
-                        className="
+                  {item.available_addons &&
+                    item.available_addons.length > 0 && (
+                      <div className="mt-3">
+                        <small
+                          className="
           fw-semibold
           d-block
           mb-2
         "
-                      >
-                        Addons
-                      </small>
+                        >
+                          Addons
+                        </small>
 
-                      {item.available_addons.map((addon) => {
-                        const isSelected = item.selected_addons.some(
-                          (a) => a.id === addon.id,
-                        );
+                        {item.available_addons.map((addon) => {
+                          const isSelected = item.selected_addons.some(
+                            (a) => a.id === addon.id,
+                          );
 
-                        return (
-                          <div
-                            key={addon.id}
-                            className="
+                          return (
+                            <div
+                              key={addon.id}
+                              className="
                 d-flex
                 justify-content-between
                 align-items-center
@@ -1258,38 +1266,94 @@ const handleServiceChargeToggle = (chargeId) => {
                 p-2
                 mb-2
               "
-                          >
-                            <div>
-                              <div className="fw-semibold">{addon.name}</div>
+                            >
+                              <div>
+                                <div className="fw-semibold">{addon.name}</div>
 
-                              <small className="text-muted">
-                                ₹{addon.price}
-                              </small>
+                                <small className="text-muted">
+                                  ₹{addon.price}
+                                </small>
+                              </div>
+
+                              {isSelected ? (
+                                <div
+                                  className="
+      d-flex
+      align-items-center
+      gap-2
+    "
+                                >
+                                  <button
+                                    type="button"
+                                    className="
+        btn
+        btn-sm
+        btn-outline-danger
+      "
+                                    onClick={() =>
+                                      decreaseAddonQuantity(
+                                        item.cart_key,
+                                        addon.id,
+                                      )
+                                    }
+                                  >
+                                    -
+                                  </button>
+
+                                  <span>
+                                    {
+                                      item.selected_addons.find(
+                                        (a) => a.id === addon.id,
+                                      )?.quantity
+                                    }
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    className="
+        btn
+        btn-sm
+        btn-outline-primary
+      "
+                                    onClick={() =>
+                                      increaseAddonQuantity(
+                                        item.cart_key,
+                                        addon.id,
+                                      )
+                                    }
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="
+      btn
+      btn-sm
+      btn-primary
+    "
+                                  onClick={() =>
+                                    handleAddonToggle(item.cart_key, addon)
+                                  }
+                                >
+                                  Add
+                                </button>
+                              )}
                             </div>
-
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() =>
-                                handleAddonToggle(item.cart_key, addon)
-                              }
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                          );
+                        })}
+                      </div>
+                    )}
                 </div>
 
                 <h6 className="fw-bold">
                   ₹
                   {(
-                    (Number(item.final_price) +
-                      item.selected_addons.reduce(
-                        (sum, addon) => sum + Number(addon.price),
-                        0,
-                      )) *
-                    item.quantity
+                    Number(item.final_price) * item.quantity +
+                    item.selected_addons.reduce((sum, addon) => {
+                      return sum + Number(addon.price) * Number(addon.quantity);
+                    }, 0)
                   ).toFixed(2)}
                 </h6>
               </div>
@@ -1392,44 +1456,25 @@ const handleServiceChargeToggle = (chargeId) => {
           {/* ==========================================
     WAITER SELECTION
 ========================================== */}
-{
-  orderType === "dine_in" && (
-    <div className="mt-3">
+          {orderType === "dine_in" && (
+            <div className="mt-3">
+              <label className="fw-semibold mb-2">Assign Waiter</label>
 
-      <label className="fw-semibold mb-2">
-        Assign Waiter
-      </label>
+              <select
+                className="form-select"
+                value={selectedWaiter}
+                onChange={(e) => setSelectedWaiter(e.target.value)}
+              >
+                <option value="">Select Waiter</option>
 
-      <select
-        className="form-select"
-        value={selectedWaiter}
-        onChange={(e) =>
-          setSelectedWaiter(e.target.value)
-        }
-      >
-
-        <option value="">
-          Select Waiter
-        </option>
-
-        {
-          waiterList.map((waiter) => (
-
-            <option
-              key={waiter.id}
-              value={waiter.id}
-            >
-              {waiter.username}
-            </option>
-
-          ))
-        }
-
-      </select>
-
-    </div>
-  )
-}
+                {waiterList.map((waiter) => (
+                  <option key={waiter.id} value={waiter.id}>
+                    {waiter.username}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* ==========================================
     ORDER NOTES
@@ -1467,11 +1512,11 @@ const handleServiceChargeToggle = (chargeId) => {
             </select>
           </div>
           {/* FOOTER */}
-            {/* ==========================================
+          {/* ==========================================
     BILL SUMMARY
 ========================================== */}
-<div
-  className="
+          <div
+            className="
     border
     rounded-4
     p-3
@@ -1479,308 +1524,189 @@ const handleServiceChargeToggle = (chargeId) => {
     bg-light
     mt-4
   "
->
-  {/* ==========================================
-      TOTAL ROW
+          >
+            {/* ==========================================
+      TOTAL HEADER
   ========================================== */}
-  <details onToggle={(e) =>
-    setShowBreakdown(
-      e.target.open
-    )
-  }>
-
-    <summary
-      className="
-        list-unstyled
+            <div
+              className="
+      d-flex
+      justify-content-between
+      align-items-center
+      fw-bold
+      fs-5
+      mb-2
+    "
+            >
+              {/* LEFT */}
+              <button
+                type="button"
+                className="
+        btn
+        btn-link
+        p-0
+        text-decoration-none
+        text-dark
         d-flex
-        justify-content-between
         align-items-center
-        fw-bold
-        fs-5
+        gap-2
       "
-      style={{
-        cursor: "pointer",
-      }}
-    >
+                onClick={() => setShowBreakdown(!showBreakdown)}
+              >
+                {showBreakdown ? (
+                  <ChevronUp size={18} />
+                ) : (
+                  <ChevronDown size={18} />
+                )}
 
-      {/* LEFT */}
-      <div
-        className="
-          d-flex
-          align-items-center
-          gap-2
-        "
-      >
+                <span className="fw-bold">Total</span>
+              </button>
 
-        {/* ICON */}
-        {
-  showBreakdown
-    ? <ChevronUp size={18} />
-    : <ChevronDown size={18} />
-}
+              {/* RIGHT */}
+              <span>₹{totalPrice.toFixed(2)}</span>
+            </div>
 
-        <span>Total</span>
-
-      </div>
-
-      {/* RIGHT */}
-      <span>
-        ₹{totalPrice.toFixed(2)}
-      </span>
-
-    </summary>
-
-    {/* ==========================================
-        BREAKDOWN
-    ========================================== */}
-    <div className="mt-3 border-top pt-3">
-
-      {/* SUBTOTAL */}
-      <div
-        className="
+            {/* ==========================================
+      BREAKDOWN
+  ========================================== */}
+            {showBreakdown && (
+              <div className="border-top pt-3 mt-3">
+                {/* ==========================================
+          SUBTOTAL
+      ========================================== */}
+                <div
+                  className="
           d-flex
           justify-content-between
           mb-2
         "
-      >
-        <span>Subtotal</span>
+                >
+                  <span>Subtotal</span>
 
-        <span>
-          ₹{cartSubtotal.toFixed(2)}
-        </span>
-      </div>
+                  <span>₹{cartSubtotal.toFixed(2)}</span>
+                </div>
 
-      {/* TAXES */}
-      {taxBreakdown.length > 0 && (
-
-        <div className="mb-2">
-
-          <div
-            className="
+                {/* ==========================================
+          TAXES
+      ========================================== */}
+                {taxBreakdown.length > 0 && (
+                  <div className="mb-3">
+                    <div
+                      className="
               d-flex
               justify-content-between
               fw-semibold
-              mb-1
+              mb-2
             "
-          >
+                    >
+                      <span>Taxes</span>
 
-            <span>Taxes</span>
+                      <span>₹{totalTax.toFixed(2)}</span>
+                    </div>
 
-            <span>
-              ₹{totalTax.toFixed(2)}
-            </span>
+                    {taxBreakdown.map((tax, index) => (
+                      <div
+                        key={index}
+                        className="
+                d-flex
+                justify-content-between
+                small
+                text-muted
+                mb-1
+              "
+                      >
+                        <span>
+                          {tax.name} ({tax.percentage}%)
+                        </span>
 
-          </div>
-
-          {taxBreakdown.map(
-            (tax, index) => (
-
-              <div
-                key={index}
-                className="
-                  d-flex
-                  justify-content-between
-                  small
-                  text-muted
-                  mb-1
-                "
-              >
-
-                <span>
-                  {tax.name}
-                  {" "}
-                  ({tax.percentage}%)
-                </span>
-
-                <span>
-                  ₹{tax.amount.toFixed(2)}
-                </span>
-
-              </div>
-
-            )
-          )}
-
-        </div>
-
-      )}
-
-      {/* ==========================================
-    OPTIONAL SERVICE CHARGES
-========================================== */}
-{
-  serviceCharges.some(
-    (charge) => !charge.auto_apply
-  ) && (
-
-    <div className="mb-3">
-
-      <div className="fw-semibold mb-2">
-        Extra Charges
-      </div>
-
-      {
-        serviceCharges
-          .filter(
-            (charge) => !charge.auto_apply
-          )
-          .map((charge) => {
-
-            let amount = 0;
-
-            if (
-              charge.charge_type === "percentage"
-            ) {
-
-              amount =
-                (cartSubtotal *
-                  Number(charge.value)) /
-                100;
-
-            } else {
-
-              amount = Number(charge.value);
-
-            }
-
-            return (
-
-              <div
-                key={charge.id}
-                className="
-                  d-flex
-                  justify-content-between
-                  align-items-center
-                  border
-                  rounded
-                  p-2
-                  mb-2
-                  bg-white
-                "
-              >
-
-                <div>
-
-                  <div className="fw-semibold">
-                    {charge.name}
+                        <span>₹{tax.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
                   </div>
+                )}
 
-                  <small className="text-muted">
+                {/* ==========================================
+          APPLIED SERVICE CHARGES
+      ========================================== */}
+                {serviceChargeBreakdown.length > 0 && (
+                  <div className="mb-3">
+                    <div
+                      className="
+              d-flex
+              justify-content-between
+              fw-semibold
+              mb-2
+            "
+                    >
+                      <span>Charges</span>
 
-                    {
-                      charge.charge_type ===
-                      "percentage"
-                        ? `${charge.value}%`
-                        : "Fixed Charge"
-                    }
+                      <span>₹{totalServiceCharge.toFixed(2)}</span>
+                    </div>
 
-                  </small>
+                    {serviceChargeBreakdown.map((charge, index) => (
+                      <div
+                        key={index}
+                        className="
+                d-flex
+                justify-content-between
+                small
+                text-muted
+                mb-1
+              "
+                      >
+                        <span>
+                          {charge.name}
 
-                </div>
+                          {charge.charge_type === "percentage" &&
+                            ` (${charge.value}%)`}
+                        </span>
 
+                        <span>₹{charge.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ==========================================
+          FINAL TOTAL
+      ========================================== */}
                 <div
                   className="
-                    d-flex
-                    align-items-center
-                    gap-3
-                  "
+          border-top
+          pt-3
+          mt-3
+          d-flex
+          justify-content-between
+          fw-bold
+        "
                 >
+                  <span>Grand Total</span>
 
-                  <span className="fw-semibold">
-                    ₹{amount.toFixed(2)}
-                  </span>
-
-                  <input
-                    type="checkbox"
-                    checked={
-                      selectedServiceCharges.includes(
-                        charge.id
-                      )
-                    }
-                    onChange={() =>
-                      handleServiceChargeToggle(
-                        charge.id
-                      )
-                    }
-                  />
-
+                  <span>₹{totalPrice.toFixed(2)}</span>
                 </div>
-
               </div>
-
-            );
-
-          })
-      }
-
-    </div>
-
-)
-}
-
-      {/* SERVICE CHARGES */}
-      {serviceChargeBreakdown.length > 0 && (
-
-        <div className="mb-2">
-
-          <div
-            className="
-              d-flex
-              justify-content-between
-              fw-semibold
-              mb-1
-            "
-          >
-
-            <span>Charges</span>
-
-            <span>
-              ₹{totalServiceCharge.toFixed(2)}
-            </span>
-
+            )}
           </div>
 
-          {serviceChargeBreakdown.map(
-            (charge, index) => (
-
-              <div
-                key={index}
-                className="
-                  d-flex
-                  justify-content-between
-                  small
-                  text-muted
-                  mb-1
-                "
-              >
-
-                <span>
-                  {charge.name}
-
-                  {charge.charge_type ===
-                    "percentage" &&
-                    ` (${charge.value}%)`}
-                </span>
-
-                <span>
-                  ₹{charge.amount.toFixed(2)}
-                </span>
-
-              </div>
-
-            )
-          )}
-
-        </div>
-
-      )}
-    </div>
-
-  </details>
-
-</div>
-  {/* ========================================== ACTION BUTTONS ========================================== */} 
-  <div className="d-grid gap-2"> <button className=" btn btn-outline-dark rounded-pill fw-semibold " onClick={handleSaveOrder} > Save Order </button> <button className=" btn btn-primary rounded-pill fw-semibold " > Checkout </button> <button className=" btn btn-success rounded-pill fw-semibold " > Take Payment </button> </div>
+          {/* ========================================== ACTION BUTTONS ========================================== */}
+          <div className="d-grid gap-2">
+            {" "}
+            <button
+              className=" btn btn-outline-dark rounded-pill fw-semibold "
+              onClick={handleSaveOrder}
+            >
+              {" "}
+              Save Order{" "}
+            </button>{" "}
+            <button className=" btn btn-primary rounded-pill fw-semibold ">
+              {" "}
+              Checkout{" "}
+            </button>{" "}
+            <button className=" btn btn-success rounded-pill fw-semibold ">
+              {" "}
+              Take Payment{" "}
+            </button>{" "}
+          </div>
         </div>
       )}
 

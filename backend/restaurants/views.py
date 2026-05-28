@@ -10,7 +10,7 @@ from rest_framework.generics import (
 from rest_framework.response import Response
 
 from accounts.models import User
-
+from .utils import get_lat_long_from_address
 from .permissions import IsRestaurantAdmin, IsRestaurantAdminOrManager, CanGetStaff, CanManageStaff
 from .serializers import (
     StaffCreateSerializer,
@@ -80,6 +80,36 @@ class RestaurantDetailView(RetrieveUpdateDestroyAPIView):
 
         return RestaurantListSerializer
 
+    # ==========================================
+    # UPDATE RESTAURANT
+    # ==========================================
+    def perform_update(
+        self,
+        serializer
+    ):
+
+        restaurant = serializer.save()
+
+        address = restaurant.address
+
+        if address:
+
+            latitude, longitude = (
+                get_lat_long_from_address(
+                    address
+                )
+            )
+
+            restaurant.latitude = latitude
+
+            restaurant.longitude = longitude
+
+            restaurant.save(
+                update_fields=[
+                    "latitude",
+                    "longitude",
+                ]
+            )
     # ==========================================
     # PREVENT PRIMARY RESTAURANT DELETE
     # ==========================================

@@ -377,7 +377,7 @@ class ServiceChargeSerializer(
             "charge_type",
             "value",
             "is_active",
-            "auto_apply",
+            "applicable_order_types",
         ]
 
 # =========================================================

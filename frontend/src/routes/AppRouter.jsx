@@ -25,6 +25,10 @@ import POSMainDashboard from "../pages/pos/POSMainDashboard";
 import WaiterDashboard from "../pages/waiter/WaiterDashboard";
 import KitchenDashboard from "../pages/kitchen/KitchenDashboard";
 import ManagerDashboard from "../pages/manager/ManagerDashboard";
+import CustomerRegisterPage from "../pages/auth/CustomerRegisterPage";
+import CustomerLoginPage from "../pages/auth/CustomerLoginPage";
+import CustomerDashboard from "../pages/customer/CustomerDashboard";
+import OrderPage from "../pages/customer/OrderPage";
 // import WaiterPage from "../pages/waiter/WaiterPage";
 
 // import ReportsPage from "../pages/manager/ReportsPage";
@@ -47,6 +51,10 @@ export default function AppRouter() {
                 path="/register"
                 element={<RegisterPage />}
                 />
+                <Route
+                path="/customer/register"
+                element={<CustomerRegisterPage />}
+                />
 
                 <Route
                 path="/check-email"
@@ -58,10 +66,14 @@ export default function AppRouter() {
                 />
                 <Route
                     path="/login"
-                    element={
-                            <LoginPage />
-                    }
+                    element={<LoginPage />}
                 />
+
+                <Route
+                    path="/customer/login"
+                    element={<CustomerLoginPage />}
+                />
+
                 <Route
                 path="/forgot-password"
                 element={<ForgotPasswordPage />}
@@ -122,6 +134,22 @@ export default function AppRouter() {
                     element={
                         <ProtectedRoute>
                             <ManagerDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/customer"
+                    element={
+                        <ProtectedRoute>
+                            <CustomerDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/restaurants/:restaurantId/menu"
+                    element={
+                        <ProtectedRoute>
+                            <OrderPage />
                         </ProtectedRoute>
                     }
                 />

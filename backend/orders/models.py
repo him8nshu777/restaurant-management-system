@@ -41,6 +41,7 @@ class Order(models.Model):
     # ORDER STATUS
     # =====================================================
     ORDER_STATUS_CHOICES = (
+        ("pending_approval", "Pending Approval"),
         ("saved", "Saved"),
         ("running", "Running"),
         ("confirmed", "Confirmed"),
@@ -791,3 +792,66 @@ class OrderServiceCharge(models.Model):
             f"{self.name}"
         )
     
+class OrderItemTax(models.Model):
+
+    order_item = models.ForeignKey(
+        OrderItem,
+        related_name="taxes",
+        on_delete=models.CASCADE,
+    )
+
+    name = models.CharField(max_length=255)
+
+    percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2
+    )
+class OrderComboItem(models.Model):
+
+    order_item = models.ForeignKey(
+        OrderItem,
+        related_name="combo_items",
+        on_delete=models.CASCADE,
+    )
+
+    product_name = models.CharField(max_length=255)
+
+    variant_name = models.CharField(max_length=255)
+
+    quantity = models.PositiveIntegerField()
+
+    allocated_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+    )
+
+class OrderComboItemTax(models.Model):
+
+    combo_item = models.ForeignKey(
+        OrderComboItem,
+        related_name="taxes",
+        on_delete=models.CASCADE,
+    )
+
+    name = models.CharField(max_length=255)
+
+    percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+    )
+
+class OrderAddonTax(models.Model):
+
+    addon = models.ForeignKey(
+        OrderItemAddon,
+        related_name="taxes",
+        on_delete=models.CASCADE,
+    )
+
+    name = models.CharField(max_length=255)
+
+    percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+    )
+

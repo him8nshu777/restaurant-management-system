@@ -21,51 +21,15 @@ from .serializers import (
 from channels.layers import get_channel_layer
 
 from asgiref.sync import async_to_sync
+from menu.models import ServiceCharge, Combo, ProductVariant
+from menu.utils.pricing import (
+    calculate_product_price,
+    calculate_combo_price,
+    calculate_product_taxes,
+)
+from orders.utils.pricing import calculate_order_totals
 
 User = get_user_model()
-# =====================================================
-# CALCULATE TOTALS
-# =====================================================
-def calculate_totals(self):
-
-    subtotal = Decimal("0")
-
-    # =============================================
-    # ITEMS + ADDONS
-    # =============================================
-    for item in self.items.all():
-
-        subtotal += item.total_price
-
-        addon_total = item.addons.aggregate(total=models.Sum("total_price"))[
-            "total"
-        ] or Decimal("0")
-
-        subtotal += addon_total
-
-    self.subtotal = subtotal
-
-    # =============================================
-    # GRAND TOTAL
-    # =============================================
-    self.grand_total = (
-        self.subtotal
-        + self.tax_amount
-        + self.service_charge_amount
-        # - self.discount_amount
-        + self.round_off_amount
-    )
-
-    if self.grand_total < 0:
-
-        self.grand_total = Decimal("0")
-
-    self.save(
-        update_fields=[
-            "subtotal",
-            "grand_total",
-        ]
-    )
 
 # =========================================================
 # CREATE ORDER
@@ -75,19 +39,21 @@ class CreateOrderView(APIView):
     @transaction.atomic
     def post(self, request, restaurant_id):
 
-        serializer = CreateOrderSerializer(data=request.data)
+        serializer = CreateOrderSerializer(
+            data=request.data
+        )
 
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid(
+            raise_exception=True
+        )
 
         data = serializer.validated_data
+
         # =================================================
-        # WAITER ASSIGNMENT
+        # WAITER
         # =================================================
         waiter = None
 
-        # ================================================
-        # AUTO ASSIGN IF WAITER LOGGED IN
-        # ================================================
         if (
             request.user.role == "waiter"
             and data["order_type"] == "dine_in"
@@ -95,9 +61,6 @@ class CreateOrderView(APIView):
 
             waiter = request.user
 
-        # ================================================
-        # CASHIER SELECTED WAITER
-        # ================================================
         elif (
             data["order_type"] == "dine_in"
             and data.get("waiter_id")
@@ -114,6 +77,11 @@ class CreateOrderView(APIView):
         # =================================================
         order = Order.objects.create(
             restaurant_id=restaurant_id,
+            customer=(
+                request.user
+                if request.user.role == "customer"
+                else None
+            ),
             created_by=request.user,
             waiter=waiter,
             order_type=data["order_type"],
@@ -125,115 +93,340 @@ class CreateOrderView(APIView):
                 1,
             ),
             notes=data.get("notes"),
-            payment_method=data.get("payment_method"),
-            discount_amount=data.get("discount_amount", Decimal("0")),
-            round_off_amount=data.get("round_off_amount", Decimal("0")),
+            payment_method=data.get(
+                "payment_method"
+            ),
+            discount_amount=data.get(
+                "discount_amount",
+                Decimal("0"),
+            ),
+            round_off_amount=data.get(
+                "round_off_amount",
+                Decimal("0"),
+            ),
             status="saved",
             saved_at=timezone.now(),
         )
+
+        # =================================================
+        # PREPARED ITEMS
+        # =================================================
+        prepared_items = []
 
         # =================================================
         # CREATE ITEMS
         # =================================================
         for item_data in data["items"]:
 
+            quantity = Decimal(
+                str(item_data["quantity"])
+            )
+
+            product_id = None
+            prepared_combo_items = []
+            # =============================================
+            # PRODUCT
+            # =============================================
+            if item_data["item_type"] == "product":
+
+                product_variant = (
+                    ProductVariant.objects
+                    .select_related("product")
+                    .get(
+                        id=item_data[
+                            "product_variant_id"
+                        ]
+                    )
+                )
+
+                item_name = (
+                    f"{product_variant.product.name} "
+                    f"({product_variant.name})"
+                )
+
+                original_price = Decimal(
+                    str(
+                        item_data[
+                            "original_price"
+                        ]
+                    )
+                )
+
+                final_price = Decimal(
+                    str(
+                        item_data["final_price"]
+                    )
+                )
+
+                product_id = (
+                    product_variant.product.id
+                )
+
+            # =============================================
+            # COMBO
+            # =============================================
+            else:
+
+                combo = Combo.objects.get(
+                    id=item_data["combo_id"]
+                )
+
+                item_name = combo.name
+
+                original_price = Decimal(
+                    str(
+                        item_data["original_price"]
+                    )
+                )
+
+                final_price = Decimal(
+                    str(
+                        item_data["final_price"]
+                    )
+                )
+
+                combo_recipes = list(
+                    combo.recipes.select_related(
+                        "product_variant",
+                        "product_variant__product",
+                    )
+                )
+
+                # =========================================
+                # TOTAL ORIGINAL VALUE
+                # =========================================
+                total_original_price = Decimal("0")
+
+                for recipe in combo_recipes:
+
+                    total_original_price += (
+                        recipe.product_variant.price
+                        * recipe.quantity
+                    )
+
+                # =========================================
+                # SAFETY
+                # =========================================
+                if total_original_price <= 0:
+
+                    total_original_price = Decimal("1")
+
+                # =========================================
+                # PREPARE COMBO ITEMS
+                # =========================================
+                prepared_combo_items = []
+
+                for recipe in combo_recipes:
+
+                    item_original_total = (
+                        recipe.product_variant.price
+                        * recipe.quantity
+                    )
+
+                    allocated_price = (
+                        (
+                            item_original_total
+                            / total_original_price
+                        )
+                        * original_price
+                    )
+                    allocated_price = round(
+                        allocated_price,
+                        2,
+                    )
+
+                    prepared_combo_items.append({
+                        "product_id":
+                            recipe.product_variant.product.id,
+
+                        "quantity":
+                            recipe.quantity,
+
+                        "allocated_price":
+                            allocated_price,
+                    })
+            # =============================================
+            # CREATE ITEM
+            # =============================================
             order_item = OrderItem.objects.create(
                 order=order,
                 item_type=item_data["item_type"],
-                product_variant_id=item_data.get("product_variant_id"),
-                combo_id=item_data.get("combo_id"),
-                item_name=item_data["item_name"],
-                original_price=item_data["original_price"],
-                final_price=item_data["final_price"],
-                dynamic_pricing_name=item_data.get("dynamic_pricing_name"),
-                quantity=item_data["quantity"],
+                product_variant_id=item_data.get(
+                    "product_variant_id"
+                ),
+                combo_id=item_data.get(
+                    "combo_id"
+                ),
+                item_name=item_name,
+                original_price=original_price,
+                final_price=final_price,
+                dynamic_pricing_name=item_data.get(
+                    "dynamic_pricing_name"
+                ),
+                quantity=quantity,
+                total_price=(
+                    final_price * quantity
+                ),
                 notes=item_data.get("notes"),
             )
 
             # =============================================
             # ADDONS
             # =============================================
+            prepared_addons = []
+
             for addon_data in item_data.get(
                 "addons",
                 [],
             ):
 
-                OrderItemAddon.objects.create(
-                    order_item=order_item,
-                    addon_id=addon_data["addon_id"],
-                    addon_name=addon_data["addon_name"],
-                    addon_price=addon_data["addon_price"],
-                    quantity=addon_data.get(
-                        "quantity",
-                        1,
-                    ),
+                addon_quantity = Decimal(
+                    str(
+                        addon_data.get(
+                            "quantity",
+                            1,
+                        )
+                    )
                 )
 
+                addon_price = Decimal(
+                    str(
+                        addon_data[
+                            "addon_price"
+                        ]
+                    )
+                )
+
+                addon_total = (
+                    addon_price
+                    * addon_quantity
+                )
+
+                OrderItemAddon.objects.create(
+                    order_item=order_item,
+                    addon_id=addon_data[
+                        "addon_id"
+                    ],
+                    addon_name=addon_data[
+                        "addon_name"
+                    ],
+                    addon_price=addon_price,
+                    quantity=addon_quantity,
+                    total_price=addon_total,
+                )
+
+                prepared_addons.append({
+                    "addon_price": addon_price,
+                    "quantity": addon_quantity,
+                })
+
+            # =============================================
+            # PREPARED ITEM
+            # =============================================
+            prepared_items.append({
+    "item_type": item_data["item_type"],
+
+    "product_id": product_id,
+
+    "combo_items": (
+    prepared_combo_items
+    if item_data["item_type"] == "combo"
+    else []
+),
+
+    "final_price": final_price,
+
+    "quantity": quantity,
+
+    "addons": prepared_addons,
+})
         # =================================================
-        # CREATE TAXES
+        # CALCULATE TOTALS
         # =================================================
-        tax_total = Decimal("0")
-
-        for tax_data in data.get(
-            "taxes",
-            [],
-        ):
-
-            tax = OrderTax.objects.create(
-                order=order,
-                name=tax_data["name"],
-                percentage=tax_data["percentage"],
-                amount=tax_data["amount"],
-            )
-
-            tax_total += tax.amount
+        totals = calculate_order_totals(
+            restaurant_id=restaurant_id,
+            order_type=order.order_type,
+            items=prepared_items,
+            discount_amount=(
+                order.discount_amount
+            ),
+            round_off_amount=(
+                order.round_off_amount
+            ),
+        )
 
         # =================================================
-        # CREATE SERVICE CHARGES
+        # SAVE TOTALS
         # =================================================
-        service_charge_total = Decimal("0")
+        order.subtotal = totals[
+            "subtotal"
+        ]
 
-        for charge_data in data.get(
-            "service_charges",
-            [],
-        ):
+        order.tax_amount = totals[
+            "tax_total"
+        ]
 
-            charge = OrderServiceCharge.objects.create(
-                order=order,
-                name=charge_data["name"],
-                charge_type=charge_data["charge_type"],
-                value=charge_data["value"],
-                amount=charge_data["amount"],
-            )
+        order.service_charge_amount = totals[
+            "service_charge_total"
+        ]
 
-            service_charge_total += charge.amount
-
-        # =================================================
-        # SAVE TOTAL TAXES
-        # =================================================
-        order.tax_amount = tax_total
-
-        order.service_charge_amount = service_charge_total
+        order.grand_total = totals[
+            "grand_total"
+        ]
 
         order.save(
             update_fields=[
+                "subtotal",
                 "tax_amount",
                 "service_charge_amount",
+                "grand_total",
             ]
         )
 
         # =================================================
-        # CALCULATE TOTALS
+        # TAXES
         # =================================================
-        order.calculate_totals()
+        for tax in totals[
+            "tax_breakdown"
+        ]:
+
+            OrderTax.objects.create(
+                order=order,
+                name=tax["name"],
+                percentage=tax[
+                    "percentage"
+                ],
+                amount=tax["amount"],
+            )
 
         # =================================================
-        # UPDATE TABLE STATUS
+        # SERVICE CHARGES
+        # =================================================
+        for charge in totals[
+            "service_charge_breakdown"
+        ]:
+
+            OrderServiceCharge.objects.create(
+                order=order,
+                name=charge["name"],
+                charge_type=charge[
+                    "charge_type"
+                ],
+                value=charge["value"],
+                amount=charge["amount"],
+            )
+
+        # =================================================
+        # TABLE STATUS
         # =================================================
         if order.table:
 
             order.table.status = "occupied"
-            order.table.assigned_waiter = order.waiter
+
+            order.table.assigned_waiter = (
+                order.waiter
+            )
+
             order.table.save(
                 update_fields=[
                     "status",
@@ -241,47 +434,27 @@ class CreateOrderView(APIView):
                 ]
             )
 
-        # =========================================
-        # SEND TO KITCHEN
-        # =========================================
-        channel_layer = get_channel_layer()
-
-        async_to_sync(channel_layer.group_send)(
-            f"kitchen_{restaurant_id}",
-            {
-                "type": "send_order_event",
-                "data": {
-                    "event": "new_order",
-                    "order": {
-                        "id": order.id,
-                        "order_number": (order.order_number),
-                        "status": order.status,
-                        "order_type": (order.order_type),
-                        "table_name": (
-                            order.table.table_number if order.table else None
-                        ),
-                        "floor_name": (order.floor.name if order.floor else None),
-                        "area_name": (order.area.name if order.area else None),
-                        "notes": (order.notes),
-                        "grand_total": str(order.grand_total),
-                        "created_at": (order.created_at.strftime("%I:%M %p")),
-                    },
-                },
-            },
-        )
+        # =================================================
+        # RESPONSE
+        # =================================================
         return Response(
             {
-                "message": "Order created",
+                "message":
+                    "Order created",
                 "order_id": order.id,
-                "order_number": (order.order_number),
-                "subtotal": order.subtotal,
-                "tax_amount": (order.tax_amount),
-                "service_charge_amount": (order.service_charge_amount),
-                "grand_total": (order.grand_total),
+                "order_number":
+                    order.order_number,
+                "subtotal":
+                    order.subtotal,
+                "tax_amount":
+                    order.tax_amount,
+                "service_charge_amount":
+                    order.service_charge_amount,
+                "grand_total":
+                    order.grand_total,
             },
             status=status.HTTP_201_CREATED,
         )
-
 
 # =========================================================
 # ORDER LIST
@@ -296,25 +469,20 @@ class OrderListView(APIView):
         # ======================================
         # BASE QUERY
         # ======================================
-        orders = Order.objects.filter(
-            restaurant_id=restaurant_id
-        )
+        orders = Order.objects.filter(restaurant_id=restaurant_id)
 
         # ======================================
         # WAITER ONLY SEES HIS ORDERS
         # ======================================
         if request.user.role == "waiter":
 
-            orders = orders.filter(
-                waiter=request.user
-            )
+            orders = orders.filter(waiter=request.user)
 
         # ======================================
         # LOAD RELATIONS
         # ======================================
         orders = (
-            orders
-            .select_related(
+            orders.select_related(
                 "table",
                 "floor",
                 "area",
@@ -331,9 +499,13 @@ class OrderListView(APIView):
             orders,
             many=True,
         )
-
+        print("print->",serializer.data)
         return Response(serializer.data)
 
+
+# =========================================================
+# UPDATE ORDER
+# =========================================================
 # =========================================================
 # UPDATE ORDER
 # =========================================================
@@ -343,9 +515,12 @@ class UpdateOrderView(APIView):
     def patch(self, request, order_id):
 
         try:
+
             order = (
-                Order.objects
-                .select_related("waiter", "table")
+                Order.objects.select_related(
+                    "waiter",
+                    "table",
+                )
                 .prefetch_related(
                     "items",
                     "items__addons",
@@ -359,13 +534,14 @@ class UpdateOrderView(APIView):
 
             return Response(
                 {"error": "Order not found"},
-                status=404
+                status=404,
             )
 
-        # ======================================
+        # =================================================
         # PREVIOUS STATE
-        # ======================================
+        # =================================================
         previous_status = order.status
+
         previous_waiter = order.waiter
 
         serializer = CreateOrderSerializer(
@@ -377,9 +553,9 @@ class UpdateOrderView(APIView):
 
         data = serializer.validated_data
 
-        # ======================================
+        # =================================================
         # BASIC FIELDS
-        # ======================================
+        # =================================================
         if order.order_type == "dine_in":
 
             waiter_id = data.get("waiter_id")
@@ -417,21 +593,16 @@ class UpdateOrderView(APIView):
             order.discount_amount,
         )
 
-        order.tax_amount = data.get(
-            "tax_amount",
-            order.tax_amount,
-        )
-
-        order.service_charge_amount = data.get(
-            "service_charge_amount",
-            order.service_charge_amount,
+        order.round_off_amount = data.get(
+            "round_off_amount",
+            order.round_off_amount,
         )
 
         order.save()
 
-        # ======================================
+        # =================================================
         # UPDATE ITEMS
-        # ======================================
+        # =================================================
         incoming_items = data.get("items", [])
 
         existing_item_ids = []
@@ -440,9 +611,72 @@ class UpdateOrderView(APIView):
 
             item_id = item_data.get("id")
 
-            # ==================================
+            quantity = Decimal(str(item_data["quantity"]))
+
+            # =============================================
+            # PRODUCT
+            # =============================================
+            item_type = item_data.get("item_type")
+
+            if item_type == "product":
+            
+                product_variant = ProductVariant.objects.select_related(
+                    "product"
+                ).get(
+                    id=item_data["product_variant_id"]
+                )
+
+                pricing_data = calculate_product_price(
+                    product_variant
+                )
+
+                original_price = pricing_data["original_price"]
+
+                final_price = pricing_data["final_price"]
+
+                dynamic_pricing_name = pricing_data[
+                    "dynamic_pricing_name"
+                ]
+
+                item_name = (
+                    f"{product_variant.product.name} "
+                    f"({product_variant.name})"
+                )
+
+            # =============================================
+            # COMBO
+            # =============================================
+            else:
+
+                combo = Combo.objects.get(
+                    id=item_data["combo_id"]
+                )
+
+                pricing_data = calculate_combo_price(
+                    combo
+                )
+
+                original_price = pricing_data["original_price"]
+
+                final_price = pricing_data["final_price"]
+
+                dynamic_pricing_name = pricing_data[
+                    "dynamic_pricing_name"
+                ]
+
+                item_name = combo.name
+
+            # =============================================
+            # ITEM TOTAL
+            # =============================================
+            item_total = (
+                Decimal(str(final_price))
+                * quantity
+            )
+
+            # =============================================
             # UPDATE EXISTING ITEM
-            # ==================================
+            # =============================================
             if item_id:
 
                 try:
@@ -453,100 +687,104 @@ class UpdateOrderView(APIView):
                     )
 
                 except OrderItem.DoesNotExist:
+
                     continue
 
-                order_item.quantity = item_data.get(
-                    "quantity",
-                    order_item.quantity,
+                order_item.item_name = item_name
+                order_item.original_price = original_price
+                order_item.final_price = final_price
+                order_item.dynamic_pricing_name = (
+                    dynamic_pricing_name
                 )
-
-                order_item.notes = item_data.get(
-                    "notes",
-                    order_item.notes,
-                )
-
-                order_item.final_price = item_data.get(
-                    "final_price",
-                    order_item.final_price,
-                )
-
-                order_item.total_price = (
-                    Decimal(str(order_item.final_price))
-                    * Decimal(str(order_item.quantity))
-                )
+                order_item.quantity = quantity
+                order_item.notes = item_data.get("notes")
+                order_item.total_price = item_total
 
                 order_item.save()
 
-            # ==================================
+            # =============================================
             # CREATE NEW ITEM
-            # ==================================
+            # =============================================
             else:
 
                 order_item = OrderItem.objects.create(
                     order=order,
                     item_type=item_data["item_type"],
-                    product_variant_id=item_data.get("product_variant_id"),
-                    combo_id=item_data.get("combo_id"),
-                    item_name=item_data["item_name"],
-                    original_price=item_data["original_price"],
-                    final_price=item_data["final_price"],
-                    quantity=item_data["quantity"],
+                    product_variant_id=item_data.get(
+                        "product_variant_id"
+                    ),
+                    combo_id=item_data.get(
+                        "combo_id"
+                    ),
+                    item_name=item_name,
+                    original_price=original_price,
+                    final_price=final_price,
+                    dynamic_pricing_name=(
+                        dynamic_pricing_name
+                    ),
+                    quantity=quantity,
+                    total_price=item_total,
                     notes=item_data.get("notes"),
-                    dynamic_pricing_name=item_data.get(
-                        "dynamic_pricing_name"
-                    ),
-                    total_price=(
-                        Decimal(str(item_data["final_price"]))
-                        * Decimal(str(item_data["quantity"]))
-                    ),
                 )
 
             existing_item_ids.append(order_item.id)
 
-            # ==================================
+            # =================================================
             # UPDATE ADDONS
-            # ==================================
+            # =================================================
             incoming_addons = item_data.get(
                 "addons",
-                []
+                [],
             )
 
             existing_addon_ids = []
 
             for addon_data in incoming_addons:
 
-                addon_id = addon_data.get("id")
+                addon_row_id = addon_data.get("id")
 
-                # ==============================
+                addon_total = (
+                    Decimal(
+                        str(addon_data["addon_price"])
+                    )
+                    * Decimal(
+                        str(
+                            addon_data.get(
+                                "quantity",
+                                1,
+                            )
+                        )
+                    )
+                )
+
+                # =============================================
                 # UPDATE EXISTING ADDON
-                # ==============================
-                if addon_id:
+                # =============================================
+                if addon_row_id:
 
                     try:
 
                         addon = OrderItemAddon.objects.get(
-                            id=addon_id,
+                            id=addon_row_id,
                             order_item=order_item,
                         )
 
                     except OrderItemAddon.DoesNotExist:
+
                         continue
 
                     addon.quantity = addon_data.get(
                         "quantity",
-                        addon.quantity,
+                        1,
                     )
 
-                    addon.total_price = (
-                        Decimal(str(addon.addon_price))
-                        * Decimal(str(addon.quantity))
-                    )
+                    addon.total_price = addon_total
 
                     addon.save()
 
-                # ==============================
+                # =============================================
                 # CREATE NEW ADDON
-                # ==============================
+                # =============================================
                 else:
 
                     addon = OrderItemAddon.objects.create(
@@ -558,49 +796,173 @@ class UpdateOrderView(APIView):
                             "quantity",
                             1,
                         ),
-                        total_price=(
-                            Decimal(str(addon_data["addon_price"]))
-                            * Decimal(
-                                str(
-                                    addon_data.get(
-                                        "quantity",
-                                        1,
-                                    )
-                                )
-                            )
-                        ),
+                        total_price=addon_total,
                     )
 
                 existing_addon_ids.append(addon.id)
 
-            # ==================================
+            # =================================================
             # DELETE REMOVED ADDONS
-            # ==================================
+            # =================================================
             order_item.addons.exclude(
                 id__in=existing_addon_ids
             ).delete()
 
-        # ======================================
+        # =================================================
         # DELETE REMOVED ITEMS
-        # ======================================
+        # =================================================
         order.items.exclude(
             id__in=existing_item_ids
         ).delete()
 
-        # ======================================
-        # REFRESH ORDER + CLEAR PREFETCH CACHE
-        # ======================================
-        if hasattr(order, "_prefetched_objects_cache"):
-            order._prefetched_objects_cache = {}
+        # =================================================
+        # CLEAR OLD TAXES
+        # =================================================
+        order.taxes.all().delete()
 
-        # ======================================
-        # RECALCULATE TOTALS
-        # ======================================
-        order.calculate_totals()
-    
-        # ======================================
+        tax_total = Decimal("0")
+
+        # =================================================
+        # RECALCULATE TAXES
+        # =================================================
+        for item in order.items.all():
+
+            if item.item_type != "product":
+
+                continue
+
+            product_variant = ProductVariant.objects.select_related(
+                "product"
+            ).get(
+                id=item.product_variant_id
+            )
+
+            taxable_amount = item.total_price
+
+            addon_total = (
+                item.addons.aggregate(
+                    total=models.Sum("total_price")
+                )["total"]
+                or Decimal("0")
+            )
+
+            taxable_amount += addon_total
+
+            taxes_data = calculate_product_taxes(
+                product_variant.product,
+                taxable_amount,
+            )
+
+            for tax_data in taxes_data["taxes"]:
+
+                OrderTax.objects.create(
+                    order=order,
+                    name=tax_data["name"],
+                    percentage=tax_data["percentage"],
+                    amount=tax_data["amount"],
+                )
+
+            tax_total += taxes_data["total_tax"]
+
+        # =================================================
+        # CLEAR OLD SERVICE CHARGES
+        # =================================================
+        order.service_charges.all().delete()
+
+        # =================================================
+        # RECALCULATE SUBTOTAL
+        # =================================================
+        subtotal = Decimal("0")
+
+        for item in order.items.all():
+
+            subtotal += item.total_price
+
+            addon_total = (
+                item.addons.aggregate(
+                    total=models.Sum("total_price")
+                )["total"]
+                or Decimal("0")
+            )
+
+            subtotal += addon_total
+
+        # =================================================
+        # RECALCULATE SERVICE CHARGES
+        # =================================================
+        service_charge_total = Decimal("0")
+
+        service_charges = ServiceCharge.objects.filter(
+            restaurant_id=order.restaurant_id,
+            is_active=True,
+            applicable_order_types__contains=[
+                order.order_type
+            ],
+        )
+
+        for service_charge in service_charges:
+
+            if service_charge.charge_type == "percentage":
+
+                amount = (
+                    subtotal
+                    * Decimal(str(service_charge.value))
+                    / Decimal("100")
+                )
+
+            else:
+
+                amount = Decimal(
+                    str(service_charge.value)
+                )
+
+            OrderServiceCharge.objects.create(
+                order=order,
+                name=service_charge.name,
+                charge_type=(
+                    service_charge.charge_type
+                ),
+                value=service_charge.value,
+                amount=amount,
+            )
+
+            service_charge_total += amount
+
+        # =================================================
+        # SAVE TOTALS
+        # =================================================
+        order.subtotal = subtotal
+
+        order.tax_amount = tax_total
+
+        order.service_charge_amount = (
+            service_charge_total
+        )
+
+        order.grand_total = (
+            subtotal
+            + tax_total
+            + service_charge_total
+            - order.discount_amount
+            + order.round_off_amount
+        )
+
+        if order.grand_total < 0:
+
+            order.grand_total = Decimal("0")
+
+        order.save(
+            update_fields=[
+                "subtotal",
+                "tax_amount",
+                "service_charge_amount",
+                "grand_total",
+            ]
+        )
+
+        # =================================================
         # TABLE LOGIC
-        # ======================================
+        # =================================================
         if order.table:
 
             if order.status in [
@@ -609,6 +971,7 @@ class UpdateOrderView(APIView):
             ]:
 
                 order.table.status = "available"
+
                 order.table.assigned_waiter = None
 
                 order.table.save(
@@ -625,14 +988,12 @@ class UpdateOrderView(APIView):
                 order.table.save(
                     update_fields=["status"]
                 )
-        
-        # =====================================
 
-        # order.refresh_from_db()
-
+        # =================================================
+        # REFRESH ORDER
+        # =================================================
         order = (
-            Order.objects
-            .select_related(
+            Order.objects.select_related(
                 "waiter",
                 "table",
                 "floor",
@@ -647,13 +1008,13 @@ class UpdateOrderView(APIView):
             .get(id=order.id)
         )
 
-        serialized_order = (
-            OrderListSerializer(order).data
-        )
+        serialized_order = OrderListSerializer(
+            order
+        ).data
 
-        # ======================================
+        # =================================================
         # SOCKET EVENT
-        # ======================================
+        # =================================================
         channel_layer = get_channel_layer()
 
         async_to_sync(channel_layer.group_send)(
@@ -667,9 +1028,9 @@ class UpdateOrderView(APIView):
             },
         )
 
-        # ======================================
+        # =================================================
         # WAITER READY EVENT
-        # ======================================
+        # =================================================
         if (
             previous_status != "ready"
             and order.status == "ready"
@@ -687,10 +1048,12 @@ class UpdateOrderView(APIView):
                 },
             )
 
-        return Response({
-            "message": "Order updated successfully",
-            "order": serialized_order,
-        })
+        return Response(
+            {
+                "message": "Order updated successfully",
+                "order": serialized_order,
+            }
+        )
 
 # =========================================================
 # DELETE ORDER

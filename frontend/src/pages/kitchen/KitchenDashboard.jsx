@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "../../components/admin/dashboard/DashboardLayout";
-import KitchenOrders from "./KitchenOrders";
+import KitchenOrders from "../kitchen/KitchenOrders";
 
 export default function KitchenDashboard() {
     // Moved state inside the component

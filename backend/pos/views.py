@@ -138,7 +138,7 @@ class POSDashboardView(APIView):
                     "name": charge.name,
                     "charge_type": charge.charge_type,
                     "value": charge.value,
-                    "auto_apply": charge.auto_apply,
+                    "applicable_order_types": charge.applicable_order_types or [],
                 }
                 for charge in service_charges
             ]

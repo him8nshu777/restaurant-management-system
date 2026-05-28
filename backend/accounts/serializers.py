@@ -98,6 +98,43 @@ class RegisterSerializer(serializers.Serializer):
 
 
 # ==========================================
+# CUSTOMER REGISTER SERIALIZER
+# ==========================================
+class CustomerRegisterSerializer(
+    serializers.Serializer
+):
+
+    username = serializers.CharField()
+
+    email = serializers.EmailField()
+
+    phone = serializers.CharField()
+
+    password = serializers.CharField(
+        write_only=True,
+        min_length=8
+    )
+
+    def create(self, validated_data):
+
+        password = validated_data.pop(
+            "password"
+        )
+
+        user = User(
+            **validated_data
+        )
+
+        user.role = "customer"
+
+        user.set_password(password)
+
+        user.save()
+        # Send email verification link
+        send_verification_email(user)
+        return user
+
+# ==========================================
 # CUSTOM LOGIN SERIALIZER
 # ==========================================
 # Handles:
@@ -210,5 +247,73 @@ class CustomLoginSerializer(serializers.Serializer):
                 "restaurant_status": restaurant.status,
 
                 "restaurant_id": restaurant.id,
+            }
+        }
+
+
+class CustomerLoginSerializer(
+    serializers.Serializer
+):
+
+    email = serializers.EmailField()
+
+    password = serializers.CharField(
+        write_only=True
+    )
+
+    def validate(self, attrs):
+
+        email = attrs.get("email")
+
+        password = attrs.get(
+            "password"
+        )
+
+        try:
+
+            user = User.objects.get(
+                email=email,
+                role="customer"
+            )
+
+        except User.DoesNotExist:
+
+            raise serializers.ValidationError(
+                "Invalid credentials"
+            )
+
+        if not user.check_password(
+            password
+        ):
+
+            raise serializers.ValidationError(
+                "Invalid credentials"
+            )
+
+        if not user.is_email_verified:
+
+            raise serializers.ValidationError(
+                "Email is not verified."
+            )
+        refresh = RefreshToken.for_user(user)
+
+        return {
+
+            "refresh":
+            str(refresh),
+
+            "access":
+            str(refresh.access_token),
+
+            "user": {
+
+                "id":
+                user.id,
+
+                "email":
+                user.email,
+
+                "role":
+                user.role,
             }
         }

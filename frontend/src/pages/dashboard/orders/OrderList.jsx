@@ -169,51 +169,73 @@ const openEditModal = (order) => {
       order.service_charges || [],
 
     items:
-      order.items?.map((item) => ({
+  order.items?.map((item) => ({
 
-        id: item.id,
+    id: item.id,
 
-        item_name: item.item_name,
+    item_name: item.item_name,
 
-        item_type: item.item_type,
+    item_type: item.item_type,
 
-        quantity: item.quantity,
+    product_variant_id:
+      item.product_variant_id || null,
 
-        final_price: item.final_price,
+    combo_id:
+      item.combo_id || null,
 
-        original_price:
-          item.original_price,
+    quantity: item.quantity,
+
+    final_price: item.final_price,
+
+    original_price:
+      item.original_price,
+
+    total_price:
+      item.total_price,
+
+    notes:
+      item.notes || "",
+
+    dynamic_pricing_name:
+      item.dynamic_pricing_name,
+
+    // ======================================
+    // IMPORTANT
+    // ======================================
+    taxes: item.taxes || [],
+
+    combo_items:
+      item.combo_items || [],
+
+    addons:
+      item.addons?.map((addon) => ({
+
+        id: addon.id,
+
+        addon_id:
+          addon.addon_id,
+
+        addon_name:
+          addon.addon_name,
+
+        addon_price:
+          addon.addon_price,
+
+        quantity:
+          addon.quantity,
 
         total_price:
-          item.total_price,
+          addon.total_price,
 
-        notes: item.notes || "",
-
-        dynamic_pricing_name:
-          item.dynamic_pricing_name,
-
-        addons:
-          item.addons?.map(
-            (addon) => ({
-
-              id: addon.id,
-
-              addon_name:
-                addon.addon_name,
-
-              addon_price:
-                addon.addon_price,
-
-              quantity:
-                addon.quantity,
-
-              total_price:
-                addon.total_price,
-
-            })
-          ) || [],
+        // ==================================
+        // IMPORTANT
+        // ==================================
+        taxes:
+          addon.taxes || [],
 
       })) || [],
+
+  })) || [],
 
   });
 
@@ -255,17 +277,27 @@ const handleItemChange = (
   // ========================================
   // AUTO TOTAL
   // ========================================
-  updatedItems[index].total_price =
-    (
-      Number(
-        updatedItems[index]
-          .final_price
-      ) *
-      Number(
-        updatedItems[index]
-          .quantity
-      )
-    ).toFixed(2);
+  const item =
+  updatedItems[index];
+
+const baseTotal =
+  Number(item.final_price) *
+  Number(item.quantity);
+
+let addonTotal = 0;
+
+item.addons?.forEach((addon) => {
+
+  addonTotal +=
+    Number(addon.addon_price) *
+    Number(addon.quantity);
+
+});
+
+item.total_price =
+  (
+    baseTotal + addonTotal
+  ).toFixed(2);
 
   setFormData({
     ...formData,
@@ -293,11 +325,27 @@ const handleAddonQuantityChange = (
 
   addon.quantity = Number(value);
 
-  addon.total_price =
-    (
-      Number(addon.addon_price) *
-      Number(addon.quantity)
-    ).toFixed(2);
+ const item =
+  updatedItems[itemIndex];
+
+const baseTotal =
+  Number(item.final_price) *
+  Number(item.quantity);
+
+let addonTotal = 0;
+
+item.addons?.forEach((a) => {
+
+  addonTotal +=
+    Number(a.addon_price) *
+    Number(a.quantity);
+
+});
+
+item.total_price =
+  (
+    baseTotal + addonTotal
+  ).toFixed(2);
 
   setFormData({
     ...formData,
@@ -392,93 +440,419 @@ const removeAddon = (
   };
 
   // ==========================================
-// CALCULATE GRAND TOTAL
+// CALCULATE SINGLE ITEM TOTAL
 // ==========================================
-const calculateGrandTotal =
-  () => {
+const calculateItemTotal = (item) => {
 
-    let subtotal = 0;
+  const baseTotal =
+    Number(item.final_price) *
+    Number(item.quantity);
 
-    formData.items.forEach(
-      (item) => {
+  let addonTotal = 0;
 
-        subtotal += Number(
-          item.total_price
-        );
+  item.addons?.forEach((addon) => {
 
-        item.addons?.forEach(
-          (addon) => {
+    addonTotal +=
+      Number(addon.addon_price) *
+      Number(addon.quantity);
 
-            subtotal += Number(
-              addon.total_price
-            );
+  });
 
-          }
-        );
+  return (
+    baseTotal + addonTotal
+  ).toFixed(2);
 
-      }
-    );
+};
 
-    return (
-      subtotal
-      - Number(
-          formData.discount_amount || 0
-        )
-      + Number(
-          formData.tax_amount || 0
-        )
-      + Number(
-          formData.service_charge_amount || 0
-        )
-      // + Number(
-      //     formData.round_off_amount || 0
-      //   )
-    ).toFixed(2);
+// ==========================================
+// LIVE BILL SUMMARY
+// ==========================================
+const calculateLiveTotals = () => {
+
+  // ========================================
+  // SUBTOTAL
+  // ========================================
+  let subtotal = 0;
+
+  // ========================================
+  // TAX BREAKDOWN
+  // ========================================
+  const taxBreakdown = [];
+
+  // ========================================
+  // ADD TAX HELPER
+  // ========================================
+  const addTaxAmount = (
+    taxName,
+    percentage,
+    amount
+  ) => {
+
+    const existingTax =
+      taxBreakdown.find(
+        (t) =>
+          t.name === taxName &&
+          Number(t.percentage) ===
+            Number(percentage)
+      );
+
+    if (existingTax) {
+
+      existingTax.amount += amount;
+
+    }
+
+    else {
+
+      taxBreakdown.push({
+
+        name: taxName,
+        percentage,
+        amount,
+
+      });
+
+    }
 
   };
 
-  // ==========================================
-  // UPDATE ORDER
-  // ==========================================
-  const handleUpdateOrder =
-    async (e) => {
+  // ========================================
+  // LOOP ITEMS
+  // ========================================
+  formData.items.forEach((item) => {
 
-      e.preventDefault();
+    // ======================================
+    // PRODUCT BASE TOTAL
+    // ======================================
+    const productBaseTotal =
+      Number(item.final_price) *
+      Number(item.quantity);
 
-      try {
+    // ======================================
+    // SUBTOTAL
+    // ======================================
+    subtotal += productBaseTotal;
 
-        await updateOrder(
-          selectedOrder.id,
-          formData
+    // ======================================
+    // PRODUCT TAXES
+    // ======================================
+    if (
+      item.taxes &&
+      item.taxes.length > 0
+    ) {
+
+      item.taxes.forEach((tax) => {
+
+        const taxAmount =
+          (
+            productBaseTotal *
+            Number(tax.percentage)
+          ) / 100;
+
+        addTaxAmount(
+          tax.name,
+          tax.percentage,
+          taxAmount
         );
 
-    
-        await fetchOrders();
-        setShowEditModal(false);
+      });
 
+    }
 
-        setAlert({
-          type: "success",
-          message:
-            "Order updated successfully.",
+    // ======================================
+    // COMBO TAXES
+    // ======================================
+    if (
+      item.item_type === "combo"
+    ) {
+
+      item.combo_items?.forEach(
+        (comboItem) => {
+
+          const comboItemTotal =
+            Number(
+              comboItem.allocated_price
+            ) *
+            Number(comboItem.quantity) *
+            Number(item.quantity);
+
+          comboItem.taxes?.forEach(
+            (tax) => {
+
+              const taxAmount =
+                (
+                  comboItemTotal *
+                  Number(
+                    tax.percentage
+                  )
+                ) / 100;
+
+              addTaxAmount(
+                tax.name,
+                tax.percentage,
+                taxAmount
+              );
+
+            }
+          );
+
+        }
+      );
+
+    }
+
+    // ======================================
+    // ADDONS
+    // ======================================
+    item.addons?.forEach((addon) => {
+
+      const addonTotal =
+        Number(addon.addon_price) *
+        Number(addon.quantity || 1);
+
+      // ====================================
+      // SUBTOTAL
+      // ====================================
+      subtotal += addonTotal;
+
+      // ====================================
+      // ADDON TAXES
+      // ONLY IF ADDON HAS TAXES
+      // ====================================
+      if (
+        addon.taxes &&
+        addon.taxes.length > 0
+      ) {
+
+        addon.taxes.forEach((tax) => {
+
+          const taxAmount =
+            (
+              addonTotal *
+              Number(tax.percentage)
+            ) / 100;
+
+          addTaxAmount(
+            tax.name,
+            tax.percentage,
+            taxAmount
+          );
+
         });
 
       }
 
-      catch (error) {
+    });
 
-        console.log(error);
+  });
 
-        setAlert({
-          type: "danger",
-          message:
-            "Failed to update order.",
-        });
+  // ========================================
+  // TOTAL TAX
+  // ========================================
+  const taxTotal =
+    taxBreakdown.reduce(
+      (sum, tax) =>
+        sum + tax.amount,
+      0
+    );
+
+  // ========================================
+  // SERVICE CHARGES
+  // ========================================
+  const serviceChargeBreakdown = [];
+
+  formData.service_charges?.forEach(
+    (charge) => {
+
+      let amount = 0;
+
+      if (
+        charge.charge_type ===
+        "percentage"
+      ) {
+
+        amount =
+          (
+            subtotal *
+            Number(charge.value)
+          ) / 100;
 
       }
 
-    };
+      else {
 
+        amount = Number(
+          charge.value
+        );
+
+      }
+
+      serviceChargeBreakdown.push({
+
+        name: charge.name,
+
+        charge_type:
+          charge.charge_type,
+
+        value: charge.value,
+
+        amount,
+
+      });
+
+    }
+  );
+
+  // ========================================
+  // TOTAL SERVICE CHARGE
+  // ========================================
+  const serviceChargeTotal =
+    serviceChargeBreakdown.reduce(
+      (sum, charge) =>
+        sum + charge.amount,
+      0
+    );
+
+  // ========================================
+  // DISCOUNT
+  // ========================================
+  const discountAmount =
+    Number(
+      formData.discount_amount || 0
+    );
+
+  // ========================================
+  // ROUND OFF
+  // ========================================
+  const roundOffAmount =
+    Number(
+      formData.round_off_amount || 0
+    );
+
+  // ========================================
+  // GRAND TOTAL
+  // ========================================
+  const grandTotal =
+    subtotal +
+    taxTotal +
+    serviceChargeTotal -
+    discountAmount +
+    roundOffAmount;
+
+  return {
+
+    subtotal:
+      subtotal.toFixed(2),
+
+    tax_total:
+      taxTotal.toFixed(2),
+
+    service_charge_total:
+      serviceChargeTotal.toFixed(2),
+
+    grand_total:
+      grandTotal.toFixed(2),
+
+    tax_breakdown:
+      taxBreakdown,
+
+    service_charge_breakdown:
+      serviceChargeBreakdown,
+
+  };
+
+};
+
+  // ==========================================
+// UPDATE ORDER
+// ==========================================
+const handleUpdateOrder =
+  async (e) => {
+
+    e.preventDefault();
+
+    try {
+
+      const payload = {
+
+        status:
+          formData.status,
+
+        payment_status:
+          formData.payment_status,
+
+        payment_method:
+          formData.payment_method,
+
+        notes:
+          formData.notes,
+
+        discount_amount:
+          formData.discount_amount,
+
+        round_off_amount:
+          formData.round_off_amount,
+
+        items:
+          formData.items.map((item) => ({
+
+            id: item.id,
+            item_type: item.item_type,
+            product_variant_id: item.product_variant_id,
+            combo_id: item.combo_id,
+            quantity:
+              item.quantity,
+
+            notes:
+              item.notes,
+
+            addons:
+              item.addons?.map(
+                (addon) => ({
+
+                  id: addon.id,
+                  addon_id: addon.addon_id,
+                  quantity:
+                    addon.quantity,
+                  addon_price: addon.addon_price
+
+                })
+              ) || [],
+
+          })),
+
+      };
+
+      await updateOrder(
+        selectedOrder.id,
+        payload
+      );
+
+      await fetchOrders();
+
+      setShowEditModal(false);
+
+      setAlert({
+        type: "success",
+        message:
+          "Order updated successfully.",
+      });
+
+    }
+
+    catch (error) {
+
+      console.log(error);
+
+      setAlert({
+        type: "danger",
+        message:
+          "Failed to update order.",
+      });
+
+    }
+
+  };
   // ==========================================
   // DELETE ORDER
   // ==========================================
@@ -522,6 +896,8 @@ const calculateGrandTotal =
 
     };
 
+
+    const liveTotals =  calculateLiveTotals();
   return (
 
     <div className="container-fluid">
@@ -1154,8 +1530,8 @@ const calculateGrandTotal =
             </strong>
 
             {" "}
-            ₹
-            {item.total_price}
+            {/* {item.total_price} */}
+            ₹{calculateItemTotal(item)}
 
           </div>
 
@@ -1175,10 +1551,10 @@ const calculateGrandTotal =
     Taxes
   </h5>
 
-  {formData.taxes?.map((tax) => (
+  {liveTotals.tax_breakdown?.map((tax, index) => (
 
     <div
-      key={tax.id}
+      key={`${tax.name}-${index}`}
       className="
         d-flex
         justify-content-between
@@ -1194,7 +1570,7 @@ const calculateGrandTotal =
       </span>
 
       <span>
-        ₹{tax.amount}
+        ₹{Number(tax.amount).toFixed(2)}
       </span>
 
     </div>
@@ -1210,11 +1586,11 @@ const calculateGrandTotal =
     Service Charges
   </h5>
 
-  {formData.service_charges?.map(
-    (charge) => (
+  {liveTotals.service_charge_breakdown?.map(
+    (charge, index) => (
 
       <div
-        key={charge.id}
+        key={`${charge.name}-${index}`}
         className="
           d-flex
           justify-content-between
@@ -1228,7 +1604,7 @@ const calculateGrandTotal =
         </span>
 
         <span>
-          ₹{charge.amount}
+          ₹{Number(charge.amount).toFixed(2)}
         </span>
 
       </div>
@@ -1258,7 +1634,7 @@ const calculateGrandTotal =
     <span>Subtotal</span>
 
     <span>
-      ₹{formData.subtotal}
+      ₹{liveTotals.subtotal}
     </span>
   </div>
 
@@ -1272,7 +1648,7 @@ const calculateGrandTotal =
     <span>Tax</span>
 
     <span>
-      ₹{formData.tax_amount}
+      ₹{liveTotals.tax_total}
     </span>
   </div>
 
@@ -1290,8 +1666,8 @@ const calculateGrandTotal =
     <span>
       ₹
       {
-        formData.service_charge_amount
-      }
+      liveTotals.service_charge_total}
+      
     </span>
   </div>
 
@@ -1344,7 +1720,7 @@ const calculateGrandTotal =
 
     <span>
       ₹
-      {calculateGrandTotal()}
+{liveTotals.grand_total}
     </span>
 
   </div>
@@ -1365,7 +1741,7 @@ const calculateGrandTotal =
               Grand Total:
               {" "}
               ₹
-              {calculateGrandTotal()}
+{liveTotals.grand_total}
 
             </h5>
 

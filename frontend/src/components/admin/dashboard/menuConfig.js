@@ -5,6 +5,7 @@ import kitchenMenu from "../dashboard/sidebar/kitchenMenu";
 import posMenu from "../dashboard/sidebar/posMenu";
 import waiterMenu from "../dashboard/sidebar/waiterMenu";
 import managerMenu from "../dashboard/sidebar/managerMenu";
+import customerMenu from "./sidebar/customerMenu";
 
 export const getMenuByRole = (role) => {
 
@@ -24,6 +25,9 @@ export const getMenuByRole = (role) => {
 
     case "manager":
       return managerMenu;
+
+    case "customer":
+      return customerMenu;
 
     default:
       return [];

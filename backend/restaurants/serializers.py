@@ -3,7 +3,7 @@ from rest_framework import serializers
 from accounts.models import User
 
 from .models import Restaurant, Floor, Area, RestaurantTable
-
+from .utils import get_lat_long_from_address
 
 # ==========================================
 # RESTAURANT LIST SERIALIZER
@@ -39,6 +39,8 @@ class RestaurantUpdateSerializer(serializers.ModelSerializer):
             "name",
             "gst_number",
             "address",
+            "latitude",
+            "longitude",
             "status",
             "created_at",
         ]
@@ -67,10 +69,26 @@ class RestaurantCreateSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-
         request = self.context["request"]
 
-        return Restaurant.objects.create(owner=request.user, **validated_data)
+        address = validated_data.get(
+            "address"
+        )
+
+        latitude = None
+        longitude = None
+
+        # ======================================
+        # CONVERT ADDRESS TO LAT/LONG
+        # ======================================
+        if address:
+
+            latitude, longitude = (
+                get_lat_long_from_address(
+                    address
+                )
+            )
+        return Restaurant.objects.create(owner=request.user,latitude=latitude, longitude=longitude, **validated_data)
 
 
 class StaffCreateSerializer(serializers.ModelSerializer):

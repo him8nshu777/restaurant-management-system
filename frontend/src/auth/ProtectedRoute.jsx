@@ -111,6 +111,14 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/" replace />;
   }
 
+  // ==========================================
+  // CUSTOMER ACCESS
+  // ==========================================
+  if (user?.role === "customer") {
+    return children;
+  }
+
+
 
   // ==========================================
   // BLOCK ACCESS IF RESTAURANT NOT ACTIVE

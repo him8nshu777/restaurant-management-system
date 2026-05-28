@@ -25,7 +25,7 @@ import kitchen.routing
 
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "core.settings",
+    "config.settings.development",
 )
 
 django_asgi_app = (

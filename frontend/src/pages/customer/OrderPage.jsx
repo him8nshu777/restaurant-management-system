@@ -1,243 +1,58 @@
 import { useEffect, useState } from "react";
-
-import { useSelector } from "react-redux";
-
+import { useParams } from "react-router-dom";
 import { getPOSProducts } from "../../services/posService";
-import {
-  getTableList,
-  getFloorList,
-  getAreaList,
-} from "../../services/dashboardService";
 import { ChevronDown, ChevronUp } from "react-bootstrap-icons";
+
 import { createOrder } from "../../services/orderService";
-
 // ==========================================
-// POS DASHBOARD
+// CUSTOMER RESTAURANT PAGE (FIXED)
 // ==========================================
-export default function WaiterPOSDashboard() {
-  // ==========================================
-  // USER
-  // ==========================================
-  const user = useSelector((state) => state.auth.user);
+export default function OrderPage() {
+  const { restaurantId } = useParams();
 
-  // ==========================================
-  // RESTAURANT ID
-  // ==========================================
-  const restaurantId = user?.restaurant_id;
-
-  // ==========================================
-  // PRODUCT LIST
-  // ==========================================
+  // STATES
   const [productList, setProductList] = useState([]);
-
-  // ==========================================
-  // CATEGORY LIST
-  // ==========================================
   const [categoryList, setCategoryList] = useState([]);
-
-  // ==========================================
-  // CART ITEMS
-  // ==========================================
   const [cartItems, setCartItems] = useState([]);
-
-  // ==========================================
-  // SEARCH
-  // ==========================================
   const [search, setSearch] = useState("");
-
-  // ==========================================
-  // SELECTED CATEGORY
-  // ==========================================
   const [selectedCategory, setSelectedCategory] = useState(null);
-
-  // ==========================================
-  // LOADING
-  // ==========================================
   const [loading, setLoading] = useState(false);
-
-  // ==========================================
-  // ALERT
-  // ==========================================
   const [alert, setAlert] = useState(null);
-
-  // ==========================================
-  // SHOW CART
-  // ==========================================
   const [showCart, setShowCart] = useState(false);
-
-  // ==========================================
-  // ORDER TYPE
-  // ==========================================
-  const [orderType, setOrderType] = useState("dine_in");
-
-  // ==========================================
-  // ORDER NOTES
-  // ==========================================
   const [orderNotes, setOrderNotes] = useState("");
-
-  // ==========================================
-  // SELECTED TABLE
-  // ==========================================
-  const [selectedTable, setSelectedTable] = useState("");
-
-  // ==========================================
-  // FLOOR LIST
-  // ==========================================
-  const [floorList, setFloorList] = useState([]);
-
-  // ==========================================
-  // AREA LIST
-  // ==========================================
-  const [areaList, setAreaList] = useState([]);
-
-  // ==========================================
-  // AVAILABLE TABLES
-  // ==========================================
-  const [tableList, setTableList] = useState([]);
-
-  // ==========================================
-  // PAYMENT METHOD
-  // ==========================================
-  const [paymentMethod, setPaymentMethod] = useState("cash");
-
-  // ==========================================
-  // SHOW TABLE MODAL
-  // ==========================================
-  const [showTableModal, setShowTableModal] = useState(false);
-
-  // ==========================================
-  // FLOOR FILTER
-  // ==========================================
-  const [selectedFloor, setSelectedFloor] = useState(null);
-
-  // ==========================================
-  // AREA FILTER
-  // ==========================================
-  const [selectedArea, setSelectedArea] = useState(null);
 
   const [allServiceCharges, setAllServiceCharges] = useState([]);
 
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
 
   // ==========================================
-  // FILTER SERVICE CHARGES BY ORDER TYPE
+  // DELIVERY SERVICE CHARGES
   // ==========================================
   const serviceCharges = allServiceCharges.filter((charge) => {
-    const applicableTypes = charge.applicable_order_types || [];
-
-    // APPLY TO ALL ORDER TYPES
-    if (applicableTypes.length === 0) {
+    // APPLY ALL
+    if (!charge.applicable_order_types) {
       return true;
     }
 
-    // MATCH CURRENT ORDER TYPE
-    return applicableTypes.includes(orderType);
+    let orderTypes = charge.applicable_order_types;
+
+    // STRING -> ARRAY
+    if (typeof orderTypes === "string") {
+      orderTypes = orderTypes.split(",").map((item) => item.trim());
+    }
+
+    // EMPTY => APPLY ALL
+    if (!Array.isArray(orderTypes) || orderTypes.length === 0) {
+      return true;
+    }
+
+    // CUSTOMER PAGE = DELIVERY ONLY
+    return orderTypes.includes("delivery");
   });
 
   // ==========================================
-  // FETCH FLOORS
-  // ==========================================
-  const fetchFloors = async () => {
-    try {
-      const data = await getFloorList(restaurantId);
-
-      if (Array.isArray(data)) {
-        setFloorList(data);
-      } else if (Array.isArray(data.results)) {
-        setFloorList(data.results);
-      } else {
-        setFloorList([]);
-      }
-    } catch (error) {
-      console.log(error);
-
-      setFloorList([]);
-    }
-  };
-
-  // ==========================================
-  // FETCH AREAS
-  // ==========================================
-  const fetchAreas = async () => {
-    try {
-      const data = await getAreaList(restaurantId);
-
-      if (Array.isArray(data)) {
-        setAreaList(data);
-      } else if (Array.isArray(data.results)) {
-        setAreaList(data.results);
-      } else {
-        setAreaList([]);
-      }
-    } catch (error) {
-      console.log(error);
-
-      setAreaList([]);
-    }
-  };
-
-  // ==========================================
-  // FETCH TABLES
-  // ==========================================
-  const fetchTables = async () => {
-    try {
-      const data = await getTableList(restaurantId);
-
-      console.log("TABLE API:", data);
-
-      // ======================================
-      // TABLES ARRAY
-      // ======================================
-      if (Array.isArray(data.tables)) {
-        setTableList(data.tables);
-      } else {
-        setTableList([]);
-      }
-    } catch (error) {
-      console.log(error);
-
-      setTableList([]);
-    }
-  };
-
-  // ==========================================
-  // FETCH PRODUCTS AND TABLES
-  // ==========================================
-  useEffect(() => {
-    if (restaurantId) {
-      fetchProducts();
-
-      fetchTables();
-
-      fetchFloors();
-
-      fetchAreas();
-    }
-  }, [restaurantId, selectedCategory, search]);
-
-  useEffect(() => {
-    if (selectedFloor) {
-      const filteredAreas = areaList.filter(
-        (area) => String(area.floor) === String(selectedFloor),
-      );
-
-      if (filteredAreas.length > 0) {
-        setSelectedArea(filteredAreas[0].id);
-      }
-    }
-  }, [selectedFloor, areaList]);
-
-  // ==========================================
-  // RESET DINE IN DATA
-  // ==========================================
-  useEffect(() => {
-    if (orderType !== "dine_in") {
-      setSelectedTable("");
-    }
-  }, [orderType]);
-
-  // ==========================================
-  // GET PRODUCTS
+  // FETCH PRODUCTS (FIXED NORMALIZATION)
   // ==========================================
   const fetchProducts = async () => {
     try {
@@ -267,9 +82,7 @@ export default function WaiterPOSDashboard() {
       }
 
       setProductList(products);
-      // setServiceCharges(data.service_charges || []);
       setAllServiceCharges(data.service_charges || []);
-
       // ==========================================
       // CATEGORY LIST
       // ==========================================
@@ -306,8 +119,15 @@ export default function WaiterPOSDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (restaurantId) {
+      fetchProducts();
+    }
+  }, [restaurantId, selectedCategory, search]);
+
   // ==========================================
-  // ADD TO CART
+  // CART HANDLERS
   // ==========================================
   const handleAddToCart = (item) => {
     const itemKey =
@@ -315,13 +135,8 @@ export default function WaiterPOSDashboard() {
         ? `product-${item.variant_id}`
         : `combo-${item.combo_id}`;
 
-    const existingItem = cartItems.find(
-      (cartItem) => cartItem.cart_key === itemKey,
-    );
+    const existingItem = cartItems.find((c) => c.cart_key === itemKey);
 
-    // ==========================================
-    // EXISTS
-    // ==========================================
     if (existingItem) {
       const updatedCart = cartItems.map((cartItem) => {
         if (cartItem.cart_key === itemKey) {
@@ -335,26 +150,15 @@ export default function WaiterPOSDashboard() {
       });
 
       setCartItems(updatedCart);
-    }
-
-    // ==========================================
-    // NEW ITEM
-    // ==========================================
-    else {
+    } else {
       setCartItems([
         ...cartItems,
         {
           ...item,
-
           cart_key: itemKey,
-
           quantity: 1,
-
-          // IMPORTANT
           available_addons: item.addons || [],
-
           selected_addons: [],
-
           item_notes: "",
         },
       ]);
@@ -377,24 +181,6 @@ export default function WaiterPOSDashboard() {
         return item;
       })
       .filter((item) => item.quantity > 0);
-
-    setCartItems(updatedCart);
-  };
-
-  // ==========================================
-  // UPDATE ITEM NOTES
-  // ==========================================
-  const handleItemNotesChange = (cartKey, value) => {
-    const updatedCart = cartItems.map((item) => {
-      if (item.cart_key === cartKey) {
-        return {
-          ...item,
-          item_notes: value,
-        };
-      }
-
-      return item;
-    });
 
     setCartItems(updatedCart);
   };
@@ -498,10 +284,31 @@ export default function WaiterPOSDashboard() {
   };
 
   // ==========================================
-  // SAVE ORDER
+  // UPDATE ITEM NOTES
   // ==========================================
-  const handleSaveOrder = async () => {
+  const handleItemNotesChange = (cartKey, value) => {
+    const updatedCart = cartItems.map((item) => {
+      if (item.cart_key === cartKey) {
+        return {
+          ...item,
+          item_notes: value,
+        };
+      }
+
+      return item;
+    });
+
+    setCartItems(updatedCart);
+  };
+
+  // ==========================================
+  // CUSTOMER CHECKOUT
+  // ==========================================
+  const handleCheckout = async () => {
     try {
+      // ==========================================
+      // EMPTY CART
+      // ==========================================
       if (cartItems.length === 0) {
         setAlert({
           type: "danger",
@@ -511,26 +318,30 @@ export default function WaiterPOSDashboard() {
         return;
       }
 
-      if (orderType === "dine_in" && !selectedTable) {
+      // ==========================================
+      // FUTURE PAYMENT GATEWAY
+      // ==========================================
+      if (paymentMethod !== "cash") {
         setAlert({
-          type: "danger",
-          message: "Please select table",
+          type: "warning",
+          message: "Online payment coming soon",
         });
 
         return;
       }
 
+      // ==========================================
+      // PAYLOAD
+      // ==========================================
       const payload = {
-        order_type: orderType,
+        // ==========================================
+        // ORDER TYPE
+        // ==========================================
+        order_type: "delivery",
 
-        floor_id: selectedFloor,
-
-        area_id: selectedArea,
-
-        table_id: selectedTable,
-
-        waiter_id: null,
-
+        // ==========================================
+        // NOTES
+        // ==========================================
         notes: orderNotes,
 
         payment_method: paymentMethod,
@@ -547,11 +358,11 @@ export default function WaiterPOSDashboard() {
         grand_total: totalPrice,
 
         // ==========================================
-        // PAYMENT
+        // PAYMENT STATUS
         // ==========================================
-        payment_status: "pending",
+        payment_status: paymentMethod === "cash" ? "pending" : "paid",
 
-        order_status: "pending",
+        order_status: "pending_approval",
 
         // ==========================================
         // SERVICE CHARGES
@@ -561,15 +372,6 @@ export default function WaiterPOSDashboard() {
           charge_type: charge.charge_type,
           value: charge.value,
           amount: charge.amount,
-        })),
-
-        // ==========================================
-        // TAX BREAKDOWN
-        // ==========================================
-        taxes: taxBreakdown.map((tax) => ({
-          name: tax.name,
-          percentage: tax.percentage,
-          amount: tax.amount,
         })),
 
         // ==========================================
@@ -624,25 +426,31 @@ export default function WaiterPOSDashboard() {
         })),
       };
 
+      // ==========================================
+      // CREATE ORDER
+      // ==========================================
       const data = await createOrder(restaurantId, payload);
 
+      // ==========================================
+      // SUCCESS
+      // ==========================================
       setAlert({
         type: "success",
-        message: `Order ${data.order_number} saved successfully`,
+        message: `Order ${data.order_number} placed successfully`,
       });
 
-      // CLEAR
+      // ==========================================
+      // CLEAR CART
+      // ==========================================
       setCartItems([]);
 
       setOrderNotes("");
 
-      setSelectedTable("");
       setShowCart(false);
-
-      fetchTables();
     } catch (error) {
-      console.log(error);
-
+      console.log("FULL ERROR:", error.response?.data);
+      console.log("ITEM ERROR:", error.response?.data?.items?.[0]);
+      console.log("TAX ERROR:", error.response?.data?.addon);
       setAlert({
         type: "danger",
         message: "Failed to save order",
@@ -651,13 +459,12 @@ export default function WaiterPOSDashboard() {
   };
 
   // ==========================================
-  // TOTAL CART ITEMS
+  // TOTALS
   // ==========================================
   const totalCartItems = cartItems.reduce(
     (total, item) => total + item.quantity,
     0,
   );
-
   const cartSubtotal = cartItems.reduce((total, item) => {
     const addonTotal = item.selected_addons.reduce((sum, addon) => {
       return sum + Number(addon.price) * Number(addon.quantity);
@@ -713,7 +520,6 @@ export default function WaiterPOSDashboard() {
         addTaxAmount(tax.name, tax.percentage, taxAmount);
       });
     }
-
     // ========================================
     // COMBO TAXES
     // ========================================
@@ -785,100 +591,67 @@ export default function WaiterPOSDashboard() {
 
   const totalPrice = cartSubtotal + totalTax + totalServiceCharge;
 
+  // ==========================================
+  // RENDER
+  // ==========================================
   return (
-    <div className="container-fluid">
-      {/* ==========================================
-          ALERT
-      ========================================== */}
+    <div className="container-fluid py-4">
+      {/* ALERT */}
       {alert && (
         <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
-      {/* ==========================================
-          HEADER
-      ========================================== */}
-      <div
-        className="
-          d-flex
-          justify-content-between
-          align-items-center
-          mb-4
-        "
-      >
-        <h2 className="fw-bold">POS Dashboard</h2>
+      {/* HEADER */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="fw-bold">Restaurant Menu</h2>
 
         <button className="btn btn-dark" onClick={() => setShowCart(true)}>
           Cart ({totalCartItems})
         </button>
       </div>
 
-      {/* ==========================================
-          SEARCH BAR
-      ========================================== */}
+      {/* SEARCH */}
       <div className="mb-4">
         <input
-          type="text"
           className="form-control"
-          placeholder="Search products..."
+          placeholder="Search food..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
       <div className="row">
-        {/* ==========================================
-            CATEGORY SIDEBAR
-        ========================================== */}
+        {/* CATEGORY */}
         <div className="col-lg-2 mb-4">
-          <div
-            className="
-              card
-              border-0
-              shadow-sm
-            "
-          >
+          <div className="card border-0 shadow-sm">
             <div className="card-body">
-              <h5 className="fw-bold mb-3">Categories</h5>
+              <h5 className="fw-bold">Categories</h5>
 
-              {/* ALL CATEGORY */}
               <button
-                className={`
-                  btn
-                  w-100
-                  mb-2
-                  ${selectedCategory === null ? "btn-primary" : "btn-light"}
-                `}
+                className={`btn w-100 mb-2 ${
+                  selectedCategory === null ? "btn-primary" : "btn-light"
+                }`}
                 onClick={() => setSelectedCategory(null)}
               >
                 All
               </button>
 
-              {/* CATEGORY LIST */}
-              {categoryList.map((category) => (
+              {categoryList.map((cat) => (
                 <button
-                  key={`category-${category.id}`}
-                  className={`
-                    btn
-                    w-100
-                    mb-2
-                    ${
-                      selectedCategory === category.id
-                        ? "btn-primary"
-                        : "btn-light"
-                    }
-                  `}
-                  onClick={() => setSelectedCategory(category.id)}
+                  key={cat.id}
+                  className={`btn w-100 mb-2 ${
+                    selectedCategory === cat.id ? "btn-primary" : "btn-light"
+                  }`}
+                  onClick={() => setSelectedCategory(cat.id)}
                 >
-                  {category.name}
+                  {cat.name}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* ==========================================
-            PRODUCT GRID
-        ========================================== */}
+        {/* PRODUCTS */}
         <div className="col-lg-10">
           {loading ? (
             <div className="text-center">Loading...</div>
@@ -1135,44 +908,17 @@ export default function WaiterPOSDashboard() {
         </div>
       </div>
 
-      {/* ==========================================
-    CART MODAL
-========================================== */}
+      {/* CART */}
       {showCart && (
         <div
-          className="
-      position-fixed
-      top-0
-      end-0
-      bg-white
-      shadow-lg
-      h-100
-      p-4
-    "
-          style={{
-            width: "550px",
-            zIndex: 9999,
-            overflowY: "auto",
-          }}
+          className="position-fixed top-0 end-0 bg-white shadow-lg h-100 p-4"
+          style={{ width: "500px", zIndex: 9999, overflowY: "auto" }}
         >
-          {/* HEADER */}
-          <div
-            className="
-        d-flex
-        justify-content-between
-        align-items-center
-        mb-4
-      "
-          >
-            <h4 className="fw-bold mb-0">Cart</h4>
-
-            <button
-              className="btn-close"
-              onClick={() => setShowCart(false)}
-            ></button>
+          <div className="d-flex justify-content-between mb-4">
+            <h4>Cart</h4>
+            <button className="btn-close" onClick={() => setShowCart(false)} />
           </div>
 
-          {/* EMPTY CART */}
           {cartItems.length === 0 && (
             <div className="text-center text-muted">Cart is empty</div>
           )}
@@ -1401,50 +1147,6 @@ export default function WaiterPOSDashboard() {
           ))}
 
           {/* ==========================================
-    ORDER TYPE
-========================================== */}
-          <div className="mt-4">
-            <label className="fw-semibold mb-2">Order Type</label>
-
-            <select
-              className="form-select"
-              value={orderType}
-              onChange={(e) => setOrderType(e.target.value)}
-            >
-              <option value="dine_in">Dine In</option>
-
-              <option value="takeaway">Takeaway</option>
-
-              <option value="delivery">Delivery</option>
-            </select>
-          </div>
-
-          {/* ==========================================
-    TABLE SELECTION BUTTON
-========================================== */}
-          {orderType === "dine_in" && (
-            <div className="mt-4">
-              <button
-                className="
-        btn
-        btn-dark
-        w-100
-        rounded-pill
-      "
-                onClick={() => {
-                  setShowTableModal(true);
-
-                  if (floorList.length > 0 && !selectedFloor) {
-                    setSelectedFloor(floorList[0].id);
-                  }
-                }}
-              >
-                {selectedTable ? `Table Selected` : "Select Table"}
-              </button>
-            </div>
-          )}
-
-          {/* ==========================================
     ORDER NOTES
 ========================================== */}
           <div className="mt-3">
@@ -1458,7 +1160,6 @@ export default function WaiterPOSDashboard() {
               onChange={(e) => setOrderNotes(e.target.value)}
             />
           </div>
-
           {/* ==========================================
     PAYMENT METHOD
 ========================================== */}
@@ -1470,7 +1171,7 @@ export default function WaiterPOSDashboard() {
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
             >
-              <option value="cash">Cash</option>
+              <option value="cash">Cash on Delivery</option>
 
               <option value="upi">UPI</option>
 
@@ -1479,93 +1180,87 @@ export default function WaiterPOSDashboard() {
               <option value="wallet">Wallet</option>
             </select>
           </div>
+
           {/* FOOTER */}
           {/* ==========================================
-    BILL SUMMARY
-========================================== */}
+              BILL SUMMARY
+          ========================================== */}
           <div
             className="
-    border
-    rounded-4
-    p-3
-    mb-4
-    bg-light
-    mt-4
-  "
+              border
+              rounded-4
+              p-3
+              mb-4
+              bg-light
+              mt-4
+            "
           >
             {/* ==========================================
-      TOTAL HEADER
-  ========================================== */}
-            <div
-              className="
-      d-flex
-      justify-content-between
-      align-items-center
-      fw-bold
-      fs-5
-      mb-2
-    "
-            >
-              {/* LEFT */}
-              <button
-                type="button"
+                TOTAL ROW
+            ========================================== */}
+            <details onToggle={(e) => setShowBreakdown(e.target.open)}>
+              <summary
                 className="
-        btn
-        btn-link
-        p-0
-        text-decoration-none
-        text-dark
-        d-flex
-        align-items-center
-        gap-2
-      "
-                onClick={() => setShowBreakdown(!showBreakdown)}
+                  list-unstyled
+                  d-flex
+                  justify-content-between
+                  align-items-center
+                  fw-bold
+                  fs-5
+                "
+                style={{
+                  cursor: "pointer",
+                }}
               >
-                {showBreakdown ? (
-                  <ChevronUp size={18} />
-                ) : (
-                  <ChevronDown size={18} />
-                )}
-
-                <span className="fw-bold">Total</span>
-              </button>
-
-              {/* RIGHT */}
-              <span>₹{totalPrice.toFixed(2)}</span>
-            </div>
-
-            {/* ==========================================
-      BREAKDOWN
-  ========================================== */}
-            {showBreakdown && (
-              <div className="border-top pt-3 mt-3">
-                {/* ==========================================
-          SUBTOTAL
-      ========================================== */}
+                {/* LEFT */}
                 <div
                   className="
-          d-flex
-          justify-content-between
-          mb-2
-        "
+                    d-flex
+                    align-items-center
+                    gap-2
+                  "
+                >
+                  {/* ICON */}
+                  {showBreakdown ? (
+                    <ChevronUp size={18} />
+                  ) : (
+                    <ChevronDown size={18} />
+                  )}
+
+                  <span>Total</span>
+                </div>
+
+                {/* RIGHT */}
+                <span>₹{totalPrice.toFixed(2)}</span>
+              </summary>
+
+              {/* ==========================================
+                  BREAKDOWN
+              ========================================== */}
+              <div className="mt-3 border-top pt-3">
+                {/* SUBTOTAL */}
+                <div
+                  className="
+                    d-flex
+                    justify-content-between
+                    mb-2
+                  "
                 >
                   <span>Subtotal</span>
 
                   <span>₹{cartSubtotal.toFixed(2)}</span>
                 </div>
 
-                {/* ==========================================
-          TAXES
-      ========================================== */}
+                {/* TAXES */}
                 {taxBreakdown.length > 0 && (
-                  <div className="mb-3">
+                  <div className="mb-2">
                     <div
                       className="
-              d-flex
-              justify-content-between
-              fw-semibold
-              mb-2
-            "
+                        d-flex
+                        justify-content-between
+                        fw-semibold
+                        mb-1
+                      "
                     >
                       <span>Taxes</span>
 
@@ -1576,12 +1271,12 @@ export default function WaiterPOSDashboard() {
                       <div
                         key={index}
                         className="
-                d-flex
-                justify-content-between
-                small
-                text-muted
-                mb-1
-              "
+                            d-flex
+                            justify-content-between
+                            small
+                            text-muted
+                            mb-1
+                          "
                       >
                         <span>
                           {tax.name} ({tax.percentage}%)
@@ -1593,18 +1288,16 @@ export default function WaiterPOSDashboard() {
                   </div>
                 )}
 
-                {/* ==========================================
-          APPLIED SERVICE CHARGES
-      ========================================== */}
+                {/* SERVICE CHARGES */}
                 {serviceChargeBreakdown.length > 0 && (
-                  <div className="mb-3">
+                  <div className="mb-2">
                     <div
                       className="
-              d-flex
-              justify-content-between
-              fw-semibold
-              mb-2
-            "
+                        d-flex
+                        justify-content-between
+                        fw-semibold
+                        mb-1
+                      "
                     >
                       <span>Charges</span>
 
@@ -1615,12 +1308,12 @@ export default function WaiterPOSDashboard() {
                       <div
                         key={index}
                         className="
-                d-flex
-                justify-content-between
-                small
-                text-muted
-                mb-1
-              "
+                            d-flex
+                            justify-content-between
+                            small
+                            text-muted
+                            mb-1
+                          "
                       >
                         <span>
                           {charge.name}
@@ -1634,250 +1327,14 @@ export default function WaiterPOSDashboard() {
                     ))}
                   </div>
                 )}
-
-                {/* ==========================================
-          FINAL TOTAL
-      ========================================== */}
-                <div
-                  className="
-          border-top
-          pt-3
-          mt-3
-          d-flex
-          justify-content-between
-          fw-bold
-        "
-                >
-                  <span>Grand Total</span>
-
-                  <span>₹{totalPrice.toFixed(2)}</span>
-                </div>
               </div>
-            )}
+            </details>
           </div>
 
-          {/* ========================================== ACTION BUTTONS ========================================== */}
-          <div className="d-grid gap-2">
-            {" "}
-            <button
-              className=" btn btn-outline-dark rounded-pill fw-semibold "
-              onClick={handleSaveOrder}
-            >
-              {" "}
-              Save Order{" "}
-            </button>{" "}
-            <button className=" btn btn-primary rounded-pill fw-semibold ">
-              {" "}
-              Checkout{" "}
-            </button>{" "}
-            <button className=" btn btn-success rounded-pill fw-semibold ">
-              {" "}
-              Take Payment{" "}
-            </button>{" "}
-          </div>
-        </div>
-      )}
-
-      {/* ==========================================
-    TABLE MODAL
-========================================== */}
-      {showTableModal && (
-        <div
-          className="
-      position-fixed
-      top-0
-      start-0
-      w-100
-      h-100
-      bg-dark
-      bg-opacity-50
-      d-flex
-      justify-content-center
-      align-items-center
-    "
-          style={{
-            zIndex: 10000,
-          }}
-        >
-          <div
-            className="bg-white rounded-4 shadow-lg"
-            style={{
-              width: "95%",
-              height: "90%",
-              overflow: "hidden",
-            }}
-          >
-            {/* HEADER */}
-            <div
-              className="
-          d-flex
-          justify-content-between
-          align-items-center
-          p-3
-          border-bottom
-        "
-            >
-              <h4 className="fw-bold mb-0">Select Table</h4>
-
-              <button
-                className="btn-close"
-                onClick={() => setShowTableModal(false)}
-              />
-            </div>
-
-            <div className="row g-0 h-100">
-              {/* ==========================================
-            FLOOR SIDEBAR
-        ========================================== */}
-              <div
-                className="col-2 border-end p-3"
-                style={{
-                  overflowY: "auto",
-                }}
-              >
-                <h6 className="fw-bold mb-3">Floors</h6>
-
-                {[
-                  ...new Map(
-                    tableList.map((table) => [
-                      table.floor,
-                      {
-                        id: table.floor,
-                        name: table.floor_name,
-                      },
-                    ]),
-                  ).values(),
-                ].map((floor) => (
-                  <button
-                    key={floor.id}
-                    className={`
-                btn
-                w-100
-                mb-2
-                ${selectedFloor === floor.id ? "btn-dark" : "btn-outline-dark"}
-              `}
-                    onClick={() => {
-                      setSelectedFloor(floor.id);
-
-                      setSelectedArea(null);
-                    }}
-                  >
-                    {floor.name}
-                  </button>
-                ))}
-              </div>
-
-              {/* ==========================================
-            AREA SIDEBAR
-        ========================================== */}
-              <div
-                className="col-2 border-end p-3"
-                style={{
-                  overflowY: "auto",
-                }}
-              >
-                <h6 className="fw-bold mb-3">Areas</h6>
-
-                {areaList
-                  .filter(
-                    (area) => String(area.floor) === String(selectedFloor),
-                  )
-                  .map((area) => (
-                    <button
-                      key={area.id}
-                      className={`
-                btn
-                w-100
-                mb-2
-                ${
-                  selectedArea === area.id
-                    ? "btn-primary"
-                    : "btn-outline-primary"
-                }
-              `}
-                      onClick={() => setSelectedArea(area.id)}
-                    >
-                      {area.name}
-                    </button>
-                  ))}
-              </div>
-
-              {/* ==========================================
-            TABLE GRID
-        ========================================== */}
-              <div
-                className="col-8 p-4"
-                style={{
-                  overflowY: "auto",
-                }}
-              >
-                <div className="row g-3">
-                  {tableList
-                    .filter(
-                      (table) =>
-                        String(table.floor) === String(selectedFloor) &&
-                        (!selectedArea ||
-                          String(table.area) === String(selectedArea)),
-                    )
-                    .map((table) => {
-                      const isAvailable = table.status === "available";
-
-                      return (
-                        <div key={table.id} className="col-md-3">
-                          <button
-                            type="button"
-                            disabled={!isAvailable}
-                            onClick={() => {
-                              setSelectedTable(table.id);
-
-                              setShowTableModal(false);
-                            }}
-                            className={`
-            btn
-            w-100
-            p-4
-            rounded-4
-            border
-            ${
-              table.status === "available"
-                ? "btn-outline-success"
-                : table.status === "occupied"
-                  ? "btn-outline-danger"
-                  : table.status === "reserved"
-                    ? "btn-outline-warning"
-                    : "btn-outline-secondary"
-            }
-          `}
-                          >
-                            <h5 className="fw-bold">{table.table_number}</h5>
-
-                            <small>Capacity: {table.capacity}</small>
-
-                            <div className="mt-2">
-                              <span
-                                className={`
-                badge
-                ${
-                  table.status === "available"
-                    ? "bg-success"
-                    : table.status === "occupied"
-                      ? "bg-danger"
-                      : table.status === "reserved"
-                        ? "bg-warning"
-                        : "bg-secondary"
-                }
-              `}
-                              >
-                                {table.status}
-                              </span>
-                            </div>
-                          </button>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            </div>
+          <div className="border-top pt-3 mt-3">
+            <button className="btn btn-primary w-100" onClick={handleCheckout}>
+              Proceed To Checkout
+            </button>
           </div>
         </div>
       )}
