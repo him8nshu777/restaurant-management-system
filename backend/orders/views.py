@@ -728,17 +728,41 @@ class UpdateOrderView(APIView):
 
             existing_addon_ids = []
 
+
+            # =================================================
+            # UPDATE ADDONS
+            # =================================================
+            incoming_addons = item_data.get(
+                "addons",
+                [],
+            )
+
+            existing_addon_ids = []
+
             for addon_data in incoming_addons:
 
                 addon_row_id = addon_data.get("id")
 
-                addon_total = Decimal(str(addon_data["addon_price"])) * Decimal(
+                addon_master = Addon.objects.get(
+                    id=addon_data["addon_id"]
+                )
+
+                addon_quantity = Decimal(
                     str(
                         addon_data.get(
                             "quantity",
                             1,
                         )
                     )
+                )
+
+                addon_price = Decimal(
+                    str(addon_master.price)
+                )
+
+                addon_total = (
+                    addon_price
+                    * addon_quantity
                 )
 
                 # =============================================
@@ -757,11 +781,10 @@ class UpdateOrderView(APIView):
 
                         continue
 
-                    addon.quantity = addon_data.get(
-                        "quantity",
-                        1,
-                    )
-
+                    addon.addon_id = addon_master.id
+                    addon.addon_name = addon_master.name
+                    addon.addon_price = addon_price
+                    addon.quantity = addon_quantity
                     addon.total_price = addon_total
 
                     addon.save()
@@ -773,18 +796,21 @@ class UpdateOrderView(APIView):
 
                     addon = OrderItemAddon.objects.create(
                         order_item=order_item,
-                        addon_id=addon_data["addon_id"],
-                        addon_name=addon_data["addon_name"],
-                        addon_price=addon_data["addon_price"],
-                        quantity=addon_data.get(
-                            "quantity",
-                            1,
-                        ),
+                        addon_id=addon_master.id,
+                        addon_name=addon_master.name,
+                        addon_price=addon_price,
+                        quantity=addon_quantity,
                         total_price=addon_total,
                     )
 
                 existing_addon_ids.append(addon.id)
 
+            # =================================================
+            # DELETE REMOVED ADDONS
+            # =================================================
+            order_item.addons.exclude(
+                id__in=existing_addon_ids
+            ).delete()
             # =================================================
             # DELETE REMOVED ADDONS
             # =================================================
@@ -795,49 +821,6 @@ class UpdateOrderView(APIView):
         # =================================================
         order.items.exclude(id__in=existing_item_ids).delete()
 
-        # =================================================
-        # CLEAR OLD TAXES
-        # =================================================
-        order.taxes.all().delete()
-
-        tax_total = Decimal("0")
-
-        # =================================================
-        # RECALCULATE TAXES
-        # =================================================
-        for item in order.items.all():
-
-            if item.item_type != "product":
-
-                continue
-
-            product_variant = ProductVariant.objects.select_related("product").get(
-                id=item.product_variant_id
-            )
-
-            taxable_amount = item.total_price
-
-            addon_total = item.addons.aggregate(total=models.Sum("total_price"))[
-                "total"
-            ] or Decimal("0")
-
-            taxable_amount += addon_total
-
-            taxes_data = calculate_product_taxes(
-                product_variant.product,
-                taxable_amount,
-            )
-
-            for tax_data in taxes_data["taxes"]:
-
-                OrderTax.objects.create(
-                    order=order,
-                    name=tax_data["name"],
-                    percentage=tax_data["percentage"],
-                    amount=tax_data["amount"],
-                )
-
-            tax_total += taxes_data["total_tax"]
 
         # =================================================
         # CLEAR OLD SERVICE CHARGES
@@ -845,71 +828,92 @@ class UpdateOrderView(APIView):
         order.service_charges.all().delete()
 
         # =================================================
-        # RECALCULATE SUBTOTAL
+        # CLEAR OLD TAXES / SERVICE CHARGES
         # =================================================
-        subtotal = Decimal("0")
+        order.taxes.all().delete()
 
-        for item in order.items.all():
-
-            subtotal += item.total_price
-
-            addon_total = item.addons.aggregate(total=models.Sum("total_price"))[
-                "total"
-            ] or Decimal("0")
-
-            subtotal += addon_total
+        order.service_charges.all().delete()
 
         # =================================================
-        # RECALCULATE SERVICE CHARGES
+        # PREPARE ITEMS FOR TOTAL CALCULATION
         # =================================================
-        service_charge_total = Decimal("0")
+        prepared_items = []
 
-        service_charges = ServiceCharge.objects.filter(
-            restaurant_id=order.restaurant_id,
-            is_active=True,
-            applicable_order_types__contains=[order.order_type],
-        )
+        for item in order.items.prefetch_related(
+            "addons",
+            "combo_items",
+            "combo_items__taxes",
+        ):
 
-        for service_charge in service_charges:
+            prepared_addons = []
 
-            if service_charge.charge_type == "percentage":
+            for addon in item.addons.all():
 
-                amount = subtotal * Decimal(str(service_charge.value)) / Decimal("100")
+                prepared_addons.append(
+                    {
+                        "addon_price": addon.addon_price,
+                        "quantity": addon.quantity,
+                    }
+                )
 
-            else:
+            prepared_combo_items = []
 
-                amount = Decimal(str(service_charge.value))
+            if item.item_type == "combo":
 
-            OrderServiceCharge.objects.create(
-                order=order,
-                name=service_charge.name,
-                charge_type=(service_charge.charge_type),
-                value=service_charge.value,
-                amount=amount,
+                for combo_item in item.combo_items.all():
+
+                    prepared_combo_items.append(
+                        {
+                            "quantity": combo_item.quantity,
+                            "allocated_price": combo_item.allocated_price,
+                            "taxes": [
+                                {
+                                    "name": tax.name,
+                                    "percentage": tax.percentage,
+                                }
+                                for tax in combo_item.taxes.all()
+                            ],
+                        }
+                    )
+
+            prepared_items.append(
+                {
+                    "item_type": item.item_type,
+                    "product_id": (
+                        item.product_variant.product.id
+                        if item.item_type == "product"
+                        else None
+                    ),
+                    "final_price": item.final_price,
+                    "quantity": item.quantity,
+                    "addons": prepared_addons,
+                    "combo_items": prepared_combo_items,
+                }
             )
 
-            service_charge_total += amount
+        # =================================================
+        # RECALCULATE TOTALS
+        # =================================================
+        totals = calculate_order_totals(
+            restaurant_id=order.restaurant_id,
+            order_type=order.order_type,
+            items=prepared_items,
+            discount_amount=order.discount_amount,
+            round_off_amount=order.round_off_amount,
+        )
 
         # =================================================
         # SAVE TOTALS
         # =================================================
-        order.subtotal = subtotal
+        order.subtotal = totals["subtotal"]
 
-        order.tax_amount = tax_total
+        order.tax_amount = totals["tax_total"]
 
-        order.service_charge_amount = service_charge_total
-
-        order.grand_total = (
-            subtotal
-            + tax_total
-            + service_charge_total
-            - order.discount_amount
-            + order.round_off_amount
+        order.service_charge_amount = (
+            totals["service_charge_total"]
         )
 
-        if order.grand_total < 0:
-
-            order.grand_total = Decimal("0")
+        order.grand_total = totals["grand_total"]
 
         order.save(
             update_fields=[
@@ -919,6 +923,31 @@ class UpdateOrderView(APIView):
                 "grand_total",
             ]
         )
+
+        # =================================================
+        # SAVE TAXES
+        # =================================================
+        for tax in totals["tax_breakdown"]:
+
+            OrderTax.objects.create(
+                order=order,
+                name=tax["name"],
+                percentage=tax["percentage"],
+                amount=tax["amount"],
+            )
+
+        # =================================================
+        # SAVE SERVICE CHARGES
+        # =================================================
+        for charge in totals["service_charge_breakdown"]:
+
+            OrderServiceCharge.objects.create(
+                order=order,
+                name=charge["name"],
+                charge_type=charge["charge_type"],
+                value=charge["value"],
+                amount=charge["amount"],
+            )
 
         # =================================================
         # TABLE LOGIC
