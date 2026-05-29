@@ -11,6 +11,10 @@ from .models import (
     OrderItemAddon,
     OrderTax,
     OrderServiceCharge,
+    OrderItemTax,
+    OrderComboItem,
+    OrderComboItemTax,
+    OrderAddonTax,
 )
 from django.contrib.auth import get_user_model
 from .serializers import (
@@ -21,7 +25,7 @@ from .serializers import (
 from channels.layers import get_channel_layer
 
 from asgiref.sync import async_to_sync
-from menu.models import ServiceCharge, Combo, ProductVariant
+from menu.models import ServiceCharge, Combo, ProductVariant, Addon
 from menu.utils.pricing import (
     calculate_product_price,
     calculate_combo_price,
@@ -31,6 +35,7 @@ from orders.utils.pricing import calculate_order_totals
 
 User = get_user_model()
 
+
 # =========================================================
 # CREATE ORDER
 # =========================================================
@@ -39,13 +44,9 @@ class CreateOrderView(APIView):
     @transaction.atomic
     def post(self, request, restaurant_id):
 
-        serializer = CreateOrderSerializer(
-            data=request.data
-        )
+        serializer = CreateOrderSerializer(data=request.data)
 
-        serializer.is_valid(
-            raise_exception=True
-        )
+        serializer.is_valid(raise_exception=True)
 
         data = serializer.validated_data
 
@@ -54,17 +55,11 @@ class CreateOrderView(APIView):
         # =================================================
         waiter = None
 
-        if (
-            request.user.role == "waiter"
-            and data["order_type"] == "dine_in"
-        ):
+        if request.user.role == "waiter" and data["order_type"] == "dine_in":
 
             waiter = request.user
 
-        elif (
-            data["order_type"] == "dine_in"
-            and data.get("waiter_id")
-        ):
+        elif data["order_type"] == "dine_in" and data.get("waiter_id"):
 
             waiter = User.objects.filter(
                 id=data.get("waiter_id"),
@@ -77,11 +72,7 @@ class CreateOrderView(APIView):
         # =================================================
         order = Order.objects.create(
             restaurant_id=restaurant_id,
-            customer=(
-                request.user
-                if request.user.role == "customer"
-                else None
-            ),
+            customer=(request.user if request.user.role == "customer" else None),
             created_by=request.user,
             waiter=waiter,
             order_type=data["order_type"],
@@ -93,9 +84,7 @@ class CreateOrderView(APIView):
                 1,
             ),
             notes=data.get("notes"),
-            payment_method=data.get(
-                "payment_method"
-            ),
+            payment_method=data.get("payment_method"),
             discount_amount=data.get(
                 "discount_amount",
                 Decimal("0"),
@@ -118,9 +107,7 @@ class CreateOrderView(APIView):
         # =================================================
         for item_data in data["items"]:
 
-            quantity = Decimal(
-                str(item_data["quantity"])
-            )
+            quantity = Decimal(str(item_data["quantity"]))
 
             product_id = None
             prepared_combo_items = []
@@ -129,61 +116,39 @@ class CreateOrderView(APIView):
             # =============================================
             if item_data["item_type"] == "product":
 
-                product_variant = (
-                    ProductVariant.objects
-                    .select_related("product")
-                    .get(
-                        id=item_data[
-                            "product_variant_id"
-                        ]
-                    )
+                product_variant = ProductVariant.objects.select_related("product").get(
+                    id=item_data["product_variant_id"]
                 )
 
-                item_name = (
-                    f"{product_variant.product.name} "
-                    f"({product_variant.name})"
-                )
+                product = product_variant.product
 
-                original_price = Decimal(
-                    str(
-                        item_data[
-                            "original_price"
-                        ]
-                    )
-                )
+                item_name = f"{product.name} " f"({product_variant.name})"
 
-                final_price = Decimal(
-                    str(
-                        item_data["final_price"]
-                    )
-                )
+                pricing_data = calculate_product_price(product_variant)
 
-                product_id = (
-                    product_variant.product.id
-                )
+                original_price = pricing_data["original_price"]
 
+                final_price = pricing_data["final_price"]
+
+                dynamic_pricing_name = pricing_data.get("dynamic_pricing_name")
+
+                product_id = product.id
             # =============================================
             # COMBO
             # =============================================
             else:
 
-                combo = Combo.objects.get(
-                    id=item_data["combo_id"]
-                )
+                combo = Combo.objects.get(id=item_data["combo_id"])
 
                 item_name = combo.name
 
-                original_price = Decimal(
-                    str(
-                        item_data["original_price"]
-                    )
-                )
+                pricing_data = calculate_combo_price(combo)
 
-                final_price = Decimal(
-                    str(
-                        item_data["final_price"]
-                    )
-                )
+                original_price = pricing_data["original_price"]
+
+                final_price = pricing_data["final_price"]
+
+                dynamic_pricing_name = pricing_data.get("dynamic_pricing_name")
 
                 combo_recipes = list(
                     combo.recipes.select_related(
@@ -192,84 +157,117 @@ class CreateOrderView(APIView):
                     )
                 )
 
-                # =========================================
-                # TOTAL ORIGINAL VALUE
-                # =========================================
                 total_original_price = Decimal("0")
 
                 for recipe in combo_recipes:
 
                     total_original_price += (
-                        recipe.product_variant.price
-                        * recipe.quantity
+                        recipe.product_variant.price * recipe.quantity
                     )
 
-                # =========================================
-                # SAFETY
-                # =========================================
                 if total_original_price <= 0:
 
                     total_original_price = Decimal("1")
 
-                # =========================================
-                # PREPARE COMBO ITEMS
-                # =========================================
                 prepared_combo_items = []
+
+                combo_snapshot_items = []
 
                 for recipe in combo_recipes:
 
-                    item_original_total = (
-                        recipe.product_variant.price
-                        * recipe.quantity
-                    )
+                    variant = recipe.product_variant
+
+                    product = variant.product
+
+                    item_original_total = variant.price * recipe.quantity
 
                     allocated_price = (
-                        (
-                            item_original_total
-                            / total_original_price
-                        )
-                        * original_price
-                    )
+                        item_original_total / total_original_price
+                    ) * final_price
+
                     allocated_price = round(
                         allocated_price,
                         2,
                     )
+                    tax_data = calculate_product_taxes(
+                        product=product,
+                        taxable_amount=(
+                            allocated_price * quantity
+                        ),
+                    )
+                    combo_snapshot_items.append(
+                        {
+                            "product_name": product.name,
+                            "variant_name": variant.name,
+                            "quantity": recipe.quantity,
+                            "allocated_price": allocated_price,
+                            "product": product,
+                            "taxes": tax_data["taxes"],
+                        }
+                    )
+                  
+                    prepared_combo_items.append(
+                        {
+                            "product_id": product.id,
+                            "quantity": recipe.quantity,
+                            "allocated_price": allocated_price,
+                            "taxes": tax_data["taxes"],
+                        }
+                    )
 
-                    prepared_combo_items.append({
-                        "product_id":
-                            recipe.product_variant.product.id,
-
-                        "quantity":
-                            recipe.quantity,
-
-                        "allocated_price":
-                            allocated_price,
-                    })
             # =============================================
             # CREATE ITEM
             # =============================================
             order_item = OrderItem.objects.create(
                 order=order,
                 item_type=item_data["item_type"],
-                product_variant_id=item_data.get(
-                    "product_variant_id"
-                ),
-                combo_id=item_data.get(
-                    "combo_id"
-                ),
+                product_variant_id=item_data.get("product_variant_id"),
+                combo_id=item_data.get("combo_id"),
                 item_name=item_name,
                 original_price=original_price,
                 final_price=final_price,
-                dynamic_pricing_name=item_data.get(
-                    "dynamic_pricing_name"
-                ),
+                dynamic_pricing_name=dynamic_pricing_name,
                 quantity=quantity,
-                total_price=(
-                    final_price * quantity
-                ),
+                total_price=(final_price * quantity),
                 notes=item_data.get("notes"),
             )
 
+            if item_data["item_type"] == "product":
+
+                tax_data = calculate_product_taxes(
+                    product=product_variant.product,
+                    taxable_amount=(
+                        final_price * quantity
+                    ),
+                )
+
+                for tax in tax_data["taxes"]:
+
+                    OrderItemTax.objects.create(
+                        order_item=order_item,
+                        name=tax["name"],
+                        percentage=tax["percentage"],
+                    )
+            if item_data["item_type"] == "combo":
+
+                for combo_item_data in combo_snapshot_items:
+
+                    combo_item = OrderComboItem.objects.create(
+                        order_item=order_item,
+                        product_name=combo_item_data["product_name"],
+                        variant_name=combo_item_data["variant_name"],
+                        quantity=combo_item_data["quantity"],
+                        allocated_price=combo_item_data["allocated_price"],
+                    )
+
+                    for tax in combo_item_data["taxes"]:
+
+                        OrderComboItemTax.objects.create(
+                            combo_item=combo_item,
+                            name=tax["name"],
+                            percentage=tax["percentage"],
+                        )
+            
             # =============================================
             # ADDONS
             # =============================================
@@ -279,7 +277,9 @@ class CreateOrderView(APIView):
                 "addons",
                 [],
             ):
-
+                addon = Addon.objects.get(
+                    id=addon_data["addon_id"]
+                )
                 addon_quantity = Decimal(
                     str(
                         addon_data.get(
@@ -290,56 +290,65 @@ class CreateOrderView(APIView):
                 )
 
                 addon_price = Decimal(
-                    str(
-                        addon_data[
-                            "addon_price"
-                        ]
-                    )
-                )
+                        str(addon.price)
+                 )
 
                 addon_total = (
                     addon_price
                     * addon_quantity
                 )
 
-                OrderItemAddon.objects.create(
-                    order_item=order_item,
-                    addon_id=addon_data[
-                        "addon_id"
-                    ],
-                    addon_name=addon_data[
-                        "addon_name"
-                    ],
-                    addon_price=addon_price,
-                    quantity=addon_quantity,
-                    total_price=addon_total,
+                created_addon = (
+                    OrderItemAddon.objects.create(
+                        order_item=order_item,
+                        addon_id=addon.id,
+                        addon_name=addon.name,
+                        addon_price=addon_price,
+                        quantity=addon_quantity,
+                        total_price=addon_total,
+                    )
                 )
+                # add below when create tax mapping with addon items 
+                # =========================================
+                # ADDON TAXES
+                # =========================================
+                # for addon_tax_data in addon_data.get(
+                #     "taxes",
+                #     [],
+                # ):
 
-                prepared_addons.append({
-                    "addon_price": addon_price,
-                    "quantity": addon_quantity,
-                })
+                #     OrderAddonTax.objects.create(
+                #         addon=created_addon,
+                #         name=addon_tax_data["name"],
+                #         percentage=addon_tax_data[
+                #             "percentage"
+                #         ],
+                #     )
+
+                prepared_addons.append(
+                    {
+                        "addon_price": addon_price,
+                        "quantity": addon_quantity,
+                    }
+                )
 
             # =============================================
             # PREPARED ITEM
             # =============================================
-            prepared_items.append({
-    "item_type": item_data["item_type"],
-
-    "product_id": product_id,
-
-    "combo_items": (
-    prepared_combo_items
-    if item_data["item_type"] == "combo"
-    else []
-),
-
-    "final_price": final_price,
-
-    "quantity": quantity,
-
-    "addons": prepared_addons,
-})
+            prepared_items.append(
+                {
+                    "item_type": item_data["item_type"],
+                    "product_id": product_id,
+                    "combo_items": (
+                        prepared_combo_items
+                        if item_data["item_type"] == "combo"
+                        else []
+                    ),
+                    "final_price": final_price,
+                    "quantity": quantity,
+                    "addons": prepared_addons,
+                }
+            )
         # =================================================
         # CALCULATE TOTALS
         # =================================================
@@ -347,32 +356,20 @@ class CreateOrderView(APIView):
             restaurant_id=restaurant_id,
             order_type=order.order_type,
             items=prepared_items,
-            discount_amount=(
-                order.discount_amount
-            ),
-            round_off_amount=(
-                order.round_off_amount
-            ),
+            discount_amount=(order.discount_amount),
+            round_off_amount=(order.round_off_amount),
         )
 
         # =================================================
         # SAVE TOTALS
         # =================================================
-        order.subtotal = totals[
-            "subtotal"
-        ]
+        order.subtotal = totals["subtotal"]
 
-        order.tax_amount = totals[
-            "tax_total"
-        ]
+        order.tax_amount = totals["tax_total"]
 
-        order.service_charge_amount = totals[
-            "service_charge_total"
-        ]
+        order.service_charge_amount = totals["service_charge_total"]
 
-        order.grand_total = totals[
-            "grand_total"
-        ]
+        order.grand_total = totals["grand_total"]
 
         order.save(
             update_fields=[
@@ -386,32 +383,24 @@ class CreateOrderView(APIView):
         # =================================================
         # TAXES
         # =================================================
-        for tax in totals[
-            "tax_breakdown"
-        ]:
+        for tax in totals["tax_breakdown"]:
 
             OrderTax.objects.create(
                 order=order,
                 name=tax["name"],
-                percentage=tax[
-                    "percentage"
-                ],
+                percentage=tax["percentage"],
                 amount=tax["amount"],
             )
 
         # =================================================
         # SERVICE CHARGES
         # =================================================
-        for charge in totals[
-            "service_charge_breakdown"
-        ]:
+        for charge in totals["service_charge_breakdown"]:
 
             OrderServiceCharge.objects.create(
                 order=order,
                 name=charge["name"],
-                charge_type=charge[
-                    "charge_type"
-                ],
+                charge_type=charge["charge_type"],
                 value=charge["value"],
                 amount=charge["amount"],
             )
@@ -423,9 +412,7 @@ class CreateOrderView(APIView):
 
             order.table.status = "occupied"
 
-            order.table.assigned_waiter = (
-                order.waiter
-            )
+            order.table.assigned_waiter = order.waiter
 
             order.table.save(
                 update_fields=[
@@ -439,22 +426,17 @@ class CreateOrderView(APIView):
         # =================================================
         return Response(
             {
-                "message":
-                    "Order created",
+                "message": "Order created",
                 "order_id": order.id,
-                "order_number":
-                    order.order_number,
-                "subtotal":
-                    order.subtotal,
-                "tax_amount":
-                    order.tax_amount,
-                "service_charge_amount":
-                    order.service_charge_amount,
-                "grand_total":
-                    order.grand_total,
+                "order_number": order.order_number,
+                "subtotal": order.subtotal,
+                "tax_amount": order.tax_amount,
+                "service_charge_amount": order.service_charge_amount,
+                "grand_total": order.grand_total,
             },
             status=status.HTTP_201_CREATED,
         )
+
 
 # =========================================================
 # ORDER LIST
@@ -499,13 +481,10 @@ class OrderListView(APIView):
             orders,
             many=True,
         )
-        print("print->",serializer.data)
+        print("print->", serializer.data)
         return Response(serializer.data)
 
 
-# =========================================================
-# UPDATE ORDER
-# =========================================================
 # =========================================================
 # UPDATE ORDER
 # =========================================================
@@ -619,28 +598,21 @@ class UpdateOrderView(APIView):
             item_type = item_data.get("item_type")
 
             if item_type == "product":
-            
-                product_variant = ProductVariant.objects.select_related(
-                    "product"
-                ).get(
+
+                product_variant = ProductVariant.objects.select_related("product").get(
                     id=item_data["product_variant_id"]
                 )
 
-                pricing_data = calculate_product_price(
-                    product_variant
-                )
+                pricing_data = calculate_product_price(product_variant)
 
                 original_price = pricing_data["original_price"]
 
                 final_price = pricing_data["final_price"]
 
-                dynamic_pricing_name = pricing_data[
-                    "dynamic_pricing_name"
-                ]
+                dynamic_pricing_name = pricing_data["dynamic_pricing_name"]
 
                 item_name = (
-                    f"{product_variant.product.name} "
-                    f"({product_variant.name})"
+                    f"{product_variant.product.name} " f"({product_variant.name})"
                 )
 
             # =============================================
@@ -648,31 +620,22 @@ class UpdateOrderView(APIView):
             # =============================================
             else:
 
-                combo = Combo.objects.get(
-                    id=item_data["combo_id"]
-                )
+                combo = Combo.objects.get(id=item_data["combo_id"])
 
-                pricing_data = calculate_combo_price(
-                    combo
-                )
+                pricing_data = calculate_combo_price(combo)
 
                 original_price = pricing_data["original_price"]
 
                 final_price = pricing_data["final_price"]
 
-                dynamic_pricing_name = pricing_data[
-                    "dynamic_pricing_name"
-                ]
+                dynamic_pricing_name = pricing_data["dynamic_pricing_name"]
 
                 item_name = combo.name
 
             # =============================================
             # ITEM TOTAL
             # =============================================
-            item_total = (
-                Decimal(str(final_price))
-                * quantity
-            )
+            item_total = Decimal(str(final_price)) * quantity
 
             # =============================================
             # UPDATE EXISTING ITEM
@@ -693,9 +656,7 @@ class UpdateOrderView(APIView):
                 order_item.item_name = item_name
                 order_item.original_price = original_price
                 order_item.final_price = final_price
-                order_item.dynamic_pricing_name = (
-                    dynamic_pricing_name
-                )
+                order_item.dynamic_pricing_name = dynamic_pricing_name
                 order_item.quantity = quantity
                 order_item.notes = item_data.get("notes")
                 order_item.total_price = item_total
@@ -710,18 +671,12 @@ class UpdateOrderView(APIView):
                 order_item = OrderItem.objects.create(
                     order=order,
                     item_type=item_data["item_type"],
-                    product_variant_id=item_data.get(
-                        "product_variant_id"
-                    ),
-                    combo_id=item_data.get(
-                        "combo_id"
-                    ),
+                    product_variant_id=item_data.get("product_variant_id"),
+                    combo_id=item_data.get("combo_id"),
                     item_name=item_name,
                     original_price=original_price,
                     final_price=final_price,
-                    dynamic_pricing_name=(
-                        dynamic_pricing_name
-                    ),
+                    dynamic_pricing_name=(dynamic_pricing_name),
                     quantity=quantity,
                     total_price=item_total,
                     notes=item_data.get("notes"),
@@ -743,16 +698,11 @@ class UpdateOrderView(APIView):
 
                 addon_row_id = addon_data.get("id")
 
-                addon_total = (
-                    Decimal(
-                        str(addon_data["addon_price"])
-                    )
-                    * Decimal(
-                        str(
-                            addon_data.get(
-                                "quantity",
-                                1,
-                            )
+                addon_total = Decimal(str(addon_data["addon_price"])) * Decimal(
+                    str(
+                        addon_data.get(
+                            "quantity",
+                            1,
                         )
                     )
                 )
@@ -804,16 +754,12 @@ class UpdateOrderView(APIView):
             # =================================================
             # DELETE REMOVED ADDONS
             # =================================================
-            order_item.addons.exclude(
-                id__in=existing_addon_ids
-            ).delete()
+            order_item.addons.exclude(id__in=existing_addon_ids).delete()
 
         # =================================================
         # DELETE REMOVED ITEMS
         # =================================================
-        order.items.exclude(
-            id__in=existing_item_ids
-        ).delete()
+        order.items.exclude(id__in=existing_item_ids).delete()
 
         # =================================================
         # CLEAR OLD TAXES
@@ -831,20 +777,15 @@ class UpdateOrderView(APIView):
 
                 continue
 
-            product_variant = ProductVariant.objects.select_related(
-                "product"
-            ).get(
+            product_variant = ProductVariant.objects.select_related("product").get(
                 id=item.product_variant_id
             )
 
             taxable_amount = item.total_price
 
-            addon_total = (
-                item.addons.aggregate(
-                    total=models.Sum("total_price")
-                )["total"]
-                or Decimal("0")
-            )
+            addon_total = item.addons.aggregate(total=models.Sum("total_price"))[
+                "total"
+            ] or Decimal("0")
 
             taxable_amount += addon_total
 
@@ -878,12 +819,9 @@ class UpdateOrderView(APIView):
 
             subtotal += item.total_price
 
-            addon_total = (
-                item.addons.aggregate(
-                    total=models.Sum("total_price")
-                )["total"]
-                or Decimal("0")
-            )
+            addon_total = item.addons.aggregate(total=models.Sum("total_price"))[
+                "total"
+            ] or Decimal("0")
 
             subtotal += addon_total
 
@@ -895,33 +833,23 @@ class UpdateOrderView(APIView):
         service_charges = ServiceCharge.objects.filter(
             restaurant_id=order.restaurant_id,
             is_active=True,
-            applicable_order_types__contains=[
-                order.order_type
-            ],
+            applicable_order_types__contains=[order.order_type],
         )
 
         for service_charge in service_charges:
 
             if service_charge.charge_type == "percentage":
 
-                amount = (
-                    subtotal
-                    * Decimal(str(service_charge.value))
-                    / Decimal("100")
-                )
+                amount = subtotal * Decimal(str(service_charge.value)) / Decimal("100")
 
             else:
 
-                amount = Decimal(
-                    str(service_charge.value)
-                )
+                amount = Decimal(str(service_charge.value))
 
             OrderServiceCharge.objects.create(
                 order=order,
                 name=service_charge.name,
-                charge_type=(
-                    service_charge.charge_type
-                ),
+                charge_type=(service_charge.charge_type),
                 value=service_charge.value,
                 amount=amount,
             )
@@ -935,9 +863,7 @@ class UpdateOrderView(APIView):
 
         order.tax_amount = tax_total
 
-        order.service_charge_amount = (
-            service_charge_total
-        )
+        order.service_charge_amount = service_charge_total
 
         order.grand_total = (
             subtotal
@@ -985,9 +911,7 @@ class UpdateOrderView(APIView):
 
                 order.table.status = "occupied"
 
-                order.table.save(
-                    update_fields=["status"]
-                )
+                order.table.save(update_fields=["status"])
 
         # =================================================
         # REFRESH ORDER
@@ -1008,9 +932,7 @@ class UpdateOrderView(APIView):
             .get(id=order.id)
         )
 
-        serialized_order = OrderListSerializer(
-            order
-        ).data
+        serialized_order = OrderListSerializer(order).data
 
         # =================================================
         # SOCKET EVENT
@@ -1054,6 +976,7 @@ class UpdateOrderView(APIView):
                 "order": serialized_order,
             }
         )
+
 
 # =========================================================
 # DELETE ORDER
