@@ -92,6 +92,16 @@ def calculate_order_totals(
                     * Decimal(str(tax.percentage))
                     / Decimal("100")
                 )
+                print(
+    "\nPRODUCT TAX =>",
+    {
+        "product_id": item["product_id"],
+        "product_total": product_total,
+        "tax_name": tax.name,
+        "tax_percentage": tax.percentage,
+        "tax_amount": tax_amount,
+    }
+)
 
                 tax_total += tax_amount
 
@@ -125,58 +135,36 @@ def calculate_order_totals(
         # =================================================
         # COMBO TAXES
         # =================================================
+
         elif item["item_type"] == "combo":
 
-            for combo_item in item.get(
-                "combo_items",
-                [],
-            ):
+            for combo_item in item.get("combo_items", []):
 
-                combo_product_total = (
-                    Decimal(
-                        str(
-                            combo_item[
-                                "allocated_price"
-                            ]
-                        )
-                    )
-                    *
-                    Decimal(
-                        str(
-                            combo_item[
-                                "quantity"
-                            ]
-                        )
-                    )
-                    *
-                    quantity
+                combo_item_total = (
+                    Decimal(str(combo_item["allocated_price"]))
+                    * Decimal(str(combo_item.get("quantity", 1)))
+                    * quantity
                 )
 
-                product_taxes = (
-                    ProductTax.objects
-                    .select_related("tax")
-                    .filter(
-                        product_id=combo_item[
-                            "product_id"
-                        ],
-                        tax__is_active=True,
-                    )
-                )
-
-                for mapping in product_taxes:
-
-                    tax = mapping.tax
+                for tax in combo_item.get("taxes", []):
 
                     tax_amount = (
-                        combo_product_total
-                        * Decimal(
-                            str(
-                                tax.percentage
-                            )
-                        )
+                        combo_item_total
+                        * Decimal(str(tax["percentage"]))
                         / Decimal("100")
                     )
-
+                    print(
+    "\nCOMBO TAX =>",
+    {
+        "allocated_price": combo_item["allocated_price"],
+        "combo_quantity": combo_item.get("quantity", 1),
+        "cart_quantity": quantity,
+        "combo_item_total": combo_item_total,
+        "tax_name": tax["name"],
+        "tax_percentage": tax["percentage"],
+        "tax_amount": tax_amount,
+    }
+)
                     tax_total += tax_amount
 
                     existing_tax = next(
@@ -184,21 +172,9 @@ def calculate_order_totals(
                             t
                             for t in tax_breakdown
                             if (
-                                t["name"] == tax.name
-                                and
-                                Decimal(
-                                    str(
-                                        t[
-                                            "percentage"
-                                        ]
-                                    )
-                                )
-                                ==
-                                Decimal(
-                                    str(
-                                        tax.percentage
-                                    )
-                                )
+                                t["name"] == tax["name"]
+                                and Decimal(str(t["percentage"]))
+                                == Decimal(str(tax["percentage"]))
                             )
                         ),
                         None,
@@ -206,18 +182,14 @@ def calculate_order_totals(
 
                     if existing_tax:
 
-                        existing_tax["amount"] += (
-                            tax_amount
-                        )
+                        existing_tax["amount"] += tax_amount
 
                     else:
 
                         tax_breakdown.append({
-                            "name": tax.name,
-                            "percentage":
-                                tax.percentage,
-                            "amount":
-                                tax_amount,
+                            "name": tax["name"],
+                            "percentage": tax["percentage"],
+                            "amount": tax_amount,
                         })
     # =====================================================
     # SERVICE CHARGES
@@ -271,7 +243,22 @@ def calculate_order_totals(
     if grand_total < 0:
 
         grand_total = Decimal("0")
+    print("\n================ FINAL TOTALS ================\n")
 
+    print("SUBTOTAL:", subtotal)
+
+    print("TAX TOTAL:", tax_total)
+
+    print("SERVICE CHARGE:", service_charge_total)
+
+    print("GRAND TOTAL:", grand_total)
+
+    print("\nTAX BREAKDOWN:")
+
+    for tax in tax_breakdown:
+        print(tax)
+
+    print("\n==============================================\n")
     return {
         "subtotal": subtotal,
         "tax_total": tax_total,

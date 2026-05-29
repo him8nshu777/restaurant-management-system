@@ -136,7 +136,7 @@ class CreateOrderView(APIView):
             # =============================================
             # COMBO
             # =============================================
-            else:
+            elif item_data["item_type"] == "combo":
 
                 combo = Combo.objects.get(id=item_data["combo_id"])
 
@@ -179,12 +179,19 @@ class CreateOrderView(APIView):
 
                     product = variant.product
 
-                    item_original_total = variant.price * recipe.quantity
+                    total_combo_items = len(combo_recipes)
+
+                    item_original_total = (
+                        variant.price * recipe.quantity
+                    )
 
                     allocated_price = (
-                        item_original_total / total_original_price
-                    ) * final_price
-
+                        item_original_total
+                        / total_original_price
+                    ) * original_price
+                    allocated_price = allocated_price.quantize(
+                        Decimal("0.01")
+                    )
                     allocated_price = round(
                         allocated_price,
                         2,
@@ -214,7 +221,17 @@ class CreateOrderView(APIView):
                             "taxes": tax_data["taxes"],
                         }
                     )
+            else:
 
+                return Response(
+                    {
+                        "error": (
+                            f"Invalid item_type: "
+                            f"{item_data.get('item_type')}"
+                        )
+                    },
+                    status=400,
+                )
             # =============================================
             # CREATE ITEM
             # =============================================
@@ -349,6 +366,14 @@ class CreateOrderView(APIView):
                     "addons": prepared_addons,
                 }
             )
+
+        print("\n================ PREPARED ITEMS ================\n")
+
+        from pprint import pprint
+
+        pprint(prepared_items)
+
+        print("\n================================================\n")
         # =================================================
         # CALCULATE TOTALS
         # =================================================
@@ -472,7 +497,13 @@ class OrderListView(APIView):
             )
             .prefetch_related(
                 "items",
+                "items__taxes",
                 "items__addons",
+                "items__addons__taxes",
+                "items__combo_items",
+                "items__combo_items__taxes",
+                "taxes",
+                "service_charges",
             )
             .order_by("-created_at")
         )
@@ -483,7 +514,6 @@ class OrderListView(APIView):
         )
         print("print->", serializer.data)
         return Response(serializer.data)
-
 
 # =========================================================
 # UPDATE ORDER
@@ -502,7 +532,11 @@ class UpdateOrderView(APIView):
                 )
                 .prefetch_related(
                     "items",
+                    "items__taxes",
                     "items__addons",
+                    "items__addons__taxes",
+                    "items__combo_items",
+                    "items__combo_items__taxes",
                     "taxes",
                     "service_charges",
                 )
