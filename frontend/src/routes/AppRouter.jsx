@@ -29,6 +29,7 @@ import CustomerRegisterPage from "../pages/auth/CustomerRegisterPage";
 import CustomerLoginPage from "../pages/auth/CustomerLoginPage";
 import CustomerDashboard from "../pages/customer/CustomerDashboard";
 import OrderPage from "../pages/customer/OrderPage";
+import DeliveryDashboard from "../pages/delivery/deliveryDashboard";
 // import WaiterPage from "../pages/waiter/WaiterPage";
 
 // import ReportsPage from "../pages/manager/ReportsPage";
@@ -150,6 +151,14 @@ export default function AppRouter() {
                     element={
                         <ProtectedRoute>
                             <OrderPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/delivery"
+                    element={
+                        <ProtectedRoute>
+                            <DeliveryDashboard />
                         </ProtectedRoute>
                     }
                 />

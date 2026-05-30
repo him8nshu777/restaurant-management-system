@@ -6,7 +6,7 @@ from django.db import models
 from django.utils import timezone
 
 from restaurants.models import Restaurant
-from accounts.models import User
+from accounts.models import User, CustomerAddress
 from django.db import IntegrityError
 from menu.models import (
     ProductVariant,
@@ -63,6 +63,20 @@ class Order(models.Model):
         ("refunded", "Refunded"),
     )
 
+    DELIVERY_STATUS_CHOICES = (
+        ("unassigned", "Unassigned"),
+        ("assigned", "Assigned"),
+        ("picked_up", "Picked Up"),
+        ("on_the_way", "On The Way"),
+        ("delivered", "Delivered"),
+    )
+
+    delivery_status = models.CharField(
+        max_length=20,
+        choices=DELIVERY_STATUS_CHOICES,
+        default="unassigned",
+    )
+
     # =====================================================
     # RESTAURANT
     # =====================================================
@@ -90,6 +104,13 @@ class Order(models.Model):
         null=True,
         related_name="customer_orders",
     )
+    delivery_address = models.ForeignKey(
+        CustomerAddress,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+    )
 
     # =====================================================
     # WAITER
@@ -101,6 +122,18 @@ class Order(models.Model):
         blank=True,
         related_name="waiter_orders",
         limit_choices_to={"role": "waiter"},
+    )
+
+    # =====================================================
+    # DELIVERY STAFF
+    # =====================================================
+    delivery_staff = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="delivery_orders",
+        limit_choices_to={"role": "delivery"},
     )
     # =====================================================
     # CREATED BY STAFF
@@ -389,6 +422,7 @@ class Order(models.Model):
         # SAVE
         # =========================================
         super().save(*args, **kwargs)
+
 # =========================================================
 # ORDER ITEM
 # =========================================================

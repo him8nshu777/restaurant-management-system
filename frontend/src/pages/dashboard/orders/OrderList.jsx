@@ -92,7 +92,8 @@ console.log(
     try {
       const data =
         await getOrderList(
-          restaurantId
+          {restaurantId,
+          kitchen: false,}
         );
       setOrderList(data);
 
@@ -1124,6 +1125,9 @@ const handleUpdateOrder =
 
               <option value="saved">
                 Saved
+              </option>
+              <option value="pending_approval">
+                Pending Approval
               </option>
 
               <option value="running">

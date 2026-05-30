@@ -362,7 +362,7 @@ export default function OrderPage() {
         // ==========================================
         payment_status: paymentMethod === "cash" ? "pending" : "paid",
 
-        order_status: "pending_approval",
+        // order_status: "pending_approval",
 
         // ==========================================
         // SERVICE CHARGES

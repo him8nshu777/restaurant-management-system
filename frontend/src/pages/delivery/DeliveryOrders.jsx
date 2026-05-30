@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 
 import { useSelector } from "react-redux";
 
-import { getOrderList, updateOrderStatus } from "../../services/orderService";
+import { getOrderList, assignDeliveryOrder } from "../../services/orderService";
 
 // ==========================================
 // API / WS BASE URL
@@ -10,9 +10,9 @@ import { getOrderList, updateOrderStatus } from "../../services/orderService";
 const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || "ws://127.0.0.1:8000";
 
 // ==========================================
-// KITCHEN ORDERS
+// DELIVERY ORDERS
 // ==========================================
-export default function KitchenOrders() {
+export default function DeliveryOrders() {
   // ========================================
   // REFS
   // ========================================
@@ -84,10 +84,10 @@ export default function KitchenOrders() {
   // ========================================
   const fetchOrders = async () => {
     try {
-      const data = await getOrderList({restaurantId, kitchen: true,});
+      const data = await getOrderList({ restaurantId, kitchen: false });
 
       const filteredOrders = data.filter(
-        (order) => order.status !== "completed" && order.status !== "cancelled",
+        (order) => order.order_type === "delivery" && order.status === "ready" && order.delivery_status === "unassigned"
       );
 
       setOrders(filteredOrders);
@@ -169,7 +169,7 @@ export default function KitchenOrders() {
     // ======================================
     // SOCKET URL
     // ======================================
-    const socketUrl = `${WS_BASE_URL}/ws/kitchen/${restaurantId}/`;
+    const socketUrl = `${WS_BASE_URL}/ws/delivery/${restaurantId}/`;
 
     // ======================================
     // CREATE SOCKET
@@ -198,7 +198,7 @@ export default function KitchenOrders() {
       // IMPORTANT
       // YOUR BACKEND SENDS:
       // { event: "new_order" }
-      if (data.event === "new_order") {
+      if (data.event === "delivery_request") {
         console.log("NEW ORDER RECEIVED");
 
         // PLAY SOUND
@@ -285,27 +285,21 @@ export default function KitchenOrders() {
   };
 
   // ========================================
-  // STATUS BADGE
+  // ACCEPT ORDER
   // ========================================
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "saved":
-        return "bg-secondary";
+  const acceptOrder = async (orderId) => {
+    try {
 
-      case "running":
-        return "bg-primary";
+      await assignDeliveryOrder(
+        orderId
+      );
 
-      case "confirmed":
-        return "bg-info";
+      fetchOrders();
 
-      case "preparing":
-        return "bg-warning";
+    } catch (error) {
 
-      case "ready":
-        return "bg-success";
+      console.log(error);
 
-      default:
-        return "bg-dark";
     }
   };
 
@@ -399,9 +393,9 @@ export default function KitchenOrders() {
           "
         >
           <div>
-            <h2 className="fw-bold mb-1">Kitchen Display System</h2>
+            <h2 className="fw-bold mb-1">Delivery Display System</h2>
 
-            <small className="text-muted">Live Kitchen Orders</small>
+            <small className="text-muted">Live Delivery Orders</small>
           </div>
 
           {/* SOCKET STATUS */}
@@ -473,29 +467,23 @@ export default function KitchenOrders() {
                           ⏱ {getMinutesAgo(order.kitchen_started_at)}
                         </span>
 
-                        <span
-                          className={`badge ${getStatusBadge(order.status)}`}
-                        >
-                          {order.status.toUpperCase()}
+                        <span className="badge bg-success">
+                          READY FOR DELIVERY
                         </span>
                       </div>
                     </div>
 
                     <div style={{ minWidth: "160px" }}>
-                      <select
-                        className="form-select form-select-sm"
-                        value={order.status}
-                        onChange={(e) => updateStatus(order.id, e.target.value)}
-                      >
-                        <option value="saved">Saved</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="preparing">Preparing</option>
-                        <option value="running">Running</option>
-                        <option value="ready">Ready</option>
-                        <option value="pending_approval">Pending Approval</option>
-                        <option value="served">Served</option>
-                        <option value="completed">Completed</option>
-                      </select>
+                      {order.delivery_status === "unassigned" ? (
+                        <button
+                          className="btn btn-success w-100"
+                          onClick={() => acceptOrder(order.id)}
+                        >
+                          Accept Delivery
+                        </button>
+                      ) : (
+                        <span className="badge bg-primary">Assigned</span>
+                      )}
                     </div>
                   </div>
 
@@ -510,43 +498,33 @@ export default function KitchenOrders() {
   "
                   >
                     <div className="row g-2">
-                      <div className="col-6">
-                        <small className="text-muted">Order Type</small>
+                      <div
+                        className="
+    border
+    rounded
+    p-3
+    mb-3
+    bg-light
+  "
+                      >
+                        <div className="mb-2">
+                          <small className="text-muted">Customer</small>
 
-                        <div className="fw-semibold text-capitalize">
-                          {order.order_type || "-"}
+                          <div className="fw-semibold">
+                            {order.customer_name || "-"}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="col-6">
-                        <small className="text-muted">Table</small>
+                        <div className="mb-2">
+                          <small className="text-muted">Phone</small>
 
-                        <div className="fw-semibold">
-                          {order.table_name || "-"}
+                          <div>{order.customer_phone || "-"}</div>
                         </div>
-                      </div>
 
-                      <div className="col-6">
-                        <small className="text-muted">Waiter</small>
+                        <div>
+                          <small className="text-muted">Address</small>
 
-                        <div className="fw-semibold">
-                          {order.waiter_name || "-"}
-                        </div>
-                      </div>
-
-                      <div className="col-6">
-                        <small className="text-muted">Floor</small>
-
-                        <div className="fw-semibold">
-                          {order.floor_name || "-"}
-                        </div>
-                      </div>
-
-                      <div className="col-6">
-                        <small className="text-muted">Area</small>
-
-                        <div className="fw-semibold">
-                          {order.area_name || "-"}
+                          <div>{order.delivery_address || "-"}</div>
                         </div>
                       </div>
                       <div className="col-6">
@@ -555,6 +533,18 @@ export default function KitchenOrders() {
                           ₹{order.grand_total || "-"}
                         </div>
                       </div>
+                    </div>
+
+                    <div className="col-6">
+                      <small className="text-muted">Payment</small>
+
+                      <div>{order.payment_method}</div>
+                    </div>
+
+                    <div className="col-6">
+                      <small className="text-muted">Payment Status</small>
+
+                      <div>{order.payment_status}</div>
                     </div>
                   </div>
                   {/* OVERALL ORDER NOTE */}
@@ -645,25 +635,9 @@ export default function KitchenOrders() {
                             ))}
                           </div>
                         )}
-
-                        {/* NOTES */}
-                        {item.notes && (
-                          <div
-                            className="
-      alert
-      alert-warning
-      py-2
-      mt-2
-    "
-                          >
-                            ⚠ {item.notes}
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
-
-                  {/* ACTIONS */}
                 </div>
               </div>
             </div>

@@ -395,10 +395,10 @@ class CreateOrderSerializer(
         required=False,
     )
 
-
 # =========================================================
 # ORDER LIST SERIALIZER
 # =========================================================
+
 class OrderListSerializer(
     serializers.ModelSerializer
 ):
@@ -441,7 +441,25 @@ class OrderListSerializer(
             read_only=True,
         )
     )
+    kitchen_started_at = serializers.SerializerMethodField()
 
+    customer_name = serializers.CharField(
+        source="customer.username",
+        read_only=True
+    )
+
+    customer_phone = serializers.CharField(
+        source="customer.phone",
+        read_only=True
+    )
+
+    delivery_status = serializers.CharField()
+
+    delivery_staff_id = serializers.IntegerField(
+        source="delivery_staff.id",
+        read_only=True
+    )
+    delivery_address = serializers.SerializerMethodField()
     class Meta:
 
         model = Order
@@ -470,6 +488,13 @@ class OrderListSerializer(
             "service_charges",
             "waiter_id",
             "waiter_name",
+
+            "kitchen_started_at",
+            "customer_name",
+            "customer_phone",
+            "delivery_status",
+            "delivery_staff_id",
+            "delivery_address",
         ]
 
     def get_waiter_name(self, obj):
@@ -484,3 +509,37 @@ class OrderListSerializer(
             )
 
         return None
+    
+    def get_kitchen_started_at(self, obj):
+
+        if obj.status in [
+            "confirmed",
+            "preparing",
+            "ready",
+        ]:
+            dt = (
+                obj.confirmed_at
+                or obj.saved_at
+                or obj.created_at
+            )
+        else:
+            dt = (
+                obj.saved_at
+                or obj.created_at
+            )
+
+        return (
+            dt.isoformat()
+            if dt
+            else None
+        )
+
+    def get_delivery_address(self, obj):
+
+        if not obj.delivery_address:
+            return None
+
+        return (
+            f"{obj.delivery_address.address_line_1}, "
+            f"{obj.delivery_address.city}"
+        )

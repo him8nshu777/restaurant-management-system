@@ -21,17 +21,21 @@ export const createOrder = async (
 // ==========================================
 // ORDER LIST
 // ==========================================
-export const getOrderList = async (
-  restaurantId
-) => {
+export const getOrderList = async ({
+  restaurantId,
+  kitchen = false,
+}) => {
 
-  const response =
-    await axiosInstance.get(
-      `/order/${restaurantId}/list/`
-    );
+  const response = await axiosInstance.get(
+    `/order/${restaurantId}/list/`,
+    {
+      params: {
+        kitchen,
+      },
+    }
+  );
 
   return response.data;
-
 };
 
 // ==========================================
@@ -169,4 +173,37 @@ export const cancelOrder = async (
 
   return response.data;
 
+};
+
+// ==========================================
+// ASSIGN DELIVERY ORDER
+// ==========================================
+export const assignDeliveryOrder = async (
+  orderId
+) => {
+
+  const response =
+    await axiosInstance.patch(
+      `/order/${orderId}/accept-delivery/`
+    );
+
+  return response.data;
+
+};
+
+// ==========================================
+// UPDATE DELIVERY STATUS
+// ==========================================
+export const updateDeliveryStatus = async (
+  orderId,
+  payload
+) => {
+
+  const response =
+    await axiosInstance.patch(
+      `/order/${orderId}/delivery-status/`,
+      payload
+    );
+
+  return response.data;
 };

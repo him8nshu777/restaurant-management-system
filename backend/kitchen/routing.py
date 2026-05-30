@@ -2,7 +2,8 @@ from django.urls import re_path
 
 from .consumers import (
     KitchenConsumer,
-    WaiterConsumer
+    WaiterConsumer,
+    DeliveryConsumer
 )
 
 websocket_urlpatterns = [
@@ -13,8 +14,14 @@ websocket_urlpatterns = [
     ),
 
     re_path(
-    r"ws/waiter/(?P<waiter_id>\d+)/$",
-    WaiterConsumer.as_asgi(),
-),
-
+        r"ws/waiter/(?P<waiter_id>\d+)/$",
+        WaiterConsumer.as_asgi(),
+    ),
+    # =====================================
+    # DELIVERY
+    # =====================================
+    re_path(
+        r"ws/delivery/(?P<restaurant_id>\d+)/$",
+        DeliveryConsumer.as_asgi(),
+    ),
 ]

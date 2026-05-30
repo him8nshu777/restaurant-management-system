@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from decimal import Decimal
+from django.shortcuts import get_object_or_404
 from .models import (
     Order,
     OrderItem,
@@ -25,6 +26,7 @@ from .serializers import (
 from channels.layers import get_channel_layer
 
 from asgiref.sync import async_to_sync
+
 from menu.models import ServiceCharge, Combo, ProductVariant, Addon
 from menu.utils.pricing import (
     calculate_product_price,
@@ -67,6 +69,12 @@ class CreateOrderView(APIView):
                 restaurant_id=restaurant_id,
             ).first()
 
+        initial_status = (
+            "pending_approval"
+            if request.user.role == "customer"
+            else "saved"
+        )
+
         # =================================================
         # CREATE ORDER
         # =================================================
@@ -93,7 +101,7 @@ class CreateOrderView(APIView):
                 "round_off_amount",
                 Decimal("0"),
             ),
-            status="saved",
+            status=initial_status,
             saved_at=timezone.now(),
         )
 
@@ -446,6 +454,34 @@ class CreateOrderView(APIView):
                 ]
             )
 
+        # =========================================
+        # SEND TO KITCHEN
+        # =========================================
+        channel_layer = get_channel_layer()
+        if order.status != "pending_approval":
+            async_to_sync(channel_layer.group_send)(
+                f"kitchen_{restaurant_id}",
+                {
+                    "type": "send_order_event",
+                    "data": {
+                        "event": "new_order",
+                        "order": {
+                            "id": order.id,
+                            "order_number": (order.order_number),
+                            "status": order.status,
+                            "order_type": (order.order_type),
+                            "table_name": (
+                                order.table.table_number if order.table else None
+                            ),
+                            "floor_name": (order.floor.name if order.floor else None),
+                            "area_name": (order.area.name if order.area else None),
+                            "notes": (order.notes),
+                            "grand_total": str(order.grand_total),
+                            "created_at": (order.created_at.strftime("%I:%M %p")),
+                        },
+                    },
+                },
+            )
         # =================================================
         # RESPONSE
         # =================================================
@@ -477,7 +513,10 @@ class OrderListView(APIView):
         # BASE QUERY
         # ======================================
         orders = Order.objects.filter(restaurant_id=restaurant_id)
-
+        if request.query_params.get("kitchen") == "true":
+            orders = orders.exclude(
+                status="pending_approval"
+            )
         # ======================================
         # WAITER ONLY SEES HIS ORDERS
         # ======================================
@@ -485,6 +524,14 @@ class OrderListView(APIView):
 
             orders = orders.filter(waiter=request.user)
 
+        # ======================================
+        # DELIVERY STAFF
+        # ======================================
+        elif request.user.role == "delivery":
+
+            orders = orders.filter(
+                delivery_staff=request.user
+            )
         # ======================================
         # LOAD RELATIONS
         # ======================================
@@ -512,7 +559,11 @@ class OrderListView(APIView):
             orders,
             many=True,
         )
-        print("print->", serializer.data)
+        from pprint import pprint
+
+        # print("\n===== ORDER LIST DATA =====")
+        # pprint(serializer.data)
+        # print("===========================\n")
         return Response(serializer.data)
 
 # =========================================================
@@ -914,13 +965,28 @@ class UpdateOrderView(APIView):
         )
 
         order.grand_total = totals["grand_total"]
+        new_status = data.get("status")
 
+        if (
+            previous_status != "confirmed"
+            and new_status == "confirmed"
+        ):
+            order.confirmed_at = timezone.now()
+
+        if new_status:
+            order.status = new_status
+        print("ORDER STATUS:", order.status)
+        print("PAYMENT STATUS:", order.payment_status)
+        print("PAYMENT METHOD:", order.payment_method)
+        print("DELIVERY STATUS:", order.delivery_status)
         order.save(
             update_fields=[
                 "subtotal",
                 "tax_amount",
                 "service_charge_amount",
                 "grand_total",
+                "status",
+                "confirmed_at",
             ]
         )
 
@@ -1001,37 +1067,20 @@ class UpdateOrderView(APIView):
         # SOCKET EVENT
         # =================================================
         channel_layer = get_channel_layer()
-
-        async_to_sync(channel_layer.group_send)(
-            f"kitchen_{order.restaurant.id}",
-            {
-                "type": "send_order_event",
-                "data": {
-                    "event": "order_updated",
-                    "order": serialized_order,
-                },
-            },
-        )
-
-        # =================================================
-        # WAITER READY EVENT
-        # =================================================
         if (
-            previous_status != "ready"
-            and order.status == "ready"
-            and previous_waiter is not None
+            order.status != "pending_approval"
         ):
-
             async_to_sync(channel_layer.group_send)(
-                f"waiter_{previous_waiter.id}",
+                f"kitchen_{order.restaurant.id}",
                 {
                     "type": "send_order_event",
                     "data": {
-                        "event": "order_ready",
+                        "event": "order_updated",
                         "order": serialized_order,
                     },
                 },
             )
+
 
         return Response(
             {
@@ -1117,3 +1166,145 @@ class DeleteOrderView(APIView):
             {"message": "Order deleted successfully"},
             status=status.HTTP_200_OK,
         )
+
+class UpdateOrderStatusView(APIView):
+
+    def patch(self, request, order_id):
+
+        order = get_object_or_404(
+            Order.objects.select_related(
+                "waiter",
+                # "delivery_partner",
+            ),
+            id=order_id,
+        )
+
+        previous_status = order.status
+
+        order.status = request.data.get(
+            "status",
+            order.status,
+        )
+
+        order.save(update_fields=["status"])
+
+        channel_layer = get_channel_layer()
+
+        serialized_order = OrderListSerializer(order).data
+
+        # ==========================================
+        # ORDER READY
+        # ==========================================
+        if (
+            previous_status != "ready"
+            and order.status == "ready"
+        ):
+
+            # ======================================
+            # DINE IN → WAITER
+            # ======================================
+            if (
+                order.order_type == "dine_in"
+                and order.waiter
+            ):
+                async_to_sync(
+                    channel_layer.group_send
+                )(
+                    f"waiter_{order.waiter.id}",
+                    {
+                        "type": "send_order_event",
+                        "data": {
+                            "event": "order_ready",
+                            "order": serialized_order,
+                        },
+                    },
+                )
+
+            # ======================================
+            # DELIVERY → DELIVERY PARTNER
+            # ======================================
+            elif (
+                order.status == "ready" and order.order_type == "delivery" and order.delivery_status == "unassigned"
+            ):
+                async_to_sync(
+                    channel_layer.group_send
+                )(
+                    f"delivery_{order.restaurant.id}",
+                    {
+                        "type": "send_order_event",
+                        "data": {
+                            "event": "delivery_request",
+                            "order": OrderListSerializer(order).data,
+                        },
+                    },
+                )
+
+        return Response(
+            {
+                "message": "Status updated successfully"
+            }
+        )
+
+class AcceptDeliveryOrderView(APIView):
+
+    # permission_classes = [IsAuthenticated]
+    @transaction.atomic
+    def patch(self, request, order_id):
+
+        order = get_object_or_404(
+            Order,
+            id=order_id,
+            order_type="delivery",
+        )
+
+        if order.delivery_staff:
+
+            return Response(
+                {
+                    "error":
+                    "Order already assigned"
+                },
+                status=400
+            )
+
+        order.delivery_staff = request.user
+        order.delivery_status = "assigned"
+        order.save()
+
+        return Response(
+            {
+                "message":
+                "Order accepted"
+            }
+        )
+
+class UpdateDeliveryStatusView(APIView):
+
+    def patch(self, request, order_id):
+
+        order = get_object_or_404(
+            Order,
+            id=order_id,
+            delivery_staff=request.user,
+        )
+
+        delivery_status = request.data.get(
+            "delivery_status"
+        )
+
+        order.delivery_status = delivery_status
+
+        # auto complete order
+        if delivery_status == "delivered":
+            order.status = "completed"
+
+        order.save(
+            update_fields=[
+                "delivery_status",
+                "status",
+            ]
+        )
+
+        return Response({
+            "message": "Updated"
+        })

@@ -3,7 +3,7 @@ import DashboardLayout from "../../components/admin/dashboard/DashboardLayout";
 import POSDashboard from "./POSDashboard";
 import OrderList from "../dashboard/orders/OrderList";
 
-export default function KitchenDashboard() {
+export default function PosMainDashboard() {
     // Moved state inside the component
     const [activePage, setActivePage] = useState({ type: "pos-dashboard" });
 
