@@ -84,7 +84,7 @@ export default function DeliveryOrders() {
   // ========================================
   const fetchOrders = async () => {
     try {
-      const data = await getOrderList({ restaurantId, kitchen: false });
+      const data = await getOrderList({ restaurantId, kitchen: false, delivery_requests: true });
 
       const filteredOrders = data.filter(
         (order) => order.order_type === "delivery" && order.status === "ready" && order.delivery_status === "unassigned"

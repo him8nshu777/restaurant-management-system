@@ -33,3 +33,22 @@ export const getNearbyRestaurants =
 
   return response.data;
 };
+
+// ==========================================
+// CUSTOMER ORDER LIST
+// ==========================================
+export const getCustomerOrderList = async ({
+  order_history = false,
+}) => {
+
+  const response = await axiosInstance.get(
+    `/customers/orders`,
+    {
+      params: {
+        order_history,
+      },
+    }
+  );
+
+  return response.data;
+};

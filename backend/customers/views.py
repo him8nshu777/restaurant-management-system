@@ -11,7 +11,8 @@ from rest_framework.permissions import AllowAny
 from restaurants.models import Restaurant
 
 from .serializers import NearbyRestaurantSerializer
-
+from orders.serializers import OrderListSerializer
+from orders.models import Order
 
 # ==========================================
 # UPDATE CUSTOMER LOCATION API
@@ -165,3 +166,41 @@ class NearbyRestaurantsAPIView(APIView):
         serializer = NearbyRestaurantSerializer(results, many=True)
 
         return Response(serializer.data)
+
+class CustomerOrderListView(APIView):
+
+    def get(self, request):
+
+        orders = Order.objects.filter(
+            customer=request.user
+        )
+
+        order_history = request.query_params.get(
+            "order_history"
+        )
+
+        if order_history == "true":
+
+            orders = orders.filter(
+                status__in=[
+                    "completed",
+                    "cancelled",
+                ]
+            )
+
+        else:
+
+            orders = orders.exclude(
+                status__in=[
+                    "completed",
+                    "cancelled",
+                ]
+            )
+
+        serializer = OrderListSerializer(
+            orders,
+            many=True,
+        )
+
+        return Response(serializer.data)
+    

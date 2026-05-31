@@ -48,9 +48,7 @@ class OrderItemTaxSerializer(serializers.ModelSerializer):
 # =========================================================
 # COMBO ITEM TAX READ SERIALIZER
 # =========================================================
-class OrderComboItemTaxSerializer(
-    serializers.ModelSerializer
-):
+class OrderComboItemTaxSerializer(serializers.ModelSerializer):
 
     class Meta:
 
@@ -66,9 +64,7 @@ class OrderComboItemTaxSerializer(
 # =========================================================
 # COMBO ITEM READ SERIALIZER
 # =========================================================
-class OrderComboItemSerializer(
-    serializers.ModelSerializer
-):
+class OrderComboItemSerializer(serializers.ModelSerializer):
 
     taxes = OrderComboItemTaxSerializer(
         many=True,
@@ -93,9 +89,7 @@ class OrderComboItemSerializer(
 # ADDON WRITE SERIALIZER
 # USED FOR CREATE / UPDATE
 # =========================================================
-class OrderItemAddonWriteSerializer(
-    serializers.ModelSerializer
-):
+class OrderItemAddonWriteSerializer(serializers.ModelSerializer):
 
     id = serializers.IntegerField(
         required=False,
@@ -122,9 +116,7 @@ class OrderItemAddonWriteSerializer(
 # ADDON READ SERIALIZER
 # USED FOR LIST / DETAIL
 # =========================================================
-class OrderItemAddonReadSerializer(
-    serializers.ModelSerializer
-):
+class OrderItemAddonReadSerializer(serializers.ModelSerializer):
 
     taxes = OrderAddonTaxSerializer(
         many=True,
@@ -150,9 +142,7 @@ class OrderItemAddonReadSerializer(
 # ITEM WRITE SERIALIZER
 # USED FOR CREATE / UPDATE
 # =========================================================
-class OrderItemWriteSerializer(
-    serializers.ModelSerializer
-):
+class OrderItemWriteSerializer(serializers.ModelSerializer):
 
     id = serializers.IntegerField(
         required=False,
@@ -202,9 +192,7 @@ class OrderItemWriteSerializer(
 # ITEM READ SERIALIZER
 # USED FOR LIST / DETAIL
 # =========================================================
-class OrderItemReadSerializer(
-    serializers.ModelSerializer
-):
+class OrderItemReadSerializer(serializers.ModelSerializer):
 
     addons = OrderItemAddonReadSerializer(
         many=True,
@@ -246,9 +234,7 @@ class OrderItemReadSerializer(
 # =========================================================
 # ORDER TAX SERIALIZER
 # =========================================================
-class OrderTaxCreateSerializer(
-    serializers.Serializer
-):
+class OrderTaxCreateSerializer(serializers.Serializer):
 
     id = serializers.IntegerField(
         required=False,
@@ -270,9 +256,7 @@ class OrderTaxCreateSerializer(
 # =========================================================
 # ORDER SERVICE CHARGE SERIALIZER
 # =========================================================
-class OrderServiceChargeCreateSerializer(
-    serializers.Serializer
-):
+class OrderServiceChargeCreateSerializer(serializers.Serializer):
 
     id = serializers.IntegerField(
         required=False,
@@ -296,9 +280,7 @@ class OrderServiceChargeCreateSerializer(
 # =========================================================
 # CREATE / UPDATE ORDER SERIALIZER
 # =========================================================
-class CreateOrderSerializer(
-    serializers.Serializer
-):
+class CreateOrderSerializer(serializers.Serializer):
 
     order_type = serializers.CharField(
         required=True,
@@ -380,11 +362,9 @@ class CreateOrderSerializer(
     # =========================================
     # SERVICE CHARGES
     # =========================================
-    service_charges = (
-        OrderServiceChargeCreateSerializer(
-            many=True,
-            required=False,
-        )
+    service_charges = OrderServiceChargeCreateSerializer(
+        many=True,
+        required=False,
     )
 
     # =========================================
@@ -395,13 +375,18 @@ class CreateOrderSerializer(
         required=False,
     )
 
+
 # =========================================================
 # ORDER LIST SERIALIZER
 # =========================================================
 
-class OrderListSerializer(
-    serializers.ModelSerializer
-):
+
+class OrderListSerializer(serializers.ModelSerializer):
+
+    restaurant_name = serializers.CharField(
+        source="restaurant.name",
+        read_only=True,
+    )
 
     waiter_id = serializers.IntegerField(
         source="waiter.id",
@@ -435,37 +420,30 @@ class OrderListSerializer(
         read_only=True,
     )
 
-    service_charges = (
-        OrderServiceChargeCreateSerializer(
-            many=True,
-            read_only=True,
-        )
+    service_charges = OrderServiceChargeCreateSerializer(
+        many=True,
+        read_only=True,
     )
     kitchen_started_at = serializers.SerializerMethodField()
 
-    customer_name = serializers.CharField(
-        source="customer.username",
-        read_only=True
-    )
+    customer_name = serializers.CharField(source="customer.username", read_only=True)
 
-    customer_phone = serializers.CharField(
-        source="customer.phone",
-        read_only=True
-    )
+    customer_phone = serializers.CharField(source="customer.phone", read_only=True)
 
     delivery_status = serializers.CharField()
 
     delivery_staff_id = serializers.IntegerField(
-        source="delivery_staff.id",
-        read_only=True
+        source="delivery_staff.id", read_only=True
     )
     delivery_address = serializers.SerializerMethodField()
+    completed_at = serializers.DateTimeField(source="updated_at", read_only=True)
     class Meta:
 
         model = Order
 
         fields = [
             "id",
+            "restaurant_name",
             "order_number",
             "order_type",
             "status",
@@ -481,14 +459,15 @@ class OrderListSerializer(
             "floor_name",
             "area_name",
             "table_name",
+
             "created_at",
+            "completed_at",
             # nested
             "items",
             "taxes",
             "service_charges",
             "waiter_id",
             "waiter_name",
-
             "kitchen_started_at",
             "customer_name",
             "customer_phone",
@@ -503,13 +482,10 @@ class OrderListSerializer(
 
             full_name = obj.waiter.username
 
-            return (
-                full_name
-                or obj.waiter.email
-            )
+            return full_name or obj.waiter.email
 
         return None
-    
+
     def get_kitchen_started_at(self, obj):
 
         if obj.status in [
@@ -517,29 +493,15 @@ class OrderListSerializer(
             "preparing",
             "ready",
         ]:
-            dt = (
-                obj.confirmed_at
-                or obj.saved_at
-                or obj.created_at
-            )
+            dt = obj.confirmed_at or obj.saved_at or obj.created_at
         else:
-            dt = (
-                obj.saved_at
-                or obj.created_at
-            )
+            dt = obj.saved_at or obj.created_at
 
-        return (
-            dt.isoformat()
-            if dt
-            else None
-        )
+        return dt.isoformat() if dt else None
 
     def get_delivery_address(self, obj):
 
         if not obj.delivery_address:
             return None
 
-        return (
-            f"{obj.delivery_address.address_line_1}, "
-            f"{obj.delivery_address.city}"
-        )
+        return f"{obj.delivery_address.address_line_1}, " f"{obj.delivery_address.city}"

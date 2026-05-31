@@ -502,36 +502,154 @@ class CreateOrderView(APIView):
 # =========================================================
 # ORDER LIST
 # ========================================================
+# class OrderListView(APIView):
+
+#     def get(self, request, restaurant_id):
+#         print("REQUEST USER ->", request.user)
+#         print("ROLE ->", request.user.role)
+#         print("USER RESTAURANT ->", request.user.restaurant_id)
+#         print("PARAM RESTAURANT ->", restaurant_id)
+#         # ======================================
+#         # BASE QUERY
+#         # ======================================
+#         orders = Order.objects.filter(restaurant_id=restaurant_id)
+#         if request.query_params.get("kitchen") == "true":
+#             orders = orders.exclude(
+#                 status="pending_approval"
+#             )
+#         # ======================================
+#         # WAITER ONLY SEES HIS ORDERS
+#         # ======================================
+#         if request.user.role == "waiter":
+
+#             orders = orders.filter(waiter=request.user)
+
+#         # ======================================
+#         # DELIVERY STAFF
+#         # ======================================
+#         elif request.user.role == "delivery":
+
+#             orders = orders.filter(
+#                 delivery_staff=request.user
+#             )
+#         # ======================================
+#         # LOAD RELATIONS
+#         # ======================================
+#         orders = (
+#             orders.select_related(
+#                 "table",
+#                 "floor",
+#                 "area",
+#                 "waiter",
+#             )
+#             .prefetch_related(
+#                 "items",
+#                 "items__taxes",
+#                 "items__addons",
+#                 "items__addons__taxes",
+#                 "items__combo_items",
+#                 "items__combo_items__taxes",
+#                 "taxes",
+#                 "service_charges",
+#             )
+#             .order_by("-created_at")
+#         )
+
+#         serializer = OrderListSerializer(
+#             orders,
+#             many=True,
+#         )
+#         # from pprint import pprint
+
+#         # print("\n===== ORDER LIST DATA =====")
+#         # pprint(serializer.data)
+#         # print("===========================\n")
+#         return Response(serializer.data)
+# =========================================================
+# ORDER LIST
+# =========================================================
 class OrderListView(APIView):
 
     def get(self, request, restaurant_id):
+
         print("REQUEST USER ->", request.user)
         print("ROLE ->", request.user.role)
         print("USER RESTAURANT ->", request.user.restaurant_id)
         print("PARAM RESTAURANT ->", restaurant_id)
+
         # ======================================
         # BASE QUERY
         # ======================================
-        orders = Order.objects.filter(restaurant_id=restaurant_id)
-        if request.query_params.get("kitchen") == "true":
+        orders = Order.objects.filter(
+            restaurant_id=restaurant_id
+        )
+
+        # ======================================
+        # KITCHEN FILTER
+        # ======================================
+        if (
+            request.query_params.get("kitchen")
+            == "true"
+        ):
             orders = orders.exclude(
                 status="pending_approval"
             )
+
         # ======================================
         # WAITER ONLY SEES HIS ORDERS
         # ======================================
         if request.user.role == "waiter":
 
-            orders = orders.filter(waiter=request.user)
+            orders = orders.filter(
+                waiter=request.user
+            )
 
         # ======================================
         # DELIVERY STAFF
         # ======================================
         elif request.user.role == "delivery":
-
-            orders = orders.filter(
-                delivery_staff=request.user
+            delivery_requests = request.query_params.get(
+                "delivery_requests"
             )
+            delivery_history = request.query_params.get(
+                "delivery_history"
+            )
+
+            # ======================================
+            # AVAILABLE ORDERS TO ACCEPT
+            # ======================================
+            if delivery_requests == "true":
+
+                orders = orders.filter(
+                    order_type="delivery",
+                    status="ready",
+                    delivery_status="unassigned",
+                    delivery_staff__isnull=True,
+                )
+
+            # ======================================
+            # DELIVERY HISTORY
+            # ======================================
+            elif delivery_history == "true":
+
+                orders = orders.filter(
+                    delivery_staff=request.user,
+                    delivery_status="delivered",
+                    status="completed",
+                )
+
+            # ======================================
+            # ACTIVE DELIVERIES
+            # ======================================
+            else:
+
+                orders = orders.filter(
+                    delivery_staff=request.user
+                ).exclude(
+                    delivery_status="delivered"
+                )
+        
+       
         # ======================================
         # LOAD RELATIONS
         # ======================================
@@ -541,6 +659,7 @@ class OrderListView(APIView):
                 "floor",
                 "area",
                 "waiter",
+                "delivery_staff",
             )
             .prefetch_related(
                 "items",
@@ -559,12 +678,9 @@ class OrderListView(APIView):
             orders,
             many=True,
         )
-        from pprint import pprint
 
-        # print("\n===== ORDER LIST DATA =====")
-        # pprint(serializer.data)
-        # print("===========================\n")
         return Response(serializer.data)
+
 
 # =========================================================
 # UPDATE ORDER
@@ -1292,19 +1408,38 @@ class UpdateDeliveryStatusView(APIView):
             "delivery_status"
         )
 
-        order.delivery_status = delivery_status
+        payment_status = request.data.get(
+            "payment_status"
+        )
 
-        # auto complete order
-        if delivery_status == "delivered":
-            order.status = "completed"
+        update_fields = []
+
+        if delivery_status:
+            order.delivery_status = delivery_status
+            update_fields.append(
+                "delivery_status"
+            )
+
+            # Auto complete order
+            if delivery_status == "delivered":
+                order.status = "completed"
+
+                update_fields.append(
+                    "status"
+                )
+
+        if payment_status:
+            order.payment_status = payment_status
+
+            update_fields.append(
+                "payment_status"
+            )
 
         order.save(
-            update_fields=[
-                "delivery_status",
-                "status",
-            ]
+            update_fields=update_fields
         )
 
         return Response({
             "message": "Updated"
         })
+    

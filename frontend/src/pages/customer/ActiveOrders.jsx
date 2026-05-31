@@ -3,37 +3,19 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 import {
-  getOrderList,
-  updateDeliveryStatus,
-} from "../../services/orderService";
+  getCustomerOrderList
+} from "../../services/customerService";
 
 // ==========================================
 // ORDER MANAGEMENT
 // ==========================================
 export default function ActiveOrders() {
-  // ==========================================
-  // ACTIVE RESTAURANT
-  // ==========================================
-  const activeRestaurant = useSelector(
-    (state) => state.restaurant.activeRestaurant,
-  );
+
 
   const user = useSelector((state) => state.auth.user);
 
-  // ==========================================
-  // RESTAURANT ID
-  // ==========================================
-  const restaurantId =
-    user?.role === "restaurant_admin"
-      ? activeRestaurant?.id
-      : user?.restaurant_id;
+
   console.log("USER:", user);
-
-  console.log("USER RESTAURANT:", user?.restaurant);
-
-  console.log("ACTIVE RESTAURANT:", activeRestaurant);
-
-  console.log("RESTAURANT ID:", restaurantId);
 
   // ==========================================
   // ORDER LIST
@@ -71,7 +53,7 @@ export default function ActiveOrders() {
   // ==========================================
   const fetchOrders = async () => {
     try {
-      const data = await getOrderList({ restaurantId, kitchen: false });
+      const data = await getCustomerOrderList({ order_history: false });
       setOrderList(data);
     } catch (error) {
       console.log(error);
@@ -87,10 +69,10 @@ export default function ActiveOrders() {
   // LOAD DATA
   // ==========================================
   useEffect(() => {
-    if (restaurantId) {
+    if (user) {
       fetchOrders();
     }
-  }, [restaurantId]);
+  }, [user]);
 
   // ==========================================
   // OPEN EDIT MODAL
@@ -175,46 +157,6 @@ export default function ActiveOrders() {
     setShowEditModal(true);
   };
 
-  // ==========================================
-  // HANDLE INPUT CHANGE
-  // ==========================================
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  // ==========================================
-  // UPDATE ORDER
-  // ==========================================
-  const handleUpdateOrder = async (e) => {
-    e.preventDefault();
-
-    try {
-      await updateDeliveryStatus(selectedOrder.id, {
-        delivery_status: formData.delivery_status,
-        payment_status: formData.payment_status,
-      });
-
-      await fetchOrders();
-
-      setShowEditModal(false);
-
-      setAlert({
-        type: "success",
-        message: "Delivery status updated successfully.",
-      });
-    } catch (error) {
-      console.log(error);
-
-      setAlert({
-        type: "danger",
-        message: "Failed to update delivery status.",
-      });
-    }
-  };
-
   return (
     <div className="container-fluid">
       {/* ALERT */}
@@ -248,9 +190,7 @@ export default function ActiveOrders() {
               <thead>
                 <tr>
                   <th>Order No</th>
-                  <th>Customer</th>
-                  <th>Phone</th>
-                  <th>Address</th>
+                  <th>Restaurant Name</th>
                   <th>Total</th>
                   <th>Delivery Status</th>
                   <th>Payment</th>
@@ -262,13 +202,7 @@ export default function ActiveOrders() {
                 {orderList.map((order) => (
                   <tr key={order.id}>
                     <td>{order.order_number}</td>
-
-                    <td>{order.customer_name || "-"}</td>
-
-                    <td>{order.customer_phone || "-"}</td>
-
-                    <td>{order.delivery_address || "-"}</td>
-
+                    <td>{order.restaurant_name}</td>
                     <td>₹{order.grand_total}</td>
                     <td>
                       <span className="badge bg-warning text-dark">
@@ -296,7 +230,7 @@ export default function ActiveOrders() {
                         className="btn btn-sm btn-primary"
                         onClick={() => openEditModal(order)}
                       >
-                        Update
+                        View
                       </button>
                     </td>
                   </tr>
@@ -312,49 +246,30 @@ export default function ActiveOrders() {
         <ModalWrapper
           title="Edit Order"
           onClose={() => setShowEditModal(false)}
-          onSubmit={handleUpdateOrder}
         >
           {/* STATUS */}
           <div className="mb-3">
             <label className="form-label">Delivery Status</label>
 
-            <select
+            <input
               className="form-select"
               name="delivery_status"
               value={formData.delivery_status}
-              onChange={handleChange}
+              readOnly
             >
-              <option value="assigned">Assigned</option>
-
-              <option value="picked_up">Picked Up</option>
-
-              <option value="on_the_way">On The Way</option>
-
-              <option value="delivered">Delivered</option>
-
-              <option value="failed">Failed</option>
-            </select>
+            </input>
           </div>
           {/* PAYMENT STATUS */}
           <div className="mb-3">
             <label className="form-label">Payment Status</label>
 
-            <select
+            <input
               className="form-select"
               name="payment_status"
               value={formData.payment_status}
-              onChange={handleChange}
+              readOnly
             >
-              <option value="pending">Pending</option>
-
-              <option value="partial">Partial</option>
-
-              <option value="paid">Paid</option>
-
-              <option value="failed">Failed</option>
-
-              <option value="refunded">Refunded</option>
-            </select>
+            </input>
           </div>
 
           {/* NOTES */}
@@ -531,7 +446,7 @@ export default function ActiveOrders() {
             "
                   >
                     <strong>Total Price:</strong> 
-                    {item.total_price}₹
+                    ₹{item.total_price}
                     </div>
                 </div>
               </div>
@@ -758,26 +673,7 @@ function ModalWrapper({ title, children, onClose, onSubmit }) {
 
             {/* FOOTER */}
             <div className="modal-footer">
-              <button
-                type="button"
-                className="
-                  btn
-                  btn-secondary
-                "
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                className="
-                  btn
-                  btn-primary
-                "
-              >
-                Save Changes
-              </button>
+              
             </div>
           </form>
         </div>

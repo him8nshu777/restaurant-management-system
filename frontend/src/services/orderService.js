@@ -24,6 +24,9 @@ export const createOrder = async (
 export const getOrderList = async ({
   restaurantId,
   kitchen = false,
+  delivery_history = false,
+  delivery_requests = false,
+  order_history = false,
 }) => {
 
   const response = await axiosInstance.get(
@@ -31,6 +34,9 @@ export const getOrderList = async ({
     {
       params: {
         kitchen,
+        delivery_history,
+        delivery_requests,
+        order_history,
       },
     }
   );

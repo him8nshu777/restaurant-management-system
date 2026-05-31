@@ -12,822 +12,522 @@ import {
 // ORDER MANAGEMENT
 // ==========================================
 export default function OrderList() {
-
   // ==========================================
   // ACTIVE RESTAURANT
   // ==========================================
   const activeRestaurant = useSelector(
-    (state) =>
-      state.restaurant.activeRestaurant
+    (state) => state.restaurant.activeRestaurant,
   );
-  
-  const user = useSelector(
-  (state) => state.auth.user
-);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
-console.log("USER:", user);
+  const user = useSelector((state) => state.auth.user);
 
-console.log(
-  "USER RESTAURANT:",
-  user?.restaurant
-);
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
+  console.log("USER:", user);
 
-console.log(
-  "ACTIVE RESTAURANT:",
-  activeRestaurant
-);
+  console.log("USER RESTAURANT:", user?.restaurant);
 
-console.log(
-  "RESTAURANT ID:",
-  restaurantId
-);
+  console.log("ACTIVE RESTAURANT:", activeRestaurant);
+
+  console.log("RESTAURANT ID:", restaurantId);
 
   // ==========================================
   // ORDER LIST
   // ==========================================
-  const [orderList, setOrderList] =
-    useState([]);
+  const [orderList, setOrderList] = useState([]);
 
   // ==========================================
   // ALERT
   // ==========================================
-  const [alert, setAlert] =
-    useState(null);
+  const [alert, setAlert] = useState(null);
 
   // ==========================================
   // EDIT MODAL
   // ==========================================
-  const [showEditModal, setShowEditModal] =
-    useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // ==========================================
   // SELECTED ORDER
   // ==========================================
-  const [selectedOrder, setSelectedOrder] =
-    useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   // ==========================================
   // FORM DATA
   // ==========================================
-  const [formData, setFormData] =
-    useState({
-      status: "",
-      payment_status: "",
-      notes: "",
-      items: [],
-    });
+  const [formData, setFormData] = useState({
+    status: "",
+    payment_status: "",
+    notes: "",
+    items: [],
+  });
 
   // ==========================================
   // FETCH ORDERS
   // ==========================================
   const fetchOrders = async () => {
-
     try {
-      const data =
-        await getOrderList(
-          {restaurantId,
-          kitchen: false,}
-        );
+      const data = await getOrderList({ restaurantId, kitchen: false });
       setOrderList(data);
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
       console.log(error);
 
       setAlert({
         type: "danger",
-        message:
-          "Failed to fetch orders.",
+        message: "Failed to fetch orders.",
       });
-
     }
-
   };
 
   // ==========================================
   // LOAD DATA
   // ==========================================
   useEffect(() => {
-
     if (restaurantId) {
-
       fetchOrders();
-
     }
-
   }, [restaurantId]);
 
   // ==========================================
-// OPEN EDIT MODAL
-// ==========================================
-const openEditModal = (order) => {
+  // OPEN EDIT MODAL
+  // ==========================================
+  const openEditModal = (order) => {
+    setSelectedOrder(order);
 
-  setSelectedOrder(order);
+    setFormData({
+      status: order.status,
 
-  setFormData({
+      payment_status: order.payment_status,
 
-    status: order.status,
+      payment_method: order.payment_method || "",
 
-    payment_status:
-      order.payment_status,
+      notes: order.notes || "",
 
-    payment_method:
-      order.payment_method || "",
+      discount_amount: order.discount_amount || 0,
 
-    notes: order.notes || "",
+      // round_off_amount:
+      //   order.round_off_amount || 0,
 
-    discount_amount:
-      order.discount_amount || 0,
+      tax_amount: order.tax_amount || 0,
 
-    // round_off_amount:
-    //   order.round_off_amount || 0,
+      service_charge_amount: order.service_charge_amount || 0,
 
-    tax_amount:
-      order.tax_amount || 0,
+      subtotal: order.subtotal || 0,
 
-    service_charge_amount:
-      order.service_charge_amount || 0,
+      grand_total: order.grand_total || 0,
 
-    subtotal:
-      order.subtotal || 0,
+      taxes: order.taxes || [],
 
-    grand_total:
-      order.grand_total || 0,
+      service_charges: order.service_charges || [],
 
-    taxes:
-      order.taxes || [],
+      items:
+        order.items?.map((item) => ({
+          id: item.id,
 
-    service_charges:
-      order.service_charges || [],
+          item_name: item.item_name,
 
-    items:
-  order.items?.map((item) => ({
+          item_type: item.item_type,
 
-    id: item.id,
+          product_variant_id: item.product_variant_id || null,
 
-    item_name: item.item_name,
+          combo_id: item.combo_id || null,
 
-    item_type: item.item_type,
+          quantity: item.quantity,
 
-    product_variant_id:
-      item.product_variant_id || null,
+          final_price: item.final_price,
 
-    combo_id:
-      item.combo_id || null,
+          original_price: item.original_price,
 
-    quantity: item.quantity,
+          total_price: item.total_price,
 
-    final_price: item.final_price,
+          notes: item.notes || "",
 
-    original_price:
-      item.original_price,
+          dynamic_pricing_name: item.dynamic_pricing_name,
 
-    total_price:
-      item.total_price,
+          // ======================================
+          // IMPORTANT
+          // ======================================
+          taxes: item.taxes || [],
 
-    notes:
-      item.notes || "",
+          combo_items: item.combo_items || [],
 
-    dynamic_pricing_name:
-      item.dynamic_pricing_name,
+          addons:
+            item.addons?.map((addon) => ({
+              id: addon.id,
 
-    // ======================================
-    // IMPORTANT
-    // ======================================
-    taxes: item.taxes || [],
+              addon_id: addon.addon_id,
 
-    combo_items:
-      item.combo_items || [],
+              addon_name: addon.addon_name,
 
-    addons:
-      item.addons?.map((addon) => ({
+              addon_price: addon.addon_price,
 
-        id: addon.id,
+              quantity: addon.quantity,
 
-        addon_id:
-          addon.addon_id,
+              total_price: addon.total_price,
 
-        addon_name:
-          addon.addon_name,
+              // ==================================
+              // IMPORTANT
+              // ==================================
+              taxes: addon.taxes || [],
+            })) || [],
+        })) || [],
+    });
 
-        addon_price:
-          addon.addon_price,
-
-        quantity:
-          addon.quantity,
-
-        total_price:
-          addon.total_price,
-
-        // ==================================
-        // IMPORTANT
-        // ==================================
-        taxes:
-          addon.taxes || [],
-
-      })) || [],
-
-  })) || [],
-
-  });
-
-  setShowEditModal(true);
-
-};
+    setShowEditModal(true);
+  };
 
   // ==========================================
   // HANDLE INPUT CHANGE
   // ==========================================
   const handleChange = (e) => {
-
     setFormData({
       ...formData,
-      [e.target.name]:
-        e.target.value,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  // ==========================================
+  // HANDLE ITEM CHANGE
+  // ==========================================
+  const handleItemChange = (index, field, value) => {
+    const updatedItems = [...formData.items];
+
+    updatedItems[index][field] = field === "quantity" ? Number(value) : value;
+
+    // ========================================
+    // AUTO TOTAL
+    // ========================================
+    const item = updatedItems[index];
+
+    const baseTotal = Number(item.final_price) * Number(item.quantity);
+
+    let addonTotal = 0;
+
+    item.addons?.forEach((addon) => {
+      addonTotal += Number(addon.addon_price) * Number(addon.quantity);
     });
 
-  };
-
-  // ==========================================
-// HANDLE ITEM CHANGE
-// ==========================================
-const handleItemChange = (
-  index,
-  field,
-  value
-) => {
-
-  const updatedItems = [
-    ...formData.items,
-  ];
-
-  updatedItems[index][field] =
-    field === "quantity"
-      ? Number(value)
-      : value;
-
-  // ========================================
-  // AUTO TOTAL
-  // ========================================
-  const item =
-  updatedItems[index];
-
-const baseTotal =
-  Number(item.final_price) *
-  Number(item.quantity);
-
-let addonTotal = 0;
-
-item.addons?.forEach((addon) => {
-
-  addonTotal +=
-    Number(addon.addon_price) *
-    Number(addon.quantity);
-
-});
-
-item.total_price =
-  (
-    baseTotal + addonTotal
-  ).toFixed(2);
-
-  setFormData({
-    ...formData,
-    items: updatedItems,
-  });
-
-};
-
-// ==========================================
-// HANDLE ADDON CHANGE
-// ==========================================
-const handleAddonQuantityChange = (
-  itemIndex,
-  addonIndex,
-  value
-) => {
-
-  const updatedItems = [
-    ...formData.items,
-  ];
-
-  const addon =
-    updatedItems[itemIndex]
-      .addons[addonIndex];
-
-  addon.quantity = Number(value);
-
- const item =
-  updatedItems[itemIndex];
-
-const baseTotal =
-  Number(item.final_price) *
-  Number(item.quantity);
-
-let addonTotal = 0;
-
-item.addons?.forEach((a) => {
-
-  addonTotal +=
-    Number(a.addon_price) *
-    Number(a.quantity);
-
-});
-
-item.total_price =
-  (
-    baseTotal + addonTotal
-  ).toFixed(2);
-
-  setFormData({
-    ...formData,
-    items: updatedItems,
-  });
-
-};
-
-// ==========================================
-// REMOVE ADDON
-// ==========================================
-const removeAddon = (
-  itemIndex,
-  addonIndex
-) => {
-
-  const updatedItems = [
-    ...formData.items,
-  ];
-
-  updatedItems[itemIndex].addons =
-    updatedItems[itemIndex]
-      .addons.filter(
-        (_, i) =>
-          i !== addonIndex
-      );
-
-  setFormData({
-    ...formData,
-    items: updatedItems,
-  });
-
-};
-
-  // ==========================================
-  // INCREASE QUANTITY
-  // ==========================================
-  const increaseQuantity = (
-    index
-  ) => {
-
-    const item =
-      formData.items[index];
-
-    handleItemChange(
-      index,
-      "quantity",
-      item.quantity + 1
-    );
-
-  };
-
-  // ==========================================
-  // DECREASE QUANTITY
-  // ==========================================
-  const decreaseQuantity = (
-    index
-  ) => {
-
-    const item =
-      formData.items[index];
-
-    if (item.quantity <= 1) {
-      return;
-    }
-
-    handleItemChange(
-      index,
-      "quantity",
-      item.quantity - 1
-    );
-
-  };
-
-  // ==========================================
-  // REMOVE ITEM
-  // ==========================================
-  const removeItem = (
-    index
-  ) => {
-
-    const updatedItems =
-      formData.items.filter(
-        (_, i) => i !== index
-      );
+    item.total_price = (baseTotal + addonTotal).toFixed(2);
 
     setFormData({
       ...formData,
       items: updatedItems,
     });
-
   };
 
   // ==========================================
-// CALCULATE SINGLE ITEM TOTAL
-// ==========================================
-const calculateItemTotal = (item) => {
+  // HANDLE ADDON CHANGE
+  // ==========================================
+  const handleAddonQuantityChange = (itemIndex, addonIndex, value) => {
+    const updatedItems = [...formData.items];
 
-  const baseTotal =
-    Number(item.final_price) *
-    Number(item.quantity);
+    const addon = updatedItems[itemIndex].addons[addonIndex];
 
-  let addonTotal = 0;
+    addon.quantity = Number(value);
 
-  item.addons?.forEach((addon) => {
+    const item = updatedItems[itemIndex];
 
-    addonTotal +=
-      Number(addon.addon_price) *
-      Number(addon.quantity);
+    const baseTotal = Number(item.final_price) * Number(item.quantity);
 
-  });
+    let addonTotal = 0;
 
-  return (
-    baseTotal + addonTotal
-  ).toFixed(2);
+    item.addons?.forEach((a) => {
+      addonTotal += Number(a.addon_price) * Number(a.quantity);
+    });
 
-};
+    item.total_price = (baseTotal + addonTotal).toFixed(2);
 
-// ==========================================
-// LIVE BILL SUMMARY
-// ==========================================
-const calculateLiveTotals = () => {
-
-  // ========================================
-  // SUBTOTAL
-  // ========================================
-  let subtotal = 0;
-
-  // ========================================
-  // TAX BREAKDOWN
-  // ========================================
-  const taxBreakdown = [];
-
-  // ========================================
-  // ADD TAX HELPER
-  // ========================================
-  const addTaxAmount = (
-    taxName,
-    percentage,
-    amount
-  ) => {
-
-    const existingTax =
-      taxBreakdown.find(
-        (t) =>
-          t.name === taxName &&
-          Number(t.percentage) ===
-            Number(percentage)
-      );
-
-    if (existingTax) {
-
-      existingTax.amount += amount;
-
-    }
-
-    else {
-
-      taxBreakdown.push({
-
-        name: taxName,
-        percentage,
-        amount,
-
-      });
-
-    }
-
+    setFormData({
+      ...formData,
+      items: updatedItems,
+    });
   };
 
-  // ========================================
-  // LOOP ITEMS
-  // ========================================
-  formData.items.forEach((item) => {
+  // ==========================================
+  // REMOVE ADDON
+  // ==========================================
+  const removeAddon = (itemIndex, addonIndex) => {
+    const updatedItems = [...formData.items];
 
-    // ======================================
-    // PRODUCT BASE TOTAL
-    // ======================================
-    const productBaseTotal =
-      Number(item.final_price) *
-      Number(item.quantity);
+    updatedItems[itemIndex].addons = updatedItems[itemIndex].addons.filter(
+      (_, i) => i !== addonIndex,
+    );
 
-    // ======================================
-    // SUBTOTAL
-    // ======================================
-    subtotal += productBaseTotal;
+    setFormData({
+      ...formData,
+      items: updatedItems,
+    });
+  };
 
-    // ======================================
-    // PRODUCT TAXES
-    // ======================================
-    if (
-      item.taxes &&
-      item.taxes.length > 0
-    ) {
+  // ==========================================
+  // INCREASE QUANTITY
+  // ==========================================
+  const increaseQuantity = (index) => {
+    const item = formData.items[index];
 
-      item.taxes.forEach((tax) => {
+    handleItemChange(index, "quantity", item.quantity + 1);
+  };
 
-        const taxAmount =
-          (
-            productBaseTotal *
-            Number(tax.percentage)
-          ) / 100;
+  // ==========================================
+  // DECREASE QUANTITY
+  // ==========================================
+  const decreaseQuantity = (index) => {
+    const item = formData.items[index];
 
-        addTaxAmount(
-          tax.name,
-          tax.percentage,
-          taxAmount
-        );
-
-      });
-
+    if (item.quantity <= 1) {
+      return;
     }
 
-    // ======================================
-    // COMBO TAXES
-    // ======================================
-    if (
-      item.item_type === "combo"
-    ) {
+    handleItemChange(index, "quantity", item.quantity - 1);
+  };
 
-      item.combo_items?.forEach(
-        (comboItem) => {
+  // ==========================================
+  // REMOVE ITEM
+  // ==========================================
+  const removeItem = (index) => {
+    const updatedItems = formData.items.filter((_, i) => i !== index);
 
+    setFormData({
+      ...formData,
+      items: updatedItems,
+    });
+  };
+
+  // ==========================================
+  // CALCULATE SINGLE ITEM TOTAL
+  // ==========================================
+  const calculateItemTotal = (item) => {
+    const baseTotal = Number(item.final_price) * Number(item.quantity);
+
+    let addonTotal = 0;
+
+    item.addons?.forEach((addon) => {
+      addonTotal += Number(addon.addon_price) * Number(addon.quantity);
+    });
+
+    return (baseTotal + addonTotal).toFixed(2);
+  };
+
+  // ==========================================
+  // LIVE BILL SUMMARY
+  // ==========================================
+  const calculateLiveTotals = () => {
+    // ========================================
+    // SUBTOTAL
+    // ========================================
+    let subtotal = 0;
+
+    // ========================================
+    // TAX BREAKDOWN
+    // ========================================
+    const taxBreakdown = [];
+
+    // ========================================
+    // ADD TAX HELPER
+    // ========================================
+    const addTaxAmount = (taxName, percentage, amount) => {
+      const existingTax = taxBreakdown.find(
+        (t) =>
+          t.name === taxName && Number(t.percentage) === Number(percentage),
+      );
+
+      if (existingTax) {
+        existingTax.amount += amount;
+      } else {
+        taxBreakdown.push({
+          name: taxName,
+          percentage,
+          amount,
+        });
+      }
+    };
+
+    // ========================================
+    // LOOP ITEMS
+    // ========================================
+    formData.items.forEach((item) => {
+      // ======================================
+      // PRODUCT BASE TOTAL
+      // ======================================
+      const productBaseTotal = Number(item.final_price) * Number(item.quantity);
+
+      // ======================================
+      // SUBTOTAL
+      // ======================================
+      subtotal += productBaseTotal;
+
+      // ======================================
+      // PRODUCT TAXES
+      // ======================================
+      if (item.taxes && item.taxes.length > 0) {
+        item.taxes.forEach((tax) => {
+          const taxAmount = (productBaseTotal * Number(tax.percentage)) / 100;
+
+          addTaxAmount(tax.name, tax.percentage, taxAmount);
+        });
+      }
+
+      // ======================================
+      // COMBO TAXES
+      // ======================================
+      if (item.item_type === "combo") {
+        item.combo_items?.forEach((comboItem) => {
           const comboItemTotal =
-            Number(
-              comboItem.allocated_price
-            ) *
+            Number(comboItem.allocated_price) *
             Number(comboItem.quantity) *
             Number(item.quantity);
 
-          comboItem.taxes?.forEach(
-            (tax) => {
+          comboItem.taxes?.forEach((tax) => {
+            const taxAmount = (comboItemTotal * Number(tax.percentage)) / 100;
 
-              const taxAmount =
-                (
-                  comboItemTotal *
-                  Number(
-                    tax.percentage
-                  )
-                ) / 100;
-
-              addTaxAmount(
-                tax.name,
-                tax.percentage,
-                taxAmount
-              );
-
-            }
-          );
-
-        }
-      );
-
-    }
-
-    // ======================================
-    // ADDONS
-    // ======================================
-    item.addons?.forEach((addon) => {
-
-      const addonTotal =
-        Number(addon.addon_price) *
-        Number(addon.quantity || 1);
-
-      // ====================================
-      // SUBTOTAL
-      // ====================================
-      subtotal += addonTotal;
-
-      // ====================================
-      // ADDON TAXES
-      // ONLY IF ADDON HAS TAXES
-      // ====================================
-      if (
-        addon.taxes &&
-        addon.taxes.length > 0
-      ) {
-
-        addon.taxes.forEach((tax) => {
-
-          const taxAmount =
-            (
-              addonTotal *
-              Number(tax.percentage)
-            ) / 100;
-
-          addTaxAmount(
-            tax.name,
-            tax.percentage,
-            taxAmount
-          );
-
+            addTaxAmount(tax.name, tax.percentage, taxAmount);
+          });
         });
-
       }
 
+      // ======================================
+      // ADDONS
+      // ======================================
+      item.addons?.forEach((addon) => {
+        const addonTotal =
+          Number(addon.addon_price) * Number(addon.quantity || 1);
+
+        // ====================================
+        // SUBTOTAL
+        // ====================================
+        subtotal += addonTotal;
+
+        // ====================================
+        // ADDON TAXES
+        // ONLY IF ADDON HAS TAXES
+        // ====================================
+        if (addon.taxes && addon.taxes.length > 0) {
+          addon.taxes.forEach((tax) => {
+            const taxAmount = (addonTotal * Number(tax.percentage)) / 100;
+
+            addTaxAmount(tax.name, tax.percentage, taxAmount);
+          });
+        }
+      });
     });
 
-  });
+    // ========================================
+    // TOTAL TAX
+    // ========================================
+    const taxTotal = taxBreakdown.reduce((sum, tax) => sum + tax.amount, 0);
 
-  // ========================================
-  // TOTAL TAX
-  // ========================================
-  const taxTotal =
-    taxBreakdown.reduce(
-      (sum, tax) =>
-        sum + tax.amount,
-      0
-    );
+    // ========================================
+    // SERVICE CHARGES
+    // ========================================
+    const serviceChargeBreakdown = [];
 
-  // ========================================
-  // SERVICE CHARGES
-  // ========================================
-  const serviceChargeBreakdown = [];
-
-  formData.service_charges?.forEach(
-    (charge) => {
-
+    formData.service_charges?.forEach((charge) => {
       let amount = 0;
 
-      if (
-        charge.charge_type ===
-        "percentage"
-      ) {
-
-        amount =
-          (
-            subtotal *
-            Number(charge.value)
-          ) / 100;
-
-      }
-
-      else {
-
-        amount = Number(
-          charge.value
-        );
-
+      if (charge.charge_type === "percentage") {
+        amount = (subtotal * Number(charge.value)) / 100;
+      } else {
+        amount = Number(charge.value);
       }
 
       serviceChargeBreakdown.push({
-
         name: charge.name,
 
-        charge_type:
-          charge.charge_type,
+        charge_type: charge.charge_type,
 
         value: charge.value,
 
         amount,
-
       });
+    });
 
-    }
-  );
-
-  // ========================================
-  // TOTAL SERVICE CHARGE
-  // ========================================
-  const serviceChargeTotal =
-    serviceChargeBreakdown.reduce(
-      (sum, charge) =>
-        sum + charge.amount,
-      0
+    // ========================================
+    // TOTAL SERVICE CHARGE
+    // ========================================
+    const serviceChargeTotal = serviceChargeBreakdown.reduce(
+      (sum, charge) => sum + charge.amount,
+      0,
     );
 
-  // ========================================
-  // DISCOUNT
-  // ========================================
-  const discountAmount =
-    Number(
-      formData.discount_amount || 0
-    );
+    // ========================================
+    // DISCOUNT
+    // ========================================
+    const discountAmount = Number(formData.discount_amount || 0);
 
-  // ========================================
-  // ROUND OFF
-  // ========================================
-  const roundOffAmount =
-    Number(
-      formData.round_off_amount || 0
-    );
+    // ========================================
+    // ROUND OFF
+    // ========================================
+    const roundOffAmount = Number(formData.round_off_amount || 0);
 
-  // ========================================
-  // GRAND TOTAL
-  // ========================================
-  const grandTotal =
-    subtotal +
-    taxTotal +
-    serviceChargeTotal -
-    discountAmount +
-    roundOffAmount;
+    // ========================================
+    // GRAND TOTAL
+    // ========================================
+    const grandTotal =
+      subtotal +
+      taxTotal +
+      serviceChargeTotal -
+      discountAmount +
+      roundOffAmount;
 
-  return {
+    return {
+      subtotal: subtotal.toFixed(2),
 
-    subtotal:
-      subtotal.toFixed(2),
+      tax_total: taxTotal.toFixed(2),
 
-    tax_total:
-      taxTotal.toFixed(2),
+      service_charge_total: serviceChargeTotal.toFixed(2),
 
-    service_charge_total:
-      serviceChargeTotal.toFixed(2),
+      grand_total: grandTotal.toFixed(2),
 
-    grand_total:
-      grandTotal.toFixed(2),
+      tax_breakdown: taxBreakdown,
 
-    tax_breakdown:
-      taxBreakdown,
-
-    service_charge_breakdown:
-      serviceChargeBreakdown,
-
+      service_charge_breakdown: serviceChargeBreakdown,
+    };
   };
 
-};
-
   // ==========================================
-// UPDATE ORDER
-// ==========================================
-const handleUpdateOrder =
-  async (e) => {
-
+  // UPDATE ORDER
+  // ==========================================
+  const handleUpdateOrder = async (e) => {
     e.preventDefault();
 
     try {
-
       const payload = {
+        status: formData.status,
 
-        status:
-          formData.status,
+        payment_status: formData.payment_status,
 
-        payment_status:
-          formData.payment_status,
+        payment_method: formData.payment_method,
 
-        payment_method:
-          formData.payment_method,
+        notes: formData.notes,
 
-        notes:
-          formData.notes,
+        discount_amount: formData.discount_amount,
 
-        discount_amount:
-          formData.discount_amount,
+        round_off_amount: formData.round_off_amount,
 
-        round_off_amount:
-          formData.round_off_amount,
+        items: formData.items.map((item) => ({
+          id: item.id,
+          item_type: item.item_type,
+          product_variant_id: item.product_variant_id,
+          combo_id: item.combo_id,
+          quantity: item.quantity,
 
-        items:
-          formData.items.map((item) => ({
+          notes: item.notes,
 
-            id: item.id,
-            item_type: item.item_type,
-            product_variant_id: item.product_variant_id,
-            combo_id: item.combo_id,
-            quantity:
-              item.quantity,
-
-            notes:
-              item.notes,
-
-            addons:
-              item.addons?.map(
-                (addon) => ({
-
-                  id: addon.id,
-                  addon_id: addon.addon_id,
-                  quantity:
-                    addon.quantity,
-                  addon_price: addon.addon_price
-
-                })
-              ) || [],
-
-          })),
-
+          addons:
+            item.addons?.map((addon) => ({
+              id: addon.id,
+              addon_id: addon.addon_id,
+              quantity: addon.quantity,
+              addon_price: addon.addon_price,
+            })) || [],
+        })),
       };
 
-      await updateOrder(
-        selectedOrder.id,
-        payload
-      );
+      await updateOrder(selectedOrder.id, payload);
 
       await fetchOrders();
 
@@ -835,83 +535,52 @@ const handleUpdateOrder =
 
       setAlert({
         type: "success",
-        message:
-          "Order updated successfully.",
+        message: "Order updated successfully.",
       });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
       console.log(error);
 
       setAlert({
         type: "danger",
-        message:
-          "Failed to update order.",
+        message: "Failed to update order.",
       });
-
     }
-
   };
   // ==========================================
   // DELETE ORDER
   // ==========================================
-  const handleDeleteOrder =
-    async (orderId) => {
+  const handleDeleteOrder = async (orderId) => {
+    const confirmDelete = window.confirm("Delete this order?");
 
-      const confirmDelete =
-        window.confirm(
-          "Delete this order?"
-        );
+    if (!confirmDelete) {
+      return;
+    }
 
-      if (!confirmDelete) {
-        return;
-      }
+    try {
+      await deleteOrder(orderId);
 
-      try {
+      fetchOrders();
 
-        await deleteOrder(orderId);
+      setAlert({
+        type: "success",
+        message: "Order deleted successfully.",
+      });
+    } catch (error) {
+      console.log(error);
 
-        fetchOrders();
+      setAlert({
+        type: "danger",
+        message: "Failed to delete order.",
+      });
+    }
+  };
 
-        setAlert({
-          type: "success",
-          message:
-            "Order deleted successfully.",
-        });
-
-      }
-
-      catch (error) {
-
-        console.log(error);
-
-        setAlert({
-          type: "danger",
-          message:
-            "Failed to delete order.",
-        });
-
-      }
-
-    };
-
-
-    const liveTotals =  calculateLiveTotals();
+  const liveTotals = calculateLiveTotals();
   return (
-
     <div className="container-fluid">
-
       {/* ALERT */}
       {alert && (
-
-        <div
-          className={`alert alert-${alert.type}`}
-        >
-          {alert.message}
-        </div>
-
+        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
       {/* HEADER */}
@@ -923,11 +592,7 @@ const handleUpdateOrder =
           mb-4
         "
       >
-
-        <h2 className="fw-bold">
-          Orders
-        </h2>
-
+        <h2 className="fw-bold">Orders</h2>
       </div>
 
       {/* TABLE */}
@@ -938,17 +603,11 @@ const handleUpdateOrder =
           shadow-sm
         "
       >
-
         <div className="card-body">
-
           <div className="table-responsive">
-
             <table className="table align-middle">
-
               <thead>
-
                 <tr>
-
                   <th>Order No</th>
 
                   <th>Type</th>
@@ -964,28 +623,17 @@ const handleUpdateOrder =
                   <th>Date</th>
 
                   <th>Actions</th>
-
                 </tr>
-
               </thead>
 
               <tbody>
-
                 {orderList.map((order) => (
-
                   <tr key={order.id}>
+                    <td>{order.order_number}</td>
 
-                    <td>
-                      {order.order_number}
-                    </td>
+                    <td>{order.order_type}</td>
 
-                    <td>
-                      {order.order_type}
-                    </td>
-
-                    <td>
-                      {order.table_name || "-"}
-                    </td>
+                    <td>{order.table_name || "-"}</td>
 
                     <td>
                       {order.order_type === "dine_in"
@@ -994,7 +642,6 @@ const handleUpdateOrder =
                     </td>
 
                     <td>
-
                       <span
                         className={`
                           badge
@@ -1002,57 +649,41 @@ const handleUpdateOrder =
                             order.status === "saved"
                               ? "bg-secondary"
                               : order.status === "running"
-                              ? "bg-primary"
-                              : order.status === "completed"
-                              ? "bg-success"
-                              : order.status === "cancelled"
-                              ? "bg-danger"
-                              : "bg-warning"
+                                ? "bg-primary"
+                                : order.status === "completed"
+                                  ? "bg-success"
+                                  : order.status === "cancelled"
+                                    ? "bg-danger"
+                                    : "bg-warning"
                           }
                         `}
                       >
                         {order.status}
                       </span>
-
                     </td>
 
                     <td>
-
                       <span
                         className={`
                           badge
                           ${
-                            order.payment_status ===
-                            "paid"
+                            order.payment_status === "paid"
                               ? "bg-success"
-                              : order.payment_status ===
-                                "failed"
-                              ? "bg-danger"
-                              : "bg-warning"
+                              : order.payment_status === "failed"
+                                ? "bg-danger"
+                                : "bg-warning"
                           }
                         `}
                       >
-                        {
-                          order.payment_status
-                        }
+                        {order.payment_status}
                       </span>
-
                     </td>
 
-                    <td>
-                      ₹{order.grand_total}
-                    </td>
+                    <td>₹{order.grand_total}</td>
+
+                    <td>{new Date(order.created_at).toLocaleString()}</td>
 
                     <td>
-
-                      {new Date(
-                        order.created_at
-                      ).toLocaleString()}
-
-                    </td>
-
-                    <td>
-
                       <button
                         className="
                           btn
@@ -1060,9 +691,7 @@ const handleUpdateOrder =
                           btn-sm
                           me-2
                         "
-                        onClick={() =>
-                          openEditModal(order)
-                        }
+                        onClick={() => openEditModal(order)}
                       >
                         Edit
                       </button>
@@ -1073,48 +702,29 @@ const handleUpdateOrder =
                           btn-danger
                           btn-sm
                         "
-                        onClick={() =>
-                          handleDeleteOrder(
-                            order.id
-                          )
-                        }
+                        onClick={() => handleDeleteOrder(order.id)}
                       >
                         Delete
                       </button>
-
                     </td>
-
                   </tr>
-
                 ))}
-
               </tbody>
-
             </table>
-
           </div>
-
         </div>
-
       </div>
 
       {/* EDIT MODAL */}
       {showEditModal && (
-
         <ModalWrapper
           title="Edit Order"
-          onClose={() =>
-            setShowEditModal(false)
-          }
+          onClose={() => setShowEditModal(false)}
           onSubmit={handleUpdateOrder}
         >
-
           {/* STATUS */}
           <div className="mb-3">
-
-            <label className="form-label">
-              Order Status
-            </label>
+            <label className="form-label">Order Status</label>
 
             <select
               className="form-select"
@@ -1122,92 +732,50 @@ const handleUpdateOrder =
               value={formData.status}
               onChange={handleChange}
             >
+              <option value="saved">Saved</option>
+              <option value="pending_approval">Pending Approval</option>
 
-              <option value="saved">
-                Saved
-              </option>
-              <option value="pending_approval">
-                Pending Approval
-              </option>
+              <option value="running">Running</option>
 
-              <option value="running">
-                Running
-              </option>
+              <option value="confirmed">Confirmed</option>
 
-              <option value="confirmed">
-                Confirmed
-              </option>
+              <option value="preparing">Preparing</option>
 
-              <option value="preparing">
-                Preparing
-              </option>
+              <option value="ready">Ready</option>
 
-              <option value="ready">
-                Ready
-              </option>
+              <option value="served">Served</option>
 
-              <option value="served">
-                Served
-              </option>
+              <option value="completed">Completed</option>
 
-              <option value="completed">
-                Completed
-              </option>
-
-              <option value="cancelled">
-                Cancelled
-              </option>
-
+              <option value="cancelled">Cancelled</option>
             </select>
-
           </div>
 
           {/* PAYMENT STATUS */}
           <div className="mb-3">
-
-            <label className="form-label">
-              Payment Status
-            </label>
+            <label className="form-label">Payment Status</label>
 
             <select
               className="form-select"
               name="payment_status"
-              value={
-                formData.payment_status
-              }
+              value={formData.payment_status}
               onChange={handleChange}
             >
+              <option value="pending">Pending</option>
 
-              <option value="pending">
-                Pending
-              </option>
+              <option value="partial">Partial</option>
 
-              <option value="partial">
-                Partial
-              </option>
+              <option value="paid">Paid</option>
 
-              <option value="paid">
-                Paid
-              </option>
+              <option value="failed">Failed</option>
 
-              <option value="failed">
-                Failed
-              </option>
-
-              <option value="refunded">
-                Refunded
-              </option>
-
+              <option value="refunded">Refunded</option>
             </select>
-
           </div>
 
           {/* NOTES */}
           <div className="mb-3">
-
-            <label className="form-label">
-              Notes
-            </label>
+            <label className="form-label">Notes</label>
 
             <textarea
               className="form-control"
@@ -1216,490 +784,339 @@ const handleUpdateOrder =
               value={formData.notes}
               onChange={handleChange}
             />
-
           </div>
 
           {/* ITEMS */}
-<div className="mb-4">
+          <div className="mb-4">
+            <h5 className="fw-bold mb-3">Order Items</h5>
 
-  <h5 className="fw-bold mb-3">
-    Order Items
-  </h5>
-
-  {formData.items.map(
-    (item, index) => (
-
-      <div
-        key={item.id}
-        className="
+            {formData.items.map((item, index) => (
+              <div
+                key={item.id}
+                className="
           card
           border-0
           shadow-sm
           mb-3
         "
-      >
-
-        <div className="card-body">
-
-          {/* HEADER */}
-          <div
-            className="
+              >
+                <div className="card-body">
+                  {/* HEADER */}
+                  <div
+                    className="
               d-flex
               justify-content-between
               align-items-start
               mb-3
             "
-          >
+                  >
+                    <div>
+                      <h6 className="fw-bold mb-1">{item.item_name}</h6>
 
-            <div>
+                      <small className="text-muted">
+                        ₹{item.final_price} each
+                      </small>
 
-              <h6 className="fw-bold mb-1">
-                {item.item_name}
-              </h6>
-
-              <small className="text-muted">
-
-                ₹{item.final_price}
-                {" "}
-                each
-
-              </small>
-
-              {item.dynamic_pricing_name && (
-
-                <div>
-
-                  <span
-                    className="
+                      {item.dynamic_pricing_name && (
+                        <div>
+                          <span
+                            className="
                       badge
                       bg-warning
                       text-dark
                       mt-1
                     "
-                  >
+                          >
+                            {item.dynamic_pricing_name}
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
-                    {
-                      item.dynamic_pricing_name
-                    }
-
-                  </span>
-
-                </div>
-
-              )}
-
-            </div>
-
-            <button
-              type="button"
-              className="
+                    <button
+                      type="button"
+                      className="
                 btn
                 btn-sm
                 btn-danger
               "
-              onClick={() =>
-                removeItem(index)
-              }
-            >
-              Delete
-            </button>
+                      onClick={() => removeItem(index)}
+                    >
+                      Delete
+                    </button>
+                  </div>
 
-          </div>
+                  {/* QUANTITY */}
+                  <div className="mb-3">
+                    <label className="form-label">Quantity</label>
 
-          {/* QUANTITY */}
-          <div className="mb-3">
-
-            <label className="form-label">
-              Quantity
-            </label>
-
-            <div
-              className="
+                    <div
+                      className="
                 d-flex
                 align-items-center
               "
-            >
-
-              <button
-                type="button"
-                className="
+                    >
+                      <button
+                        type="button"
+                        className="
                   btn
                   btn-outline-secondary
                 "
-                onClick={() =>
-                  decreaseQuantity(
-                    index
-                  )
-                }
-              >
-                -
-              </button>
+                        onClick={() => decreaseQuantity(index)}
+                      >
+                        -
+                      </button>
 
-              <input
-                type="number"
-                className="
+                      <input
+                        type="number"
+                        className="
                   form-control
                   mx-2
                   text-center
                 "
-                style={{
-                  width: "80px",
-                }}
-                value={item.quantity}
-                onChange={(e) =>
-                  handleItemChange(
-                    index,
-                    "quantity",
-                    e.target.value
-                  )
-                }
-              />
+                        style={{
+                          width: "80px",
+                        }}
+                        value={item.quantity}
+                        onChange={(e) =>
+                          handleItemChange(index, "quantity", e.target.value)
+                        }
+                      />
 
-              <button
-                type="button"
-                className="
+                      <button
+                        type="button"
+                        className="
                   btn
                   btn-outline-secondary
                 "
-                onClick={() =>
-                  increaseQuantity(
-                    index
-                  )
-                }
-              >
-                +
-              </button>
+                        onClick={() => increaseQuantity(index)}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
 
-            </div>
+                  {/* NOTES */}
+                  <div className="mb-3">
+                    <label className="form-label">Item Notes</label>
 
-          </div>
+                    <textarea
+                      rows={2}
+                      className="form-control"
+                      value={item.notes || ""}
+                      onChange={(e) =>
+                        handleItemChange(index, "notes", e.target.value)
+                      }
+                    />
+                  </div>
 
-          {/* NOTES */}
-          <div className="mb-3">
+                  {/* ADDONS */}
+                  {item.addons?.length > 0 && (
+                    <div className="mb-3">
+                      <h6 className="fw-bold">Addons</h6>
 
-            <label className="form-label">
-              Item Notes
-            </label>
-
-            <textarea
-              rows={2}
-              className="form-control"
-              value={item.notes || ""}
-              onChange={(e) =>
-                handleItemChange(
-                  index,
-                  "notes",
-                  e.target.value
-                )
-              }
-            />
-
-          </div>
-
-          {/* ADDONS */}
-          {item.addons?.length > 0 && (
-
-            <div className="mb-3">
-
-              <h6 className="fw-bold">
-                Addons
-              </h6>
-
-              {item.addons.map(
-                (
-                  addon,
-                  addonIndex
-                ) => (
-
-                  <div
-                    key={addon.id}
-                    className="
+                      {item.addons.map((addon, addonIndex) => (
+                        <div
+                          key={addon.id}
+                          className="
                       border
                       rounded
                       p-2
                       mb-2
                     "
-                  >
-
-                    <div
-                      className="
+                        >
+                          <div
+                            className="
                         d-flex
                         justify-content-between
                         align-items-center
                       "
-                    >
+                          >
+                            <div>
+                              <div>{addon.addon_name}</div>
 
-                      <div>
-
-                        <div>
-                          {
-                            addon.addon_name
-                          }
-                        </div>
-
-                        <small
-                          className="
+                              <small
+                                className="
                             text-muted
                           "
-                        >
-                          ₹
-                          {
-                            addon.addon_price
-                          }
-                        </small>
+                              >
+                                ₹{addon.addon_price}
+                              </small>
+                            </div>
 
-                      </div>
-
-                      <button
-                        type="button"
-                        className="
+                            <button
+                              type="button"
+                              className="
                           btn
                           btn-sm
                           btn-outline-danger
                         "
-                        onClick={() =>
-                          removeAddon(
-                            index,
-                            addonIndex
-                          )
-                        }
-                      >
-                        Remove
-                      </button>
+                              onClick={() => removeAddon(index, addonIndex)}
+                            >
+                              Remove
+                            </button>
+                          </div>
 
-                    </div>
-
-                    <div
-                      className="
+                          <div
+                            className="
                         d-flex
                         align-items-center
                         mt-2
                       "
-                    >
-
-                      <input
-                        type="number"
-                        min="1"
-                        className="
+                          >
+                            <input
+                              type="number"
+                              min="1"
+                              className="
                           form-control
                         "
-                        style={{
-                          width: "90px",
-                        }}
-                        value={
-                          addon.quantity
-                        }
-                        onChange={(e) =>
-                          handleAddonQuantityChange(
-                            index,
-                            addonIndex,
-                            e.target.value
-                          )
-                        }
-                      />
+                              style={{
+                                width: "90px",
+                              }}
+                              value={addon.quantity}
+                              onChange={(e) =>
+                                handleAddonQuantityChange(
+                                  index,
+                                  addonIndex,
+                                  e.target.value,
+                                )
+                              }
+                            />
 
-                      <span className="ms-3">
-
-                        Total:
-                        {" "}
-                        ₹
-                        {
-                          addon.total_price
-                        }
-
-                      </span>
-
+                            <span className="ms-3">
+                              Total: ₹{addon.total_price}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+                  )}
 
-                  </div>
-
-                )
-              )}
-
-            </div>
-
-          )}
-
-          {/* TOTAL */}
-          <div
-            className="
+                  {/* TOTAL */}
+                  <div
+                    className="
               bg-light
               rounded
               p-2
             "
-          >
-
-            <strong>
-              Item Total:
-            </strong>
-
-            {" "}
-            {/* {item.total_price} */}
-            ₹{calculateItemTotal(item)}
-
+                  >
+                    <strong>Item Total:</strong> {/* {item.total_price} */}₹
+                    {calculateItemTotal(item)}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
-        </div>
+          {/* TAXES */}
+          <div className="mb-4">
+            <h5 className="fw-bold mb-3">Taxes</h5>
 
-      </div>
-
-    )
-  )}
-
-</div>
-
-{/* TAXES */}
-<div className="mb-4">
-
-  <h5 className="fw-bold mb-3">
-    Taxes
-  </h5>
-
-  {liveTotals.tax_breakdown?.map((tax, index) => (
-
-    <div
-      key={`${tax.name}-${index}`}
-      className="
+            {liveTotals.tax_breakdown?.map((tax, index) => (
+              <div
+                key={`${tax.name}-${index}`}
+                className="
         d-flex
         justify-content-between
         border-bottom
         py-2
       "
-    >
+              >
+                <span>
+                  {tax.name} ({tax.percentage}%)
+                </span>
 
-      <span>
-        {tax.name}
-        {" "}
-        ({tax.percentage}%)
-      </span>
+                <span>₹{Number(tax.amount).toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
 
-      <span>
-        ₹{Number(tax.amount).toFixed(2)}
-      </span>
+          {/* SERVICE CHARGES */}
+          <div className="mb-4">
+            <h5 className="fw-bold mb-3">Service Charges</h5>
 
-    </div>
-
-  ))}
-
-</div>
-
-{/* SERVICE CHARGES */}
-<div className="mb-4">
-
-  <h5 className="fw-bold mb-3">
-    Service Charges
-  </h5>
-
-  {liveTotals.service_charge_breakdown?.map(
-    (charge, index) => (
-
-      <div
-        key={`${charge.name}-${index}`}
-        className="
+            {liveTotals.service_charge_breakdown?.map((charge, index) => (
+              <div
+                key={`${charge.name}-${index}`}
+                className="
           d-flex
           justify-content-between
           border-bottom
           py-2
         "
-      >
+              >
+                <span>{charge.name}</span>
 
-        <span>
-          {charge.name}
-        </span>
+                <span>₹{Number(charge.amount).toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
 
-        <span>
-          ₹{Number(charge.amount).toFixed(2)}
-        </span>
-
-      </div>
-
-    )
-  )}
-
-</div>
-
-{/* BILL SUMMARY */}
-<div
-  className="
+          {/* BILL SUMMARY */}
+          <div
+            className="
     bg-light
     rounded
     p-3
     mb-3
   "
->
-
-  <div
-    className="
+          >
+            <div
+              className="
       d-flex
       justify-content-between
       mb-2
     "
-  >
-    <span>Subtotal</span>
+            >
+              <span>Subtotal</span>
 
-    <span>
-      ₹{liveTotals.subtotal}
-    </span>
-  </div>
+              <span>₹{liveTotals.subtotal}</span>
+            </div>
 
-  <div
-    className="
+            <div
+              className="
       d-flex
       justify-content-between
       mb-2
     "
-  >
-    <span>Tax</span>
+            >
+              <span>Tax</span>
 
-    <span>
-      ₹{liveTotals.tax_total}
-    </span>
-  </div>
+              <span>₹{liveTotals.tax_total}</span>
+            </div>
 
-  <div
-    className="
+            <div
+              className="
       d-flex
       justify-content-between
       mb-2
     "
-  >
-    <span>
-      Service Charge
-    </span>
+            >
+              <span>Service Charge</span>
 
-    <span>
-      ₹
-      {
-      liveTotals.service_charge_total}
-      
-    </span>
-  </div>
+              <span>₹{liveTotals.service_charge_total}</span>
+            </div>
 
-  <div
-    className="
+            <div
+              className="
       d-flex
       justify-content-between
       mb-2
     "
-  >
-    <span>Discount</span>
+            >
+              <span>Discount</span>
 
-    <span>
-      - ₹
-      {
-        formData.discount_amount
-      }
-    </span>
-  </div>
+              <span>- ₹{formData.discount_amount}</span>
+            </div>
 
-  <div
-    className="
+            <div
+              className="
       d-flex
       justify-content-between
       mb-2
     "
-  >
-    {/* <span>Round Off</span>
+            >
+              {/* <span>Round Off</span>
 
     <span>
       ₹
@@ -1707,29 +1124,23 @@ const handleUpdateOrder =
         formData.round_off_amount
       }
     </span> */}
-  </div>
+            </div>
 
-  <hr />
+            <hr />
 
-  <div
-    className="
+            <div
+              className="
       d-flex
       justify-content-between
       fw-bold
       fs-5
     "
-  >
+            >
+              <span>Grand Total</span>
 
-    <span>Grand Total</span>
-
-    <span>
-      ₹
-{liveTotals.grand_total}
-    </span>
-
-  </div>
-
-</div>
+              <span>₹{liveTotals.grand_total}</span>
+            </div>
+          </div>
 
           {/* GRAND TOTAL */}
           <div
@@ -1739,40 +1150,19 @@ const handleUpdateOrder =
               rounded
             "
           >
-
-            <h5 className="mb-0">
-
-              Grand Total:
-              {" "}
-              ₹
-{liveTotals.grand_total}
-
-            </h5>
-
+            <h5 className="mb-0">Grand Total: ₹{liveTotals.grand_total}</h5>
           </div>
-
         </ModalWrapper>
-
       )}
-
     </div>
-
   );
-
 }
 
 // ==========================================
 // REUSABLE MODAL
 // ==========================================
-function ModalWrapper({
-  title,
-  children,
-  onClose,
-  onSubmit,
-}) {
-
+function ModalWrapper({ title, children, onClose, onSubmit }) {
   return (
-
     <div
       className="
         modal
@@ -1781,44 +1171,36 @@ function ModalWrapper({
         show
       "
       style={{
-        backgroundColor:
-          "rgba(0,0,0,0.5)",
+        backgroundColor: "rgba(0,0,0,0.5)",
       }}
     >
-
       <div
-  className="
+        className="
     modal-dialog
     modal-xl
     modal-dialog-scrollable
   "
-  style={{
-    height: "95vh",
-    marginTop: "10px",
-    marginBottom: "10px",
-  }}
->
-
+        style={{
+          height: "95vh",
+          marginTop: "10px",
+          marginBottom: "10px",
+        }}
+      >
         <div
           className="modal-content"
           style={{
             maxHeight: "95vh",
           }}
         >
-
           {/* HEADER */}
           <div className="modal-header">
-
-            <h5 className="modal-title">
-              {title}
-            </h5>
+            <h5 className="modal-title">{title}</h5>
 
             <button
               type="button"
               className="btn-close"
               onClick={onClose}
             ></button>
-
           </div>
 
           {/* FORM */}
@@ -1830,21 +1212,19 @@ function ModalWrapper({
               h-100
             "
           >
-
             {/* BODY */}
             <div
-  className="modal-body"
-  style={{
-    overflowY: "auto",
-    maxHeight: "calc(95vh - 140px)",
-  }}
->
-  {children}
-</div>
+              className="modal-body"
+              style={{
+                overflowY: "auto",
+                maxHeight: "calc(95vh - 140px)",
+              }}
+            >
+              {children}
+            </div>
 
             {/* FOOTER */}
             <div className="modal-footer">
-
               <button
                 type="button"
                 className="
@@ -1865,17 +1245,10 @@ function ModalWrapper({
               >
                 Save Changes
               </button>
-
             </div>
-
           </form>
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }

@@ -15,15 +15,15 @@ const customerMenu = [
     icon: <HouseDoor />
   },
 
-  {
-    key: "saved-addresses",
-    label: "Saved Addresses",
-    icon: <GeoAlt />
-  },
+  // {
+  //   key: "saved-addresses",
+  //   label: "Saved Addresses",
+  //   icon: <GeoAlt />
+  // },
 
   {
-    key: "current-orders",
-    label: "Current Orders",
+    key: "active-orders",
+    label: "Acitve Orders",
     icon: <BagCheck />
   },
 
@@ -33,11 +33,11 @@ const customerMenu = [
     icon: <ClockHistory />
   },
 
-  {
-    key: "favorites",
-    label: "Favorites",
-    icon: <Heart />
-  },
+  // {
+  //   key: "favorites",
+  //   label: "Favorites",
+  //   icon: <Heart />
+  // },
 
   {
     key: "profile",

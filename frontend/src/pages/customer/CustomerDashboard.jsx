@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "../../components/admin/dashboard/DashboardLayout";
 
 import RestaurantsPage from "./RestaurantsPage";
+import ActiveOrders from "./ActiveOrders";
+import OrderHistory from "./OrderHistory";
 
 export default function CustomerDashboard() {
   // ==========================================
@@ -75,6 +77,8 @@ export default function CustomerDashboard() {
   // PAGE RENDERER
   // ==========================================
   const renderPage = () => {
+    console.log("ACTIVE PAGE:", activePage);
+
     switch (activePage.type) {
       case "restaurants":
         return (
@@ -84,6 +88,11 @@ export default function CustomerDashboard() {
             loadingLocation={loadingLocation}
           />
         );
+      case "active-orders":
+        return <ActiveOrders />;
+
+      case "order-history":
+        return <OrderHistory />;
 
       default:
         return (
