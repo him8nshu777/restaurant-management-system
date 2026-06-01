@@ -538,7 +538,7 @@ class TableDetailView(RetrieveUpdateDestroyAPIView):
         if self.request.user.role == "restaurant_admin":
 
             return RestaurantTable.objects.filter(restaurant__owner=self.request.user)
-        return RestaurantTable.objects.filter(restaurant=self.request.user.resataurant)
+        return RestaurantTable.objects.filter(restaurant=self.request.user.restaurant)
 
     def get_serializer_class(self):
 

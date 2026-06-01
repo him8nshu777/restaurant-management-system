@@ -130,8 +130,16 @@ class StaffCreateSerializer(serializers.ModelSerializer):
         # ==========================================
         # VERIFY RESTAURANT BELONGS TO OWNER
         # ==========================================
-        restaurant = Restaurant.objects.get(id=restaurant_id, owner=request.user)
-
+        # restaurant = Restaurant.objects.get(id=restaurant_id, owner=request.user)
+        if request.user.role == "restaurant_admin":
+            restaurant = Restaurant.objects.get(
+                id=restaurant_id,
+                owner=request.user
+            )
+        else:
+            restaurant = Restaurant.objects.get(
+                id=restaurant_id
+            )
         # ==========================================
         # PENDING BRANCH CANNOT CREATE STAFF
         # ==========================================
@@ -232,7 +240,16 @@ class FloorCreateSerializer(serializers.ModelSerializer):
         # ==========================================
         # VERIFY OWNER RESTAURANT
         # ==========================================
-        restaurant = Restaurant.objects.get(id=restaurant_id, owner=request.user)
+        # restaurant = Restaurant.objects.get(id=restaurant_id, owner=request.user)
+        if request.user.role == "restaurant_admin":
+            restaurant = Restaurant.objects.get(
+                id=restaurant_id,
+                owner=request.user
+            )
+        else:
+            restaurant = Restaurant.objects.get(
+                id=restaurant_id
+            )
 
         # ==========================================
         # CREATE FLOOR
@@ -286,7 +303,16 @@ class AreaCreateSerializer(serializers.ModelSerializer):
         # ==========================================
         # VERIFY RESTAURANT OWNER
         # ==========================================
-        restaurant = Restaurant.objects.get(id=restaurant_id, owner=request.user)
+        # restaurant = Restaurant.objects.get(id=restaurant_id, owner=request.user)
+        if request.user.role == "restaurant_admin":
+            restaurant = Restaurant.objects.get(
+                id=restaurant_id,
+                owner=request.user
+            )
+        else:
+            restaurant = Restaurant.objects.get(
+                id=restaurant_id
+            )
 
         # ==========================================
         # CREATE AREA
@@ -396,8 +422,16 @@ class TableCreateSerializer(serializers.ModelSerializer):
         # ==========================================
         # VERIFY RESTAURANT OWNER
         # ==========================================
-        restaurant = Restaurant.objects.get(id=restaurant_id, owner=request.user)
-
+        # restaurant = Restaurant.objects.get(id=restaurant_id, owner=request.user)
+        if request.user.role == "restaurant_admin":
+            restaurant = Restaurant.objects.get(
+                id=restaurant_id,
+                owner=request.user
+            )
+        else:
+            restaurant = Restaurant.objects.get(
+                id=restaurant_id
+            )
         # ==========================================
         # CREATE TABLE
         # ==========================================

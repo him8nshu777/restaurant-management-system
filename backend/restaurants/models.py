@@ -192,6 +192,11 @@ class Area(models.Model):
     class Meta:
 
         ordering = ["id"]
+        unique_together = [
+            "restaurant",
+            "floor",
+            "name"
+        ]
 
     def __str__(self):
 
@@ -294,6 +299,7 @@ class RestaurantTable(models.Model):
 
         unique_together = [
             "restaurant",
+            "floor",
             "table_number",
         ]
 
