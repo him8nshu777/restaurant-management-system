@@ -56,25 +56,34 @@ export default function VerifyEmailPage() {
   };
 
   return (
-
     <div
       className="
-        d-flex
-        flex-column
-        justify-content-center
-        align-items-center
-        vh-100
-      "
+      container-fluid
+      min-vh-100
+      d-flex
+      justify-content-center
+      align-items-center
+      bg-light
+    "
     >
+      <div
+        className="
+        card
+        border-0
+        shadow
+        p-4
+        p-md-5
+        text-center
+      "
+        style={{
+          width: "100%",
+          maxWidth: "500px",
+        }}
+      >
+        <h2 className="fw-bold text-primary">{message}</h2>
 
-      <h2>
-        {message}
-      </h2>
-
-      <p>
-        Redirecting...
-      </p>
-
+        <p className="text-muted mt-3 mb-0">Redirecting...</p>
+      </div>
     </div>
   );
 }

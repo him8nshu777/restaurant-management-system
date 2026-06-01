@@ -14,7 +14,6 @@ import ButtonLoader from "../../components/common/ButtonLoader";
  * → API call → password updated → redirect login
  */
 export default function ResetPasswordPage() {
-
   const { uid, token } = useParams();
   const navigate = useNavigate();
 
@@ -44,68 +43,94 @@ export default function ResetPasswordPage() {
     }
 
     try {
-
       // API call to reset password
-      await axiosInstance.post(
-        `/auth/reset-password/${uid}/${token}/`,
-        { password }
-      );
+      await axiosInstance.post(`/auth/reset-password/${uid}/${token}/`, {
+        password,
+      });
 
       // Success feedback
       alert("Password reset successful");
 
       // Redirect to login page
       navigate("/login");
-
     } catch (error) {
-
       // Show backend error or fallback message
-      alert(
-        error.response?.data?.message ||
-        "Something went wrong"
-      );
-
+      alert(error.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   return (
+    <div
+      className="
+      container-fluid
+      min-vh-100
+      d-flex
+      justify-content-center
+      align-items-center
+      bg-light
+    "
+    >
+      <div
+        className="
+        card
+        border-0
+        shadow
+        p-4
+        p-md-5
+      "
+        style={{
+          width: "100%",
+          maxWidth: "450px",
+        }}
+      >
+        <div className="text-center mb-4">
+          <h2 className="fw-bold">Reset Password</h2>
 
-    <div>
+          <p className="text-muted">Create a new password for your account</p>
+        </div>
 
-      <h1>Reset Password</h1>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label">New Password</label>
 
-      {/* Reset password form */}
-      <form onSubmit={handleSubmit}>
+            <input
+              type="password"
+              className="form-control"
+              placeholder="Enter new password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-        {/* New password */}
-        <input
-          type="password"
-          placeholder="New Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <div className="mb-4">
+            <label className="form-label">Confirm Password</label>
 
-        <br /><br />
+            <input
+              type="password"
+              className="form-control"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
 
-        {/* Confirm password */}
-        <input
-          type="password"
-          placeholder="Confirm Password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-        />
-
-        <br /><br />
-
-        {/* Submit button */}
-        <button type="submit" disabled={loading}>
-          {loading ? <ButtonLoader /> : "Reset Password"}
-        </button>
-
-      </form>
-
+          <button
+            type="submit"
+            className="
+            btn
+            btn-success
+            w-100
+          "
+            disabled={loading}
+          >
+            {loading ? <ButtonLoader /> : "Reset Password"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

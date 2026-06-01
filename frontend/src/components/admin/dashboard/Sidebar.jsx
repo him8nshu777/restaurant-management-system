@@ -527,28 +527,17 @@ export default function Sidebar({ activePage, setActivePage }) {
                 </button>
 
                 <button
-  className="
+                  className="
     btn
     btn-outline-danger
     w-100
     text-start
     mt-2
   "
-  onClick={handleLogout}
->
-  Logout
-</button>
-
-                <div className="small fw-semibold">{user?.username}</div>
-
-                <div
-                  className="
-      text-secondary
-      small
-    "
+                  onClick={handleLogout}
                 >
-                  {user?.role}
-                </div>
+                  Logout
+                </button>
               </>
             )}
           </div>

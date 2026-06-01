@@ -34,9 +34,9 @@ from menu.utils.pricing import (
     calculate_product_taxes,
 )
 from orders.utils.pricing import calculate_order_totals
+from inventory.services import (deduct_order_inventory)
 
 User = get_user_model()
-
 
 # =========================================================
 # CREATE ORDER
@@ -499,72 +499,6 @@ class CreateOrderView(APIView):
         )
 
 
-# =========================================================
-# ORDER LIST
-# ========================================================
-# class OrderListView(APIView):
-
-#     def get(self, request, restaurant_id):
-#         print("REQUEST USER ->", request.user)
-#         print("ROLE ->", request.user.role)
-#         print("USER RESTAURANT ->", request.user.restaurant_id)
-#         print("PARAM RESTAURANT ->", restaurant_id)
-#         # ======================================
-#         # BASE QUERY
-#         # ======================================
-#         orders = Order.objects.filter(restaurant_id=restaurant_id)
-#         if request.query_params.get("kitchen") == "true":
-#             orders = orders.exclude(
-#                 status="pending_approval"
-#             )
-#         # ======================================
-#         # WAITER ONLY SEES HIS ORDERS
-#         # ======================================
-#         if request.user.role == "waiter":
-
-#             orders = orders.filter(waiter=request.user)
-
-#         # ======================================
-#         # DELIVERY STAFF
-#         # ======================================
-#         elif request.user.role == "delivery":
-
-#             orders = orders.filter(
-#                 delivery_staff=request.user
-#             )
-#         # ======================================
-#         # LOAD RELATIONS
-#         # ======================================
-#         orders = (
-#             orders.select_related(
-#                 "table",
-#                 "floor",
-#                 "area",
-#                 "waiter",
-#             )
-#             .prefetch_related(
-#                 "items",
-#                 "items__taxes",
-#                 "items__addons",
-#                 "items__addons__taxes",
-#                 "items__combo_items",
-#                 "items__combo_items__taxes",
-#                 "taxes",
-#                 "service_charges",
-#             )
-#             .order_by("-created_at")
-#         )
-
-#         serializer = OrderListSerializer(
-#             orders,
-#             many=True,
-#         )
-#         # from pprint import pprint
-
-#         # print("\n===== ORDER LIST DATA =====")
-#         # pprint(serializer.data)
-#         # print("===========================\n")
-#         return Response(serializer.data)
 # =========================================================
 # ORDER LIST
 # =========================================================
@@ -1308,6 +1242,12 @@ class UpdateOrderStatusView(APIView):
 
         serialized_order = OrderListSerializer(order).data
 
+        if (
+            previous_status != "preparing"
+            and order.status == "preparing"
+            and not order.inventory_deducted
+        ):
+            deduct_order_inventory(order)
         # ==========================================
         # ORDER READY
         # ==========================================

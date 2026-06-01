@@ -24,6 +24,22 @@ export default function Ingredients() {
 
   const [selectedIngredient, setSelectedIngredient] = useState(null);
 
+  // ==========================================
+  // INVENTORY COUNTS
+  // ==========================================
+  const lowStockCount = ingredientList.filter(
+    (ingredient) =>
+      Number(ingredient.current_stock) > 0 &&
+      Number(ingredient.current_stock) <=
+        Number(ingredient.low_stock_threshold),
+  ).length;
+
+  const outOfStockCount = ingredientList.filter(
+    (ingredient) =>
+      Number(ingredient.current_stock) <= 0,
+  ).length;
+
+
   const [formData, setFormData] = useState({
     name: "",
     unit: "",
@@ -222,6 +238,36 @@ const restaurantId =
         </button>
       </div>
 
+      <div className="row mb-4">
+        <div className="col-md-6">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body">
+              <h6 className="text-muted mb-1">
+                Low Stock Ingredients
+              </h6>
+
+              <h3 className="mb-0 text-warning">
+                {lowStockCount}
+              </h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body">
+              <h6 className="text-muted mb-1">
+                Out Of Stock Ingredients
+              </h6>
+
+              <h3 className="mb-0 text-danger">
+                {outOfStockCount}
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="card border-0 shadow-sm">
         <div className="card-body">
           <table className="table">
@@ -231,6 +277,7 @@ const restaurantId =
                 <th>Unit</th>
                 <th>Stock</th>
                 <th>Low Alert</th>
+                <th>Inventory Status</th>
                 <th>Cost</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -239,14 +286,64 @@ const restaurantId =
 
             <tbody>
               {ingredientList.map((ingredient) => (
-                <tr key={ingredient.id}>
+                <tr
+  key={ingredient.id}
+  className={
+    Number(ingredient.current_stock) <= 0
+      ? "table-danger"
+      : Number(ingredient.current_stock) <=
+          Number(
+            ingredient.low_stock_threshold,
+          )
+        ? "table-warning"
+        : ""
+  }
+>
                   <td>{ingredient.name}</td>
 
                   <td>{ingredient.unit_code}</td>
 
-                  <td>{ingredient.current_stock}</td>
+                  <td>
+  <strong
+    className={
+      Number(ingredient.current_stock) <= 0
+        ? "text-danger"
+        : Number(
+              ingredient.current_stock,
+            ) <=
+            Number(
+              ingredient.low_stock_threshold,
+            )
+          ? "text-warning"
+          : "text-success"
+    }
+  >
+    {ingredient.current_stock}
+  </strong>
+</td>
 
                   <td>{ingredient.low_stock_threshold}</td>
+
+                  <td>
+  {Number(ingredient.current_stock) <= 0 ? (
+    <span className="badge bg-danger">
+      Out Of Stock
+    </span>
+  ) : Number(
+      ingredient.current_stock,
+    ) <=
+    Number(
+      ingredient.low_stock_threshold,
+    ) ? (
+    <span className="badge bg-warning text-dark">
+      Low Stock
+    </span>
+  ) : (
+    <span className="badge bg-success">
+      Healthy
+    </span>
+  )}
+</td>
 
                   <td>{ingredient.cost_per_unit}</td>
 

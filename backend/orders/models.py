@@ -342,6 +342,10 @@ class Order(models.Model):
         auto_now=True,
     )
 
+    inventory_deducted = models.BooleanField(
+        default=False
+    )
+
     class Meta:
 
         ordering = ["-id"]
