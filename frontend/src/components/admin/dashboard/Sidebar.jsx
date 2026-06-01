@@ -7,6 +7,7 @@ import {
   PlusCircle,
   CheckCircleFill,
   Building,
+  PersonCircle,
 } from "react-bootstrap-icons";
 
 import { getRestaurants } from "../../../services/adminService";
@@ -14,15 +15,17 @@ import { getRestaurants } from "../../../services/adminService";
 import "./sidebar.css";
 
 import { useDispatch, useSelector } from "react-redux";
-
+import { logout } from "../../../auth/authSlice";
 import { setActiveRestaurant } from "../../../features/restaurants/restaurantSlice";
 
 import { getMenuByRole } from "./menuConfig";
-
+import { useNavigate } from "react-router-dom";
 // ==========================================
 // REUSABLE SIDEBAR
 // ==========================================
 export default function Sidebar({ activePage, setActivePage }) {
+  const navigate = useNavigate();
+
   // ==========================================
   // SIDEBAR COLLAPSE STATE
   // ==========================================
@@ -55,22 +58,29 @@ export default function Sidebar({ activePage, setActivePage }) {
   // ==========================================
   // AUTH USER
   // ==========================================
-  const user = useSelector(
-    (state) => state.auth.user
-  );
+  const user = useSelector((state) => state.auth.user);
+
+  const handleLogout = () => {
+    const confirmed = window.confirm("Are you sure you want to logout?");
+
+    if (!confirmed) return;
+
+    dispatch(logout());
+
+    localStorage.clear();
+
+    navigate("/");
+  };
 
   // ==========================================
   // ROLE BASED MENU
   // ==========================================
-  const menuItems = getMenuByRole(
-    user?.role || "restaurant_admin"
-  );
+  const menuItems = getMenuByRole(user?.role || "restaurant_admin");
 
   // ==========================================
   // ROLE CHECK
   // ==========================================
-  const isRestaurantAdmin =
-    user?.role === "restaurant_admin";
+  const isRestaurantAdmin = user?.role === "restaurant_admin";
 
   // ==========================================
   // TOGGLE DROPDOWN MENU
@@ -91,18 +101,15 @@ export default function Sidebar({ activePage, setActivePage }) {
     // ======================================
     // SAVE IN LOCAL STORAGE
     // ======================================
-    localStorage.setItem(
-      "activeRestaurant",
-      JSON.stringify(restaurant)
-    );
+    localStorage.setItem("activeRestaurant", JSON.stringify(restaurant));
 
     // ======================================
     // RELOAD DASHBOARD
     // ======================================
     window.location.reload();
   };
-console.log("ROLE:", user?.role);
-console.log("MENU:", menuItems);
+  console.log("ROLE:", user?.role);
+  console.log("MENU:", menuItems);
   // ==========================================
   // FETCH RESTAURANTS
   // ==========================================
@@ -125,10 +132,7 @@ console.log("MENU:", menuItems);
       if (data.length > 0 && !activeRestaurant) {
         dispatch(setActiveRestaurant(data[0]));
 
-        localStorage.setItem(
-          "activeRestaurant",
-          JSON.stringify(data[0])
-        );
+        localStorage.setItem("activeRestaurant", JSON.stringify(data[0]));
       }
     } catch (error) {
       console.log(error);
@@ -172,14 +176,10 @@ console.log("MENU:", menuItems);
             `}
           >
             {/* ICON */}
-            <span className="fs-5">
-              {item.icon}
-            </span>
+            <span className="fs-5">{item.icon}</span>
 
             {/* LABEL */}
-            {!collapsed && (
-              <span>{item.label}</span>
-            )}
+            {!collapsed && <span>{item.label}</span>}
           </button>
         )}
 
@@ -199,11 +199,7 @@ console.log("MENU:", menuItems);
                 w-100
                 py-2
 
-                ${
-                  isChild
-                    ? "btn-outline-secondary"
-                    : "btn-outline-light"
-                }
+                ${isChild ? "btn-outline-secondary" : "btn-outline-light"}
               `}
             >
               {/* LEFT */}
@@ -214,44 +210,32 @@ console.log("MENU:", menuItems);
                   gap-3
                 "
               >
-                <span className="fs-5">
-                  {item.icon}
-                </span>
+                <span className="fs-5">{item.icon}</span>
 
-                {!collapsed && (
-                  <span>{item.label}</span>
-                )}
+                {!collapsed && <span>{item.label}</span>}
               </div>
 
               {/* RIGHT ICON */}
               {!collapsed &&
-                (openMenus[item.key] ? (
-                  <ChevronDown />
-                ) : (
-                  <ChevronRight />
-                ))}
+                (openMenus[item.key] ? <ChevronDown /> : <ChevronRight />)}
             </button>
 
             {/* ==================================
                 DROPDOWN CHILDREN
             ================================== */}
-            {openMenus[item.key] &&
-              !collapsed && (
-                <div
-                  className="
+            {openMenus[item.key] && !collapsed && (
+              <div
+                className="
                     ms-3
                     mt-2
                     d-flex
                     flex-column
                     gap-2
                   "
-                >
-                  {renderMenuItems(
-                    item.children,
-                    true
-                  )}
-                </div>
-              )}
+              >
+                {renderMenuItems(item.children, true)}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -267,11 +251,7 @@ console.log("MENU:", menuItems);
         d-flex
         flex-column
         justify-content-between
-        ${
-          collapsed
-            ? "sidebar-collapsed"
-            : "sidebar-expanded"
-        }
+        ${collapsed ? "sidebar-collapsed" : "sidebar-expanded"}
       `}
     >
       {/* ======================================
@@ -289,11 +269,7 @@ console.log("MENU:", menuItems);
             mb-4
           "
         >
-          {!collapsed && (
-            <h4 className="fw-bold mb-0">
-              ERP
-            </h4>
-          )}
+          {!collapsed && <h4 className="fw-bold mb-0">ERP</h4>}
 
           {/* COLLAPSE BUTTON */}
           <button
@@ -302,9 +278,7 @@ console.log("MENU:", menuItems);
               btn-outline-light
               btn-sm
             "
-            onClick={() =>
-              setCollapsed(!collapsed)
-            }
+            onClick={() => setCollapsed(!collapsed)}
           >
             <List size={20} />
           </button>
@@ -342,11 +316,7 @@ console.log("MENU:", menuItems);
             align-items-center
             justify-content-between
           "
-          onClick={() =>
-            setShowProfileMenu(
-              !showProfileMenu
-            )
-          }
+          onClick={() => setShowProfileMenu(!showProfileMenu)}
         >
           {/* LEFT */}
           <div
@@ -356,30 +326,34 @@ console.log("MENU:", menuItems);
               gap-2
             "
           >
-            {/* ICON */}
-            <Building size={18} />
+            {isRestaurantAdmin ? (
+              <>
+                <Building size={18} />
 
-            {/* RESTAURANT NAME */}
-            {!collapsed && (
-              <div className="text-start">
-                <div
-                  className="
-                    small
-                    fw-bold
-                  "
-                >
-                  {activeRestaurant?.name}
-                </div>
+                {!collapsed && (
+                  <div className="text-start">
+                    <div className="small fw-bold">
+                      {activeRestaurant?.name}
+                    </div>
 
-                <div
-                  className="
-                    text-secondary
-                    small
-                  "
-                >
-                  Branch
-                </div>
-              </div>
+                    <div className="text-secondary small">Branch</div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <PersonCircle size={18} />
+
+                {!collapsed && (
+                  <div className="text-start">
+                    <div className="small fw-bold">{user?.username}</div>
+
+                    <div className="text-secondary small text-capitalize">
+                      {user?.role?.replace("_", " ")}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -390,10 +364,9 @@ console.log("MENU:", menuItems);
         {/* ======================================
             DROPDOWN MENU
         ====================================== */}
-        {showProfileMenu &&
-          !collapsed && (
-            <div
-              className="
+        {showProfileMenu && !collapsed && (
+          <div
+            className="
                 bg-dark
                 border
                 border-secondary
@@ -401,25 +374,53 @@ console.log("MENU:", menuItems);
                 mt-2
                 p-2
               "
-            >
-              {/* ==================================
+          >
+            {/* ==================================
                   ONLY ADMIN CAN SWITCH BRANCH
               ================================== */}
-              {isRestaurantAdmin ? (
-                <>
-                  {/* TITLE */}
-                  <div className="mb-2">
-                    <small className="text-secondary">
-                      Your Branches
-                    </small>
-                  </div>
+            {isRestaurantAdmin ? (
+              <>
+                <div className="mb-2">
+                  <button
+                    className="
+      btn
+      btn-outline-light
+      w-100
+      text-start
+    "
+                    onClick={() =>
+                      setActivePage({
+                        type: "profile",
+                      })
+                    }
+                  >
+                    <PersonCircle className="me-2" />
+                    My Profile
+                  </button>
 
-                  {/* RESTAURANTS */}
-                  {restaurants.map(
-                    (restaurant) => (
-                      <div
-                        key={restaurant.id}
-                        className="
+                  <button
+                    className="
+    btn
+    btn-outline-danger
+    w-100
+    text-start
+    mt-2
+  "
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
+                </div>
+                {/* TITLE */}
+                <div className="mb-2">
+                  <small className="text-secondary">Your Branches</small>
+                </div>
+
+                {/* RESTAURANTS */}
+                {restaurants.map((restaurant) => (
+                  <div
+                    key={restaurant.id}
+                    className="
                           d-flex
                           justify-content-between
                           align-items-center
@@ -428,73 +429,64 @@ console.log("MENU:", menuItems);
                           mb-1
                           restaurant-item
                         "
-                      >
-                        {/* LEFT */}
-                        <div
-                          className="
+                  >
+                    {/* LEFT */}
+                    <div
+                      className="
                             d-flex
                             align-items-center
                             gap-2
                           "
-                        >
-                          {/* ACTIVE ICON */}
-                          {activeRestaurant?.id ===
-                            restaurant.id && (
-                            <CheckCircleFill className="text-success" />
-                          )}
+                    >
+                      {/* ACTIVE ICON */}
+                      {activeRestaurant?.id === restaurant.id && (
+                        <CheckCircleFill className="text-success" />
+                      )}
 
-                          {/* NAME */}
-                          <div
-                            style={{
-                              cursor: "pointer",
-                            }}
-                            onClick={() =>
-                              setActivePage({
-                                type:
-                                  "restaurant-profile",
-                                restaurant,
-                              })
-                            }
-                          >
-                            <div className="small fw-semibold">
-                              {restaurant.name}
-                            </div>
+                      {/* NAME */}
+                      <div
+                        style={{
+                          cursor: "pointer",
+                        }}
+                        onClick={() =>
+                          setActivePage({
+                            type: "restaurant-profile",
+                            restaurant,
+                          })
+                        }
+                      >
+                        <div className="small fw-semibold">
+                          {restaurant.name}
+                        </div>
 
-                            <div
-                              className="
+                        <div
+                          className="
                                 text-secondary
                                 small
                               "
-                            >
-                              {
-                                restaurant.status
-                              }
-                            </div>
-                          </div>
+                        >
+                          {restaurant.status}
                         </div>
+                      </div>
+                    </div>
 
-                        {/* ACTION */}
-                        <button
-                          className="
+                    {/* ACTION */}
+                    <button
+                      className="
                             btn
                             btn-sm
                             btn-outline-primary
                           "
-                          onClick={() =>
-                            handleSwitchRestaurant(
-                              restaurant
-                            )
-                          }
-                        >
-                          Switch
-                        </button>
-                      </div>
-                    )
-                  )}
+                      onClick={() => handleSwitchRestaurant(restaurant)}
+                    >
+                      Switch
+                    </button>
+                  </div>
+                ))}
 
-                  {/* CREATE BUTTON */}
-                  <button
-                    className="
+                {/* CREATE BUTTON */}
+                <button
+                  className="
                       btn
                       btn-primary
                       w-100
@@ -504,35 +496,63 @@ console.log("MENU:", menuItems);
                       justify-content-center
                       gap-2
                     "
-                    onClick={() =>
-                      setActivePage({
-                        type:
-                          "create-restaurant",
-                      })
-                    }
-                  >
-                    <PlusCircle size={16} />
-                    Create Branch
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="small fw-semibold">
-                    {user?.full_name}
-                  </div>
+                  onClick={() =>
+                    setActivePage({
+                      type: "create-restaurant",
+                    })
+                  }
+                >
+                  <PlusCircle size={16} />
+                  Create Branch
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="
+      btn
+      btn-outline-light
+      w-100
+      text-start
+      mb-2
+    "
+                  onClick={() =>
+                    setActivePage({
+                      type: "profile",
+                    })
+                  }
+                >
+                  <PersonCircle className="me-2" />
+                  My Profile
+                </button>
 
-                  <div
-                    className="
-                      text-secondary
-                      small
-                    "
-                  >
-                    {user?.role}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+                <button
+  className="
+    btn
+    btn-outline-danger
+    w-100
+    text-start
+    mt-2
+  "
+  onClick={handleLogout}
+>
+  Logout
+</button>
+
+                <div className="small fw-semibold">{user?.username}</div>
+
+                <div
+                  className="
+      text-secondary
+      small
+    "
+                >
+                  {user?.role}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

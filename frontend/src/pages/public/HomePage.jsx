@@ -2,7 +2,7 @@
 import { Navigate, useNavigate } from "react-router-dom";
 
 // Redux hooks
-import { useSelector, useDispatch, connect } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 
 // React hooks
 import { useEffect, useState } from "react";
@@ -13,53 +13,34 @@ import { loginSuccess } from "../../auth/authSlice";
 // Fetch latest authenticated user
 import { getCurrentUser } from "../../auth/authService";
 
-// ==========================================
-// HOME PAGE
-// ==========================================
-// RESPONSIBILITIES:
-// 1. Public landing page
-// 2. Auto-login redirect
-// 3. Role-based routing
-// 4. Restaurant status checking
-// ==========================================
 export default function HomePage() {
   const navigate = useNavigate();
 
   const dispatch = useDispatch();
 
-  // ==========================================
-  // REDUX AUTH STATE
-  // ==========================================
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const { isAuthenticated, user } = useSelector(
+    (state) => state.auth,
+  );
 
-  // ==========================================
-  // LOADING STATE
-  // ==========================================
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [checkingAuth, setCheckingAuth] =
+    useState(true);
 
-  // ==========================================
-  // FETCH CURRENT USER
-  // ==========================================
   useEffect(() => {
     const fetchUser = async () => {
-      // If not authenticated stop loading
       if (!isAuthenticated) {
         setCheckingAuth(false);
-
         return;
       }
 
       try {
-        // Fetch latest user details
         const user = await getCurrentUser();
 
-        // Update Redux store
         dispatch(
           loginSuccess({
-            access: localStorage.getItem("access"),
-
-            refresh: localStorage.getItem("refresh"),
-
+            access:
+              localStorage.getItem("access"),
+            refresh:
+              localStorage.getItem("refresh"),
             user,
           }),
         );
@@ -74,37 +55,29 @@ export default function HomePage() {
   }, [isAuthenticated, dispatch]);
 
   // ==========================================
-  // LOADING SCREEN
+  // LOADING
   // ==========================================
   if (checkingAuth) {
     return (
-      <div
-        className="
-          d-flex
-          justify-content-center
-          align-items-center
-          vh-100
-        "
-      >
+      <div className="vh-100 d-flex justify-content-center align-items-center">
         <h3>Loading...</h3>
       </div>
     );
   }
 
   // ==========================================
-  // AUTHENTICATED USER REDIRECT
+  // AUTH REDIRECTS
   // ==========================================
   if (isAuthenticated) {
     const role = user?.role;
-    console.log("role",role)
+
     if (role === "customer") {
       return <Navigate to="/customer" />;
     }
-    const restaurantStatus = user?.restaurant_status;
 
-    // ==========================================
-    // BLOCKED RESTAURANT STATES
-    // ==========================================
+    const restaurantStatus =
+      user?.restaurant_status;
+
     if (
       restaurantStatus === "pending" ||
       restaurantStatus === "rejected" ||
@@ -120,10 +93,6 @@ export default function HomePage() {
       );
     }
 
-    // ==========================================
-    // ACTIVE RESTAURANT
-    // ROLE-BASED ROUTING
-    // ==========================================
     if (restaurantStatus === "active") {
       switch (role) {
         case "restaurant_admin":
@@ -150,129 +119,293 @@ export default function HomePage() {
     }
   }
 
-  // ==========================================
-  // PUBLIC LANDING PAGE
-  // ==========================================
   return (
-    <div
-      className="
-        container-fluid
-        vh-100
-        d-flex
-        justify-content-center
-        align-items-center
-        bg-light
-      "
-    >
-      <div
-        className="
-          card
-          border-0
-          shadow
-          p-5
-          text-center
-        "
-        style={{
-          maxWidth: "500px",
-          width: "100%",
-        }}
-      >
-        {/* APP TITLE */}
-        <h1 className="fw-bold mb-3">Restaurant ERP</h1>
+    <div className="bg-light min-vh-100">
+      {/* HERO */}
+      <section className="py-5 bg-dark text-white">
+        <div className="container text-center">
+          <h1 className="display-4 fw-bold mb-3">
+            RestaurantHub
+          </h1>
 
-        {/* SUBTITLE */}
-        <p className="text-muted mb-4">
-          POS • Kitchen • Billing • Staff • Reports
-        </p>
-
-        {/* ACTION BUTTONS */}
-        <div className="mb-5">
-
-  <h4 className="fw-bold mb-3">
-    Order Food Online
-  </h4>
-
-  <p className="text-muted mb-4">
-    Browse nearby restaurants and order food
-  </p>
-
-  <div
-    className="
-      d-flex
-      flex-column
-      gap-3
-      justify-content-center
-    "
-  >
-
-    {/* BROWSE RESTAURANTS */}
-    <button
-      className="btn btn-success px-4"
-      onClick={() =>
-        navigate("/customer")
-      }
-    >
-      Browse Restaurants
-    </button>
-
-
-    {/* CUSTOMER LOGIN */}
-    <button
-      className="btn btn-outline-success px-4"
-      onClick={() =>
-        navigate("/customer/login")
-      }
-    >
-      Customer Login
-    </button>
-
-
-    {/* CUSTOMER REGISTER */}
-    <button
-      className="btn btn-outline-secondary px-4"
-      onClick={() =>
-        navigate("/customer/register")
-      }
-    >
-      Create Customer Account
-    </button>
-
-  </div>
-
-</div>
-
-        <hr className="my-4" />
-
-        <div>
-          <h4 className="fw-bold mb-3">Restaurant ERP</h4>
-
-          <p className="text-muted mb-4">
-            POS • Kitchen • Billing • Staff • Reports
+          <p
+            className="lead mx-auto"
+            style={{ maxWidth: "700px" }}
+          >
+            Online Food Ordering + Complete
+            Restaurant Management System.
+            Manage orders, billing, kitchen,
+            staff, delivery and reports from
+            one platform.
           </p>
 
-          <div
-            className="
-      d-flex
-      flex-column
-      flex-sm-row
-      gap-3
-      justify-content-center
-    "
-          >
+          <div className="mt-4 d-flex flex-column flex-sm-row justify-content-center gap-3">
             <button
-              className="btn btn-primary px-4"
-              onClick={() => navigate("/login")}
+              className="btn btn-success btn-lg"
+              onClick={() =>
+                navigate("/customer/restaurant")
+              }
             >
-              Staff Login
+              Browse Restaurants
             </button>
 
             <button
-              className="btn btn-outline-dark px-4"
-              onClick={() => navigate("/register")}
+              className="btn btn-outline-light btn-lg"
+              onClick={() =>
+                navigate("/register")
+              }
             >
               Register Restaurant
             </button>
           </div>
+        </div>
+      </section>
+
+      <div className="container py-5">
+        {/* CUSTOMER + OWNER */}
+        <div className="row g-4">
+          {/* CUSTOMER */}
+          <div className="col-lg-6">
+            <div className="card border-0 shadow h-100">
+              <div className="card-body p-4">
+                <h3 className="fw-bold mb-3">
+                  🍔 For Customers
+                </h3>
+
+                <p className="text-muted">
+                  Discover nearby restaurants,
+                  browse menus and order food
+                  online.
+                </p>
+
+                <ul className="list-unstyled">
+                  <li>
+                    ✓ Browse Restaurants
+                  </li>
+                  <li>
+                    ✓ View Menus & Prices
+                  </li>
+                  <li>
+                    ✓ Place Orders
+                  </li>
+                  <li>
+                    ✓ Track Order Status
+                  </li>
+                  <li>
+                    ✓ Order History
+                  </li>
+                </ul>
+
+                <div className="d-flex flex-column gap-2 mt-4">
+                  <button
+                    className="btn btn-success"
+                    onClick={() =>
+                      navigate(
+                        "/customer/restaurant",
+                      )
+                    }
+                  >
+                    Browse Restaurants
+                  </button>
+
+                  <button
+                    className="btn btn-outline-success"
+                    onClick={() =>
+                      navigate(
+                        "/customer/login",
+                      )
+                    }
+                  >
+                    Customer Login
+                  </button>
+
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={() =>
+                      navigate(
+                        "/customer/register",
+                      )
+                    }
+                  >
+                    Create Account
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RESTAURANT OWNER */}
+          <div className="col-lg-6">
+            <div className="card border-0 shadow h-100">
+              <div className="card-body p-4">
+                <h3 className="fw-bold mb-3">
+                  🏪 For Restaurant Owners
+                </h3>
+
+                <p className="text-muted">
+                  Manage your entire restaurant
+                  operation from one dashboard.
+                </p>
+
+                <ul className="list-unstyled">
+                  <li>
+                    ✓ POS & Billing
+                  </li>
+                  <li>
+                    ✓ Kitchen Order Management
+                  </li>
+                  <li>
+                    ✓ Staff Management
+                  </li>
+                  <li>
+                    ✓ Delivery Tracking
+                  </li>
+                  <li>
+                    ✓ Sales Reports
+                  </li>
+                  <li>
+                    ✓ Inventory Monitoring
+                  </li>
+                </ul>
+
+                <div className="d-flex flex-column gap-2 mt-4">
+                  <button
+                    className="btn btn-primary"
+                    onClick={() =>
+                      navigate("/login")
+                    }
+                  >
+                    Restaurant Login
+                  </button>
+
+                  <button
+                    className="btn btn-outline-dark"
+                    onClick={() =>
+                      navigate("/register")
+                    }
+                  >
+                    Register Restaurant
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* STAFF SECTION */}
+        <div className="card border-0 shadow mt-5">
+          <div className="card-body p-4 text-center">
+            <h3 className="fw-bold mb-3">
+              👥 Staff Access
+            </h3>
+
+            <p className="text-muted">
+              Dedicated dashboards for every
+              role in your restaurant.
+            </p>
+
+            <div className="row mt-4">
+              <div className="col-md-2 col-6 mb-3">
+                Cashier
+              </div>
+
+              <div className="col-md-2 col-6 mb-3">
+                Manager
+              </div>
+
+              <div className="col-md-2 col-6 mb-3">
+                Waiter
+              </div>
+
+              <div className="col-md-2 col-6 mb-3">
+                Kitchen
+              </div>
+
+              <div className="col-md-2 col-6 mb-3">
+                Delivery
+              </div>
+
+              <div className="col-md-2 col-6 mb-3">
+                Admin
+              </div>
+            </div>
+
+            <button
+              className="btn btn-primary mt-3"
+              onClick={() =>
+                navigate("/login")
+              }
+            >
+              Staff Login
+            </button>
+          </div>
+        </div>
+
+        {/* FEATURES */}
+        <div className="mt-5">
+          <h2 className="text-center fw-bold mb-4">
+            Why Choose RestaurantHub?
+          </h2>
+
+          <div className="row g-4">
+            <div className="col-md-4">
+              <div className="card border-0 shadow-sm h-100">
+                <div className="card-body text-center">
+                  ⚡
+                  <h5 className="mt-2">
+                    Real-Time Orders
+                  </h5>
+                  <p className="text-muted">
+                    Instant order updates
+                    between customers, POS
+                    and kitchen.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <div className="card border-0 shadow-sm h-100">
+                <div className="card-body text-center">
+                  💳
+                  <h5 className="mt-2">
+                    Fast Billing
+                  </h5>
+                  <p className="text-muted">
+                    Integrated POS and
+                    invoice generation.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <div className="card border-0 shadow-sm h-100">
+                <div className="card-body text-center">
+                  📊
+                  <h5 className="mt-2">
+                    Reports & Analytics
+                  </h5>
+                  <p className="text-muted">
+                    Monitor sales,
+                    performance and growth.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div className="text-center mt-5 py-4">
+          <h5 className="fw-bold">
+            RestaurantHub
+          </h5>
+
+          <p className="text-muted mb-0">
+            Online Ordering • POS • Kitchen •
+            Staff • Delivery • Reports
+          </p>
         </div>
       </div>
     </div>

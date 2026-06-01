@@ -6,7 +6,7 @@ from django.db import models
 from django.utils import timezone
 
 from restaurants.models import Restaurant
-from accounts.models import User, CustomerAddress
+from accounts.models import User, UserAddress
 from django.db import IntegrityError
 from menu.models import (
     ProductVariant,
@@ -105,7 +105,7 @@ class Order(models.Model):
         related_name="customer_orders",
     )
     delivery_address = models.ForeignKey(
-        CustomerAddress,
+        UserAddress,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

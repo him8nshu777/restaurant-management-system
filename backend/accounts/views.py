@@ -42,6 +42,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils.http import urlsafe_base64_decode
 
 from django.contrib.auth.tokens import default_token_generator
+from django.shortcuts import get_object_or_404
 
 # Application imports
 from .serializers import (
@@ -49,9 +50,12 @@ from .serializers import (
     CustomLoginSerializer,
     CustomerRegisterSerializer,
     CustomerLoginSerializer,
+    ProfileSerializer,
+    ProfileUpdateSerializer,
+    UserAddressSerializer,
 )
 
-from .models import User, CustomerAddress
+from .models import User, UserAddress, UserProfile
 
 from restaurants.models import Restaurant
 
@@ -356,3 +360,110 @@ class CurrentUserAPIView(APIView):
                 "restaurant_id": restaurant.id,
             }
         )
+
+
+class ProfileView(APIView):
+
+    permission_classes = [
+        IsAuthenticated
+    ]
+
+    def get(self, request):
+
+        UserProfile.objects.get_or_create(
+            user=request.user
+        )
+
+        serializer = ProfileSerializer(
+            request.user
+        )
+
+        return Response(
+            serializer.data
+        )
+
+    def patch(self, request):
+
+        serializer = (
+            ProfileUpdateSerializer(
+                instance=request.user,
+                data=request.data,
+                partial=True,
+            )
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        serializer.save()
+
+        return Response(
+            ProfileSerializer(
+                request.user
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+class UserAddressListCreateView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        addresses = request.user.addresses.all()
+
+        serializer = UserAddressSerializer(addresses, many=True)
+
+        return Response(serializer.data)
+
+    def post(self, request):
+
+        serializer = UserAddressSerializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        if serializer.validated_data.get("is_default"):
+
+            UserAddress.objects.filter(user=request.user).update(is_default=False)
+
+        serializer.save(user=request.user)
+
+        return Response(serializer.data, status=201)
+
+
+class UserAddressDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, request, pk):
+
+        return get_object_or_404(UserAddress, pk=pk, user=request.user)
+
+    def patch(self, request, pk):
+
+        address = self.get_object(request, pk)
+
+        serializer = UserAddressSerializer(address, data=request.data, partial=True)
+
+        serializer.is_valid(raise_exception=True)
+
+        if serializer.validated_data.get("is_default"):
+
+            UserAddress.objects.filter(user=request.user).exclude(id=address.id).update(
+                is_default=False
+            )
+
+        serializer.save()
+
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+
+        address = self.get_object(request, pk)
+
+        address.delete()
+
+        return Response({"detail": "Address deleted"})
+
+

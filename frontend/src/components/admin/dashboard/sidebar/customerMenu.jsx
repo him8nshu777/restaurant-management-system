@@ -39,12 +39,6 @@ const customerMenu = [
   //   icon: <Heart />
   // },
 
-  {
-    key: "profile",
-    label: "Profile",
-    icon: <PersonCircle />
-  },
-
 ];
 
 export default customerMenu;

@@ -19,7 +19,7 @@ import AccountStatusPage from "../pages/auth/AccountStatusPage";
 
 import Dashboard from "../pages/admin/Dashboard";
 
-import CashierPage from "../pages/cashier/CashierPage";
+// import CashierPage from "../pages/cashier/CashierPage";
 import POSMainDashboard from "../pages/pos/POSMainDashboard";
 
 import WaiterDashboard from "../pages/waiter/WaiterDashboard";
@@ -30,6 +30,7 @@ import CustomerLoginPage from "../pages/auth/CustomerLoginPage";
 import CustomerDashboard from "../pages/customer/CustomerDashboard";
 import OrderPage from "../pages/customer/OrderPage";
 import DeliveryDashboard from "../pages/delivery/deliveryDashboard";
+import RestaurantsPage from "../pages/customer/RestaurantsPage";
 // import WaiterPage from "../pages/waiter/WaiterPage";
 
 // import ReportsPage from "../pages/manager/ReportsPage";
@@ -55,6 +56,10 @@ export default function AppRouter() {
                 <Route
                 path="/customer/register"
                 element={<CustomerRegisterPage />}
+                />
+                <Route
+                path="/customer/restaurant"
+                element={<RestaurantsPage />}
                 />
 
                 <Route
@@ -114,14 +119,14 @@ export default function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
-                <Route
+                {/* <Route
                     path="/cashier"
                     element={
                         <ProtectedRoute>
                             <CashierPage />
                         </ProtectedRoute>
                     }
-                />
+                /> */}
                 <Route
                     path="/waiter"
                     element={

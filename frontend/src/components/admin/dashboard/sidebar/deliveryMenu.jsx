@@ -27,13 +27,6 @@ const deliveryMenu = [
     label: "Delivery History",
     icon: <ClockHistory />
   },
-
-  {
-    key: "profile",
-    label: "Profile",
-    icon: <PersonCircle />
-  },
-
 ];
 
 export default deliveryMenu;

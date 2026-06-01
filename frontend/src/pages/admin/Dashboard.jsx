@@ -33,6 +33,7 @@ import POSDashboard from "../pos/POSDashboard";
 import ComboDynamicPricing from "../dashboard/menu/ComboDynamicPricing";
 import OrderList from "../dashboard/orders/OrderList";
 import KitchenOrders from "../kitchen/KitchenOrders";
+import Profile from "../profile/Profile";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -118,6 +119,9 @@ useEffect(() => {
 
             case "pos-dashboard":
                 return <POSDashboard />;
+
+            case "profile":
+                return <Profile />;
 
             case "staff":
                 return <Staff />;

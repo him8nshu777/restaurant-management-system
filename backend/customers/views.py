@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from django.utils import timezone
 
-from accounts.models import CustomerAddress
+from accounts.models import UserAddress
 from math import radians, cos, sin, asin, sqrt
 from rest_framework.permissions import AllowAny
 
@@ -52,14 +52,14 @@ class UpdateCustomerLocationAPIView(APIView):
         # ======================================
         # GET DEFAULT ADDRESS
         # ======================================
-        address = CustomerAddress.objects.filter(customer=user, is_default=True).first()
+        address = UserAddress.objects.filter(customer=user, is_default=True).first()
 
         # ======================================
         # CREATE ADDRESS IF NOT EXISTS
         # ======================================
         if not address:
 
-            address = CustomerAddress.objects.create(
+            address = UserAddress.objects.create(
                 customer=user,
                 label="Current Location",
                 address_line_1="Current Location",

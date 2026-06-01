@@ -5,6 +5,7 @@ import DashboardLayout from "../../components/admin/dashboard/DashboardLayout";
 import DeliveryOrders from "./DeliveryOrders";
 import ActiveOrders from "./ActiveOrders";
 import DeliveryHistory from "./DeliveryHistory";
+import Profile from "../profile/Profile";
 export default function DeliveryDashboard() {
     // Moved state inside the component
     const [activePage, setActivePage] = useState({ type: "orders" });
@@ -21,6 +22,9 @@ export default function DeliveryDashboard() {
 
             case "order-history":
                 return <DeliveryHistory />;
+            
+            case "profile":
+                return <Profile />;
             default:
                 return <DeliveryOrders />;
         }

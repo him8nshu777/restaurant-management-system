@@ -8,11 +8,7 @@ import { useSelector } from "react-redux";
 
 import { getNearbyRestaurants } from "../../services/customerService";
 
-export default function RestaurantsPage({
-  latitude,
-  longitude,
-  loadingLocation,
-}) {
+export default function RestaurantsPage() {
   const navigate = useNavigate();
 
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -37,6 +33,67 @@ export default function RestaurantsPage({
   // ==========================================
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
 
+  
+  // ==========================================
+  // USER LOCATION
+  // ==========================================
+  const [location, setLocation] = useState({
+    latitude: 25.2138,
+    longitude: 75.8648,
+  });
+
+  // ==========================================
+  // LOCATION LOADING
+  // ==========================================
+  const [loadingLocation, setLoadingLocation] = useState(true);
+
+  // ==========================================
+  // FETCH LOCATION ON LOAD
+  // ==========================================
+  useEffect(() => {
+    getUserLocation();
+  }, []);
+
+  // ==========================================
+  // GET USER LOCATION
+  // ==========================================
+  const getUserLocation = () => {
+    // ========================================
+    // GEOLOCATION NOT SUPPORTED
+    // ========================================
+    if (!navigator.geolocation) {
+      setLoadingLocation(false);
+
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      // SUCCESS
+      (position) => {
+        setLocation({
+          latitude: position.coords.latitude,
+
+          longitude: position.coords.longitude,
+        });
+
+        setLoadingLocation(false);
+      },
+
+      // ERROR / DENIED
+      () => {
+        // Fallback location already set
+        setLoadingLocation(false);
+      },
+
+      {
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 300000,
+      },
+    );
+  };
+
+  
   // ==========================================
   // FETCH RESTAURANTS
   // ==========================================
@@ -45,7 +102,7 @@ export default function RestaurantsPage({
     if (loadingLocation) return;
 
     fetchRestaurants();
-  }, [latitude, longitude, loadingLocation]);
+  }, [location.latitude, location.longitude, loadingLocation]);
 
   // ==========================================
   // FETCH RESTAURANTS
@@ -55,8 +112,8 @@ export default function RestaurantsPage({
       setLoading(true);
 
       const data = await getNearbyRestaurants({
-        latitude,
-        longitude,
+        latitude: location.latitude,
+        longitude: location.longitude,
       });
 
       setRestaurants(data);
@@ -152,7 +209,7 @@ export default function RestaurantsPage({
           <Modal.Title>Login Required</Modal.Title>
         </Modal.Header>
 
-        <Modal.Body>Please login to order food.</Modal.Body>
+        <Modal.Body>Please login to see food.</Modal.Body>
 
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowLoginModal(false)}>
