@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     "django_filters",
     "drf_spectacular",
 
+    "cloudinary",
+    "cloudinary_storage",
 
     # local apps
     "accounts",
