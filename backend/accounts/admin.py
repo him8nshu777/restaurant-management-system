@@ -20,6 +20,7 @@ class CustomUserAdmin(UserAdmin):
         "role",
         "phone",
         "restaurant",
+        "is_email_verified",
         "is_active",
         "is_staff",
     )
