@@ -29,7 +29,7 @@ import CustomerRegisterPage from "../pages/auth/CustomerRegisterPage";
 import CustomerLoginPage from "../pages/auth/CustomerLoginPage";
 import CustomerDashboard from "../pages/customer/CustomerDashboard";
 import OrderPage from "../pages/customer/OrderPage";
-import DeliveryDashboard from "../pages/delivery/deliveryDashboard";
+import DeliveryDashboard from "../pages/delivery/DeliveryDashboard";
 import RestaurantsPage from "../pages/customer/RestaurantsPage";
 // import WaiterPage from "../pages/waiter/WaiterPage";
 
