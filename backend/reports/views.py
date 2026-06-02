@@ -23,7 +23,7 @@ from restaurants.models import Restaurant
 from orders.models import (
     OrderItem,
 )
-
+from django.db.models.functions import ExtractHour
 
 
 class SalesReportView(APIView):
@@ -363,8 +363,9 @@ class ProductReportView(APIView):
 
         queryset = OrderItem.objects.filter(
             order__restaurant=restaurant,
-            order__payment_status="paid",
             product_variant__isnull=False,
+        ).exclude(
+            order__status="cancelled"
         )
 
         # ============================
@@ -492,3 +493,173 @@ class ProductReportView(APIView):
                 },
             }
         )
+    
+class TimeAnalysisReportView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        user = request.user
+
+        restaurant_id = request.GET.get("restaurant_id")
+
+        period = request.GET.get(
+            "period",
+            "week"
+        )
+
+        start_date = request.GET.get("start_date")
+        end_date = request.GET.get("end_date")
+
+        # ==========================
+        # RESTAURANT ACCESS
+        # ==========================
+
+        if user.role == "restaurant_admin":
+
+            restaurant = Restaurant.objects.filter(
+                id=restaurant_id,
+                owner=user,
+            ).first()
+
+        else:
+
+            restaurant = Restaurant.objects.filter(
+                id=restaurant_id
+            ).first()
+
+            if (
+                not restaurant
+                or user.restaurant_id != restaurant.id
+            ):
+                return Response(
+                    {"detail": "Access denied"},
+                    status=403
+                )
+
+        if not restaurant:
+            return Response(
+                {"detail": "Restaurant not found"},
+                status=404
+            )
+
+        # ==========================
+        # BASE QUERYSET
+        # ==========================
+
+        queryset = Order.objects.filter(
+            restaurant=restaurant,
+            
+        ).exclude(
+            status="cancelled"
+        )
+
+        today = timezone.localdate()
+
+        # ==========================
+        # CUSTOM RANGE
+        # ==========================
+
+        if start_date and end_date:
+
+            start_obj = datetime.strptime(
+                start_date,
+                "%Y-%m-%d"
+            ).date()
+
+            end_obj = datetime.strptime(
+                end_date,
+                "%Y-%m-%d"
+            ).date()
+
+            queryset = queryset.filter(
+                created_at__date__range=[
+                    start_obj,
+                    end_obj,
+                ]
+            )
+
+        elif period == "week":
+
+            week_start = (
+                today
+                - timedelta(days=today.weekday())
+            )
+
+            queryset = queryset.filter(
+                created_at__date__gte=week_start
+            )
+
+        elif period == "month":
+
+            queryset = queryset.filter(
+                created_at__year=today.year,
+                created_at__month=today.month,
+            )
+
+        else:
+
+            queryset = queryset.filter(
+                created_at__year=today.year
+            )
+
+        # ==========================
+        # HOUR ANALYSIS
+        # ==========================
+
+        hour_data = (
+            queryset
+            .annotate(
+                hour=ExtractHour("created_at")
+            )
+            .values("hour")
+            .annotate(
+                orders=Count("id")
+            )
+            .order_by("hour")
+        )
+
+        hourly_map = {
+            item["hour"]: item["orders"]
+            for item in hour_data
+        }
+
+        labels = []
+        orders = []
+
+        for hour in range(24):
+
+            labels.append(
+                f"{hour:02d}:00"
+            )
+
+            orders.append(
+                hourly_map.get(hour, 0)
+            )
+
+        peak_index = (
+            orders.index(max(orders))
+            if orders
+            else 0
+        )
+
+        slow_index = (
+            orders.index(min(orders))
+            if orders
+            else 0
+        )
+
+        return Response({
+
+            "peak_hour": labels[peak_index],
+            "peak_orders": orders[peak_index],
+
+            "slow_hour": labels[slow_index],
+            "slow_orders": orders[slow_index],
+
+            "chart": {
+                "labels": labels,
+                "orders": orders,
+            }
+        })

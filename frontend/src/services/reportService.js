@@ -51,3 +51,30 @@ export const getProductReport = async (
 
   return response.data;
 };
+
+export const getTimeAnalysisReport = async (
+  restaurantId,
+  period,
+  startDate = "",
+  endDate = ""
+) => {
+
+  let url =
+    `/reports/time-analysis/?restaurant_id=${restaurantId}`;
+
+  if (period === "custom") {
+
+    url +=
+      `&start_date=${startDate}` +
+      `&end_date=${endDate}`;
+
+  } else {
+
+    url += `&period=${period}`;
+  }
+
+  const response =
+    await axiosInstance.get(url);
+
+  return response.data;
+};
