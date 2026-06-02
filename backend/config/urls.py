@@ -35,6 +35,9 @@ urlpatterns = [
     path("api/inventory/", include("inventory.urls")),
     path("api/pos/", include("pos.urls")),
     path("api/order/", include("orders.urls")),
+
+    
+    path("api/customers/", include("customers.urls")),
 ]
 # =========================================================
 # MEDIA FILES
