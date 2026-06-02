@@ -5,6 +5,15 @@ DEBUG = False
 
 FRONTEND_URL = env("FRONTEND_URL")
 
+# HTTPS behind Render proxy
+
+SECURE_PROXY_SSL_HEADER = (
+    "HTTP_X_FORWARDED_PROTO",
+    "https",
+)
+
+USE_X_FORWARDED_HOST = True
+
 # =========================================================
 # MEDIA CONFIGURATION
 # =========================================================
