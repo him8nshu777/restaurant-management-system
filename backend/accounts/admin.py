@@ -82,6 +82,14 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
         (
+            "Verification",
+            {
+                "fields": (
+                    "is_email_verified",
+                )
+            },
+        ),
+        (
             "Permissions",
             {
                 "fields": (
