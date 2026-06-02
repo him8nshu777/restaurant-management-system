@@ -56,6 +56,20 @@ const adminMenu = [
     key: "reports",
     label: "Reports",
     icon: <BarChartFill />,
+    children: [
+      {
+        key: "sales-report",
+        label: "Sales Reports",
+      },
+      {
+        key: "product-report",
+        label: "Product Reports",
+      },
+      {
+        key: "time-analysis",
+        label: "Time Analysis",
+      },
+    ],
   },
 
   // ==========================================

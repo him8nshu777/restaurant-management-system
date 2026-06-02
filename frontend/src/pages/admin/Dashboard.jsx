@@ -34,13 +34,14 @@ import ComboDynamicPricing from "../dashboard/menu/ComboDynamicPricing";
 import OrderList from "../dashboard/orders/OrderList";
 import KitchenOrders from "../kitchen/KitchenOrders";
 import Profile from "../profile/Profile";
+import SalesReport from "../reports/SalesReport";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
 export default function Dashboard() {
 
     // Default page
-    const [activePage, setActivePage] = useState({ type: "reports", });
+    const [activePage, setActivePage] = useState({ type: "sales-report", });
     // ==========================================
     // RESTAURANT STATE
     // ==========================================
@@ -126,8 +127,8 @@ useEffect(() => {
             case "staff":
                 return <Staff />;
 
-            case "reports":
-                return <Reports />;
+            case "sales-report":
+                return <SalesReport />;
 
             case "floors":
                 return <Floor />;
@@ -224,7 +225,7 @@ useEffect(() => {
                 );
 
             default:
-                return <Reports />;
+                return <SalesReport />;
         }
     };
 
