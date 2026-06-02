@@ -20,3 +20,34 @@ export const getSalesReport = async (
 
   return response.data;
 };
+
+
+export const getProductReport = async (
+  restaurantId,
+  period,
+  reportType,
+  startDate = "",
+  endDate = ""
+) => {
+
+  let url =
+    `/reports/products/?restaurant_id=${restaurantId}`;
+
+  if (period === "custom") {
+
+    url +=
+      `&start_date=${startDate}` +
+      `&end_date=${endDate}`;
+
+  } else {
+
+    url += `&period=${period}`;
+  }
+
+  url += `&report_type=${reportType}`;
+
+  const response =
+    await axiosInstance.get(url);
+
+  return response.data;
+};

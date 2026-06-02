@@ -33,13 +33,15 @@ import ComboDynamicPricing from "../dashboard/menu/ComboDynamicPricing";
 import OrderList from "../dashboard/orders/OrderList";
 import KitchenOrders from "../kitchen/KitchenOrders";
 import Profile from "../profile/Profile";
+import SalesReport from "../reports/SalesReport";
+import ProductReport from "../reports/ProductReport";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
 export default function ManagerDashboard() {
 
     // Default page
-    const [activePage, setActivePage] = useState({ type: "reports", });
+    const [activePage, setActivePage] = useState({ type: "sales-report", });
 
     // ==========================================
     // PAGE RENDERER
@@ -54,8 +56,11 @@ export default function ManagerDashboard() {
             case "staff":
                 return <Staff />;
 
-            case "reports":
-                return <Reports />;
+            case "sales-report":
+                return <SalesReport />;
+
+            case "product-report":
+                return <ProductReport />;
 
             case "floors":
                 return <Floor />;
@@ -135,7 +140,7 @@ export default function ManagerDashboard() {
             case "profile":
                 return <Profile />;
             default:
-                return <Reports />;
+                return <SalesReport />;
         }
     };
 

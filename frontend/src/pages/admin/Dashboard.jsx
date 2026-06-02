@@ -35,6 +35,7 @@ import OrderList from "../dashboard/orders/OrderList";
 import KitchenOrders from "../kitchen/KitchenOrders";
 import Profile from "../profile/Profile";
 import SalesReport from "../reports/SalesReport";
+import ProductReport from "../reports/ProductReport";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -129,6 +130,9 @@ useEffect(() => {
 
             case "sales-report":
                 return <SalesReport />;
+
+            case "product-report":
+                return <ProductReport />;
 
             case "floors":
                 return <Floor />;

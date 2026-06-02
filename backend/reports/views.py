@@ -5,7 +5,7 @@ from django.db.models import (
     Count,
     Avg,
 )
- 
+
 from django.db.models.functions import (
     TruncDate,
     ExtractQuarter,
@@ -20,6 +20,12 @@ from rest_framework.permissions import IsAuthenticated
 from orders.models import Order
 from restaurants.models import Restaurant
 
+from orders.models import (
+    OrderItem,
+)
+
+
+
 class SalesReportView(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -28,9 +34,7 @@ class SalesReportView(APIView):
 
         user = request.user
 
-        restaurant_id = request.GET.get(
-            "restaurant_id"
-        )
+        restaurant_id = request.GET.get("restaurant_id")
 
         start_date = request.GET.get("start_date")
         end_date = request.GET.get("end_date")
@@ -56,26 +60,16 @@ class SalesReportView(APIView):
                 id=restaurant_id,
             ).first()
 
-            if (
-                not restaurant
-                or user.restaurant_id
-                != restaurant.id
-            ):
+            if not restaurant or user.restaurant_id != restaurant.id:
                 return Response(
-                    {
-                        "detail":
-                        "Access denied"
-                    },
+                    {"detail": "Access denied"},
                     status=403,
                 )
 
         if not restaurant:
 
             return Response(
-                {
-                    "detail":
-                    "Restaurant not found"
-                },
+                {"detail": "Restaurant not found"},
                 status=404,
             )
 
@@ -83,7 +77,6 @@ class SalesReportView(APIView):
         # BASE QUERYSET
         # ===================================
 
-        
         queryset = Order.objects.filter(
             restaurant=restaurant,
             payment_status="paid",
@@ -93,10 +86,9 @@ class SalesReportView(APIView):
 
         today = timezone.localdate()
 
-
         def parse_date(d):
             return datetime.strptime(d, "%Y-%m-%d").date()
-        
+
         # ===================================
         # CUSTOM DATE RANGE (NEW FEATURE)
         # ===================================
@@ -123,11 +115,10 @@ class SalesReportView(APIView):
                 while current <= end_date_obj:
 
                     total = (
-                        queryset.filter(
-                            created_at__date=current
-                        ).aggregate(
+                        queryset.filter(created_at__date=current).aggregate(
                             total=Sum("grand_total")
-                        )["total"] or 0
+                        )["total"]
+                        or 0
                     )
 
                     labels.append(current.strftime("%d %b"))
@@ -146,9 +137,8 @@ class SalesReportView(APIView):
                         queryset.filter(
                             created_at__date__gte=current,
                             created_at__date__lte=week_end,
-                        ).aggregate(
-                            total=Sum("grand_total")
-                        )["total"] or 0
+                        ).aggregate(total=Sum("grand_total"))["total"]
+                        or 0
                     )
 
                     labels.append(
@@ -164,8 +154,7 @@ class SalesReportView(APIView):
                 from django.db.models.functions import TruncMonth
 
                 monthly_data = (
-                    queryset
-                    .annotate(month=TruncMonth("created_at"))
+                    queryset.annotate(month=TruncMonth("created_at"))
                     .values("month")
                     .annotate(total=Sum("grand_total"))
                     .order_by("month")
@@ -180,16 +169,9 @@ class SalesReportView(APIView):
 
         elif period == "week":
 
-            start_date = (
-                today
-                - timedelta(
-                    days=today.weekday()
-                )
-            )
+            start_date = today - timedelta(days=today.weekday())
 
-            queryset = queryset.filter(
-                created_at__date__gte=start_date
-            )
+            queryset = queryset.filter(created_at__date__gte=start_date)
 
             labels = []
 
@@ -200,19 +182,13 @@ class SalesReportView(APIView):
             while current <= today:
 
                 total = (
-                    queryset.filter(
-                        created_at__date=current
-                    ).aggregate(
-                        total=Sum(
-                            "grand_total"
-                        )
+                    queryset.filter(created_at__date=current).aggregate(
+                        total=Sum("grand_total")
                     )["total"]
                     or 0
                 )
 
-                labels.append(
-                    current.strftime("%a")
-                )
+                labels.append(current.strftime("%a"))
 
                 sales.append(float(total))
 
@@ -241,23 +217,15 @@ class SalesReportView(APIView):
 
             for week in range(5):
 
-                start_day = (
-                    week * 7
-                ) + 1
+                start_day = (week * 7) + 1
 
-                end_day = (
-                    start_day + 6
-                )
+                end_day = start_day + 6
 
                 total = (
                     queryset.filter(
                         created_at__day__gte=start_day,
                         created_at__day__lte=end_day,
-                    ).aggregate(
-                        total=Sum(
-                            "grand_total"
-                        )
-                    )["total"]
+                    ).aggregate(total=Sum("grand_total"))["total"]
                     or 0
                 )
 
@@ -269,26 +237,13 @@ class SalesReportView(APIView):
 
         else:
 
-            queryset = queryset.filter(
-                created_at__year=today.year
-            )
+            queryset = queryset.filter(created_at__year=today.year)
 
             quarter_data = (
-                queryset
-                .annotate(
-                    quarter=ExtractQuarter(
-                        "created_at"
-                    )
-                )
+                queryset.annotate(quarter=ExtractQuarter("created_at"))
                 .values("quarter")
-                .annotate(
-                    total=Sum(
-                        "grand_total"
-                    )
-                )
-                .order_by(
-                    "quarter"
-                )
+                .annotate(total=Sum("grand_total"))
+                .order_by("quarter")
             )
 
             labels = [
@@ -302,62 +257,238 @@ class SalesReportView(APIView):
 
             for item in quarter_data:
 
-                sales[
-                    item["quarter"] - 1
-                ] = float(
-                    item["total"]
-                )
+                sales[item["quarter"] - 1] = float(item["total"])
 
         # ===================================
         # SUMMARY CARDS
         # ===================================
 
         summary = queryset.aggregate(
-            total_sales=Sum(
-                "grand_total"
-            ),
+            total_sales=Sum("grand_total"),
             total_orders=Count("id"),
-            average_order_value=Avg(
-                "grand_total"
-            ),
+            average_order_value=Avg("grand_total"),
         )
 
         return Response(
             {
                 "period": period,
-
                 "restaurant": {
                     "id": restaurant.id,
                     "name": restaurant.name,
                 },
-
                 "summary": {
-                    "total_sales":
-                        float(
-                            summary[
-                                "total_sales"
-                            ]
-                            or 0
-                        ),
-
-                    "total_orders":
-                        summary[
-                            "total_orders"
-                        ]
-                        or 0,
-
-                    "average_order_value":
-                        float(
-                            summary[
-                                "average_order_value"
-                            ]
-                            or 0
-                        ),
+                    "total_sales": float(summary["total_sales"] or 0),
+                    "total_orders": summary["total_orders"] or 0,
+                    "average_order_value": float(summary["average_order_value"] or 0),
                 },
-
                 "chart": {
                     "labels": labels,
                     "sales": sales,
+                },
+            }
+        )
+
+
+class ProductReportView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        user = request.user
+
+        restaurant_id = request.GET.get(
+            "restaurant_id"
+        )
+
+        period = request.GET.get(
+            "period",
+            "week",
+        )
+
+        report_type = request.GET.get(
+            "report_type",
+            "best",
+        )
+
+        start_date = request.GET.get(
+            "start_date"
+        )
+
+        end_date = request.GET.get(
+            "end_date"
+        )
+
+        # ============================
+        # RESTAURANT
+        # ============================
+
+        if user.role == "restaurant_admin":
+
+            restaurant = Restaurant.objects.filter(
+                id=restaurant_id,
+                owner=user,
+            ).first()
+
+        else:
+
+            restaurant = Restaurant.objects.filter(
+                id=restaurant_id
+            ).first()
+
+            if (
+                not restaurant
+                or user.restaurant_id
+                != restaurant.id
+            ):
+                return Response(
+                    {
+                        "detail":
+                        "Access denied"
+                    },
+                    status=403,
+                )
+
+        if not restaurant:
+
+            return Response(
+                {
+                    "detail":
+                    "Restaurant not found"
+                },
+                status=404,
+            )
+
+        today = timezone.localdate()
+
+        queryset = OrderItem.objects.filter(
+            order__restaurant=restaurant,
+            order__payment_status="paid",
+            product_variant__isnull=False,
+        )
+
+        # ============================
+        # DATE FILTER
+        # ============================
+
+        if start_date and end_date:
+
+            queryset = queryset.filter(
+                order__created_at__date__range=[
+                    start_date,
+                    end_date,
+                ]
+            )
+
+        elif period == "week":
+
+            start = (
+                today -
+                timedelta(
+                    days=today.weekday()
+                )
+            )
+
+            queryset = queryset.filter(
+                order__created_at__date__gte=start
+            )
+
+        elif period == "month":
+
+            queryset = queryset.filter(
+                order__created_at__year=today.year,
+                order__created_at__month=today.month,
+            )
+
+        elif period == "year":
+
+            queryset = queryset.filter(
+                order__created_at__year=today.year
+            )
+
+        # ============================
+        # PRODUCT DATA
+        # ============================
+
+        products = (
+            queryset
+            .values(
+                "product_variant__product__name",
+                "product_variant__name",
+            )
+            .annotate(
+                quantity_sold=Sum(
+                    "quantity"
+                )
+            )
+        )
+
+        if report_type == "best":
+
+            products = products.order_by(
+                "-quantity_sold"
+            )[:10]
+
+        else:
+
+            products = products.order_by(
+                "quantity_sold"
+            )[:10]
+
+        labels = []
+
+        quantities = []
+
+        for item in products:
+
+            labels.append(
+                f"{item['product_variant__product__name']} - "
+                f"{item['product_variant__name']}"
+            )
+
+            quantities.append(
+                item["quantity_sold"]
+            )
+
+        total_qty = queryset.aggregate(
+            total=Sum("quantity")
+        )["total"] or 0
+
+        return Response(
+            {
+                "report_type":
+                    report_type,
+
+                "summary": {
+
+                    "total_quantity":
+                        total_qty,
+
+                    "unique_products":
+                        queryset
+                        .values(
+                            "product_variant"
+                        )
+                        .distinct()
+                        .count(),
+
+                    "best_product":
+                        labels[0]
+                        if labels
+                        else None,
+
+                    "best_quantity":
+                        quantities[0]
+                        if quantities
+                        else 0,
+                },
+
+                "chart": {
+                    "labels":
+                        labels,
+
+                    "quantities":
+                        quantities,
                 },
             }
         )
