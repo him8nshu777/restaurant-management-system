@@ -42,11 +42,20 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils.http import urlsafe_base64_decode
 
 from django.contrib.auth.tokens import default_token_generator
+from django.shortcuts import get_object_or_404
 
 # Application imports
-from .serializers import RegisterSerializer, CustomLoginSerializer
+from .serializers import (
+    RegisterSerializer,
+    CustomLoginSerializer,
+    CustomerRegisterSerializer,
+    CustomerLoginSerializer,
+    ProfileSerializer,
+    ProfileUpdateSerializer,
+    UserAddressSerializer,
+)
 
-from .models import User
+from .models import User, UserAddress, UserProfile
 
 from restaurants.models import Restaurant
 
@@ -92,6 +101,30 @@ class RegisterAPIView(APIView):
 
 
 # ==========================================
+# CUSTOMER REGISTER API
+# ==========================================
+class CustomerRegisterAPIView(APIView):
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+
+        serializer = CustomerRegisterSerializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.save()
+
+        return Response(
+            {
+                "message": "Customer registered successfully",
+                "user_id": user.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# ==========================================
 # LOGIN API
 # ==========================================
 # PURPOSE:
@@ -108,6 +141,19 @@ class RegisterAPIView(APIView):
 class CustomLoginAPIView(TokenObtainPairView):
 
     serializer_class = CustomLoginSerializer
+
+
+class CustomerLoginAPIView(APIView):
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+
+        serializer = CustomerLoginSerializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        return Response(serializer.validated_data)
 
 
 # ==========================================
@@ -143,15 +189,28 @@ class VerifyEmailAPIView(APIView):
         # Validate verification token
         if default_token_generator.check_token(user, token):
 
-            # Get linked restaurant
-            restaurant = user.restaurant
+            # ==========================================
+            # CUSTOMER EMAIL VERIFICATION
+            # ==========================================
+            if user.role == "customer":
 
-            # Mark email verified
-            restaurant.is_email_verified = True
+                user.is_email_verified = True
 
-            restaurant.save()
+                user.save(update_fields=["is_email_verified"])
 
-            return Response({"message": "Email Verified"})
+            # ==========================================
+            # RESTAURANT OWNER EMAIL VERIFICATION
+            # ==========================================
+            else:
+                # Get linked restaurant
+                restaurant = user.restaurant
+
+                # Mark email verified
+                restaurant.is_email_verified = True
+
+                restaurant.save()
+
+            return Response({"message": "Email Verified", "role": user.role})
 
         # Invalid token response
         return Response({"message": "Invalid Token"}, status=400)
@@ -252,27 +311,159 @@ class ResetPasswordAPIView(APIView):
 # Frontend uses this API to always get
 # latest restaurant status from backend
 # ==========================================
+# ==========================================
+# CURRENT USER API
+# ==========================================
 class CurrentUserAPIView(APIView):
 
-    # Only logged-in users allowed
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
 
-        # Currently authenticated user
+        # ==========================================
+        # CURRENT USER
+        # ==========================================
         user = request.user
 
-        # Restaurant linked to user
+        # ==========================================
+        # CUSTOMER USER
+        # ==========================================
+        if user.role == "customer":
+            # get default address
+            address = user.addresses.filter(is_default=True).first()
+            return Response(
+                {
+                    "id": user.id,
+                    "email": user.email,
+                    "username": user.username,
+                    "phone": user.phone,
+                    "role": user.role,
+                    "is_email_verified": user.is_email_verified,
+                    "latitude": address.latitude if address else None,
+                    "longitude": address.longitude if address else None,
+                }
+            )
+
+        # ==========================================
+        # STAFF / RESTAURANT USER
+        # ==========================================
         restaurant = user.restaurant
 
-        # Return user data
         return Response(
             {
                 "id": user.id,
                 "email": user.email,
+                "username": user.username,
+                "phone": user.phone,
                 "role": user.role,
-                # Used for frontend route control
                 "restaurant_status": restaurant.status,
                 "restaurant_id": restaurant.id,
             }
         )
+
+
+class ProfileView(APIView):
+
+    permission_classes = [
+        IsAuthenticated
+    ]
+
+    def get(self, request):
+
+        UserProfile.objects.get_or_create(
+            user=request.user
+        )
+
+        serializer = ProfileSerializer(
+            request.user
+        )
+
+        return Response(
+            serializer.data
+        )
+
+    def patch(self, request):
+
+        serializer = (
+            ProfileUpdateSerializer(
+                instance=request.user,
+                data=request.data,
+                partial=True,
+            )
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        serializer.save()
+
+        return Response(
+            ProfileSerializer(
+                request.user
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+class UserAddressListCreateView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        addresses = request.user.addresses.all()
+
+        serializer = UserAddressSerializer(addresses, many=True)
+
+        return Response(serializer.data)
+
+    def post(self, request):
+
+        serializer = UserAddressSerializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        if serializer.validated_data.get("is_default"):
+
+            UserAddress.objects.filter(user=request.user).update(is_default=False)
+
+        serializer.save(user=request.user)
+
+        return Response(serializer.data, status=201)
+
+
+class UserAddressDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, request, pk):
+
+        return get_object_or_404(UserAddress, pk=pk, user=request.user)
+
+    def patch(self, request, pk):
+
+        address = self.get_object(request, pk)
+
+        serializer = UserAddressSerializer(address, data=request.data, partial=True)
+
+        serializer.is_valid(raise_exception=True)
+
+        if serializer.validated_data.get("is_default"):
+
+            UserAddress.objects.filter(user=request.user).exclude(id=address.id).update(
+                is_default=False
+            )
+
+        serializer.save()
+
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+
+        address = self.get_object(request, pk)
+
+        address.delete()
+
+        return Response({"detail": "Address deleted"})
+
+

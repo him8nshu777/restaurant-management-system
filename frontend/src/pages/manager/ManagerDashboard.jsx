@@ -32,6 +32,7 @@ import POSDashboard from "../pos/POSDashboard";
 import ComboDynamicPricing from "../dashboard/menu/ComboDynamicPricing";
 import OrderList from "../dashboard/orders/OrderList";
 import KitchenOrders from "../kitchen/KitchenOrders";
+import Profile from "../profile/Profile";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -130,6 +131,9 @@ export default function ManagerDashboard() {
 
             case "kitchen":
                 return <KitchenOrders />;
+
+            case "profile":
+                return <Profile />;
             default:
                 return <Reports />;
         }

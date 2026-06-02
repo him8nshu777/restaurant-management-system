@@ -30,3 +30,31 @@ export const registerUser = async (
 
   return response.data;
 };
+
+
+export const customerRegister =
+  async (data) => {
+
+  const response =
+    await axiosInstance.post(
+      "/auth/customer/register/",
+      data
+    );
+
+  return response.data;
+};
+
+export const customerLogin =
+  async (email, password) => {
+
+  const response =
+    await axiosInstance.post(
+      "/auth/customer/login/",
+      {
+        email,
+        password,
+      }
+    );
+
+  return response.data;
+};

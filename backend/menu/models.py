@@ -534,7 +534,16 @@ class ProductTax(models.Model):
 
 # =========================================================
 class ServiceCharge(models.Model):
+    ORDER_TYPE_CHOICES = (
+        ("dine_in", "Dine In"),
+        ("takeaway", "Takeaway"),
+        ("delivery", "Delivery"),
+    )
 
+    applicable_order_types = models.JSONField(
+        default=list,
+        blank=True,
+    )
     # =====================================================
     # SERVICE TYPES
     # =====================================================
@@ -590,13 +599,6 @@ class ServiceCharge(models.Model):
     # =====================================================
     is_active = models.BooleanField(
         default=True,
-    )
-
-    # =====================================================
-    # AUTO APPLY
-    # =====================================================
-    auto_apply = models.BooleanField(
-        default=False,
     )
 
     # =====================================================

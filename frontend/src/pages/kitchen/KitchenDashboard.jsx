@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "../../components/admin/dashboard/DashboardLayout";
-import KitchenOrders from "./KitchenOrders";
+import KitchenOrders from "../kitchen/KitchenOrders";
+import Profile from "../profile/Profile";
 
 export default function KitchenDashboard() {
     // Moved state inside the component
@@ -11,6 +12,9 @@ export default function KitchenDashboard() {
         switch (activePage.type) {
             case "kitchen-orders":
                 return <KitchenOrders />;
+
+            case "profile":
+                return <Profile />;
             default:
                 return <KitchenOrders />;
         }

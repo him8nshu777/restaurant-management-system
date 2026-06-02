@@ -8,7 +8,7 @@ export default function ButtonLoader() {
 
     <ClipLoader
       size={20}
-      color="#00a6ff"
+      color="#030303"
     />
 
   );

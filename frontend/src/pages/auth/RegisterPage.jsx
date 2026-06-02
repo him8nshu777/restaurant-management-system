@@ -118,71 +118,180 @@ export default function RegisterPage() {
   };
 
 
-  return (
+ return (
+  <div
+    className="
+      container-fluid
+      min-vh-100
+      d-flex
+      justify-content-center
+      align-items-center
+      bg-light
+      py-4
+    "
+  >
+    <div
+      className="
+        card
+        border-0
+        shadow
+        p-4
+        p-md-5
+      "
+      style={{
+        width: "100%",
+        maxWidth: "550px",
+      }}
+    >
+      {/* TITLE */}
+      <div className="text-center mb-4">
+        <h2
+          className="
+            fw-bold
+            text-primary
+          "
+        >
+          Restaurant Registration
+        </h2>
 
-    <div>
+        <p className="text-muted">
+          Register your restaurant and start managing operations
+        </p>
+      </div>
 
-      <h1>
-        Restaurant Registration
-      </h1>
-
+      {/* FORM */}
       <form onSubmit={handleSubmit}>
+        {/* USERNAME */}
+        <div className="mb-3">
+          <label className="form-label">
+            Username
+          </label>
 
-        <input
-          type="text"
-          name="username"
-          placeholder="Username"
-          onChange={handleChange}
-        />
+          <input
+            type="text"
+            name="username"
+            className="form-control"
+            placeholder="Enter username"
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          onChange={handleChange}
-        />
+        {/* EMAIL */}
+        <div className="mb-3">
+          <label className="form-label">
+            Email
+          </label>
 
-        <input
-          type="text"
-          name="phone"
-          placeholder="Phone"
-          onChange={handleChange}
-        />
+          <input
+            type="email"
+            name="email"
+            className="form-control"
+            placeholder="Enter email"
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          onChange={handleChange}
-        />
+        {/* PHONE */}
+        <div className="mb-3">
+          <label className="form-label">
+            Phone Number
+          </label>
 
-        <input
-          type="text"
-          name="restaurant_name"
-          placeholder="Restaurant Name"
-          onChange={handleChange}
-        />
+          <input
+            type="text"
+            name="phone"
+            className="form-control"
+            placeholder="Enter phone number"
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-        <input
-          type="text"
-          name="gst_number"
-          placeholder="GST Number"
-          onChange={handleChange}
-        />
+        {/* PASSWORD */}
+        <div className="mb-3">
+          <label className="form-label">
+            Password
+          </label>
 
+          <input
+            type="password"
+            name="password"
+            className="form-control"
+            placeholder="Enter password"
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* RESTAURANT NAME */}
+        <div className="mb-3">
+          <label className="form-label">
+            Restaurant Name
+          </label>
+
+          <input
+            type="text"
+            name="restaurant_name"
+            className="form-control"
+            placeholder="Enter restaurant name"
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* GST NUMBER */}
+        <div className="mb-4">
+          <label className="form-label">
+            GST Number
+          </label>
+
+          <input
+            type="text"
+            name="gst_number"
+            className="form-control"
+            placeholder="Enter GST number"
+            onChange={handleChange}
+          />
+        </div>
+
+        {/* REGISTER BUTTON */}
         <button
           type="submit"
+          className="
+            btn
+            btn-primary
+            w-100
+          "
           disabled={loading}
         >
-          {
-            loading
-              ? <ButtonLoader />
-              : "Register"
-          }
+          {loading ? (
+            <ButtonLoader />
+          ) : (
+            "Register Restaurant"
+          )}
         </button>
-
       </form>
 
+      {/* LINKS */}
+      <div className="text-center mt-4">
+        <p className="mb-0">
+          Already have an account?{" "}
+          <span
+            style={{
+              cursor: "pointer",
+            }}
+            className="text-primary"
+            onClick={() =>
+              navigate("/login")
+            }
+          >
+            Login
+          </span>
+        </p>
+      </div>
     </div>
-  );
+  </div>
+);
 }

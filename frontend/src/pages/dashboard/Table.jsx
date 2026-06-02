@@ -133,17 +133,28 @@ const restaurantId =
       console.log(error);
     }
   };
-
+  
   // ==========================================
   // HANDLE INPUT CHANGE
   // ==========================================
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
+  const { name, value } = e.target;
 
-      [e.target.name]: e.target.value,
-    });
-  };
+  if (name === "floor") {
+    setFormData((prev) => ({
+      ...prev,
+      floor: value,
+      area: "",
+    }));
+
+    return;
+  }
+
+  setFormData((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
 
   // ==========================================
   // CREATE TABLE
@@ -442,6 +453,11 @@ function TableForm({
   waiterList,
   showWaiter,
 }) {
+  const filteredAreas = areaList.filter(
+    (area) =>
+      String(area.floor) ===
+      String(formData.floor)
+  );
   return (
     <>
       {/* TABLE NUMBER */}
@@ -494,7 +510,7 @@ function TableForm({
         >
           <option value="">Select Area</option>
 
-          {areaList.map((area) => (
+          {filteredAreas.map((area) => (
             <option key={area.id} value={area.id}>
               {area.name}
             </option>

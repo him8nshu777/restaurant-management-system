@@ -187,7 +187,7 @@ class InventoryTransaction(models.Model):
 
     quantity = models.DecimalField(
         max_digits=10,
-        decimal_places=2
+        decimal_places=3
     )
 
     note = models.TextField(blank=True)

@@ -1,0 +1,44 @@
+import {
+  HouseDoor,
+  GeoAlt,
+  BagCheck,
+  ClockHistory,
+  Heart,
+  PersonCircle,
+} from "react-bootstrap-icons";
+
+const customerMenu = [
+
+  {
+    key: "restaurants",
+    label: "Nearby Restaurants",
+    icon: <HouseDoor />
+  },
+
+  // {
+  //   key: "saved-addresses",
+  //   label: "Saved Addresses",
+  //   icon: <GeoAlt />
+  // },
+
+  {
+    key: "active-orders",
+    label: "Acitve Orders",
+    icon: <BagCheck />
+  },
+
+  {
+    key: "order-history",
+    label: "Order History",
+    icon: <ClockHistory />
+  },
+
+  // {
+  //   key: "favorites",
+  //   label: "Favorites",
+  //   icon: <Heart />
+  // },
+
+];
+
+export default customerMenu;

@@ -1,245 +1,155 @@
-import {
-  useEffect,
-  useState,
-  useRef,
-} from "react";
+import { useEffect, useState, useRef } from "react";
 
-import {
-  useSelector,
-} from "react-redux";
+import { useSelector } from "react-redux";
 
 import {
   getOrderList,
-  updateOrder,
+  updateOrderStatus,
 } from "../../services/orderService";
 
 // ==========================================
 // API / WS BASE URL
 // ==========================================
-const WS_BASE_URL =
-  import.meta.env
-    .VITE_WS_BASE_URL ||
-  "ws://127.0.0.1:8000";
+const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || "ws://127.0.0.1:8000";
 
 // ==========================================
 // KITCHEN ORDERS
 // ==========================================
 export default function WaiterOrders() {
-
   // ========================================
   // REFS
   // ========================================
-  const socketRef =
-    useRef(null);
+  const socketRef = useRef(null);
 
-  const audioRef =
-    useRef(null);
+  const audioRef = useRef(null);
 
-        const user = useSelector((state) => state.auth.user);
+  const user = useSelector((state) => state.auth.user);
 
-const restaurantId = user?.restaurant_id;
+  const restaurantId = user?.restaurant_id;
 
   // ========================================
   // STATES
   // ========================================
-  const [orders, setOrders] =
-    useState([]);
+  const [orders, setOrders] = useState([]);
 
-  const [isConnected, setIsConnected] =
-    useState(false);
+  const [isConnected, setIsConnected] = useState(false);
 
-  const [
-    liveNotification,
-    setLiveNotification
-  ] = useState(null);
+  const [liveNotification, setLiveNotification] = useState(null);
 
   // ========================================
   // UNLOCK AUDIO
   // BROWSER BLOCKS AUTOPLAY
   // ========================================
   useEffect(() => {
-
-    const unlockAudio =
-      async () => {
-
-        try {
-
-          if (
-            !audioRef.current
-          ) {
-            return;
-          }
-
-          audioRef.current.volume = 0;
-
-          await audioRef.current.play();
-
-          audioRef.current.pause();
-
-          audioRef.current.currentTime = 0;
-
-          audioRef.current.volume = 1;
-
-          console.log(
-            "Audio unlocked"
-          );
-
+    const unlockAudio = async () => {
+      try {
+        if (!audioRef.current) {
+          return;
         }
 
-        catch (error) {
+        audioRef.current.volume = 0;
 
-          console.log(
-            "Audio unlock failed:",
-            error
-          );
+        await audioRef.current.play();
 
-        }
+        audioRef.current.pause();
 
-        window.removeEventListener(
-          "click",
-          unlockAudio
-        );
+        audioRef.current.currentTime = 0;
 
-      };
+        audioRef.current.volume = 1;
 
-    window.addEventListener(
-      "click",
-      unlockAudio
-    );
+        console.log("Audio unlocked");
+      } catch (error) {
+        console.log("Audio unlock failed:", error);
+      }
 
-    return () => {
-
-      window.removeEventListener(
-        "click",
-        unlockAudio
-      );
-
+      window.removeEventListener("click", unlockAudio);
     };
 
+    window.addEventListener("click", unlockAudio);
+
+    return () => {
+      window.removeEventListener("click", unlockAudio);
+    };
   }, []);
 
   // ========================================
   // FETCH ORDERS
   // ========================================
   const fetchOrders = async () => {
-  try {
-    if (!user?.restaurant_id) return;
+    try {
+      if (!user?.restaurant_id) return;
 
-    const data = await getOrderList(user.restaurant_id);
+      const data = await getOrderList(user.restaurant_id);
 
-    const filteredOrders = data.filter(
-      (order) =>
-        order.waiter_id === user.id &&
-      ["ready", "served"].includes(order.status)
-    );
+      const filteredOrders = data.filter(
+        (order) =>
+          order.waiter_id === user.id &&
+          ["ready", "served"].includes(order.status),
+      );
 
-    setOrders(filteredOrders);
-  } catch (error) {
-    console.log(error);
-  }
-};
+      setOrders(filteredOrders);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   // ========================================
   // INITIAL LOAD
   // ========================================
   useEffect(() => {
-
-    if (
-      user?.restaurant_id
-    ) {
-
+    if (user?.restaurant_id) {
       fetchOrders();
-
     }
-
   }, [user]);
 
   // ========================================
   // PLAY SOUND
   // ========================================
-  const playNotificationSound =
-    () => {
+  const playNotificationSound = () => {
+    try {
+      if (!audioRef.current) {
+        console.log("Audio ref missing");
 
-      try {
-
-        if (
-          !audioRef.current
-        ) {
-          console.log(
-            "Audio ref missing"
-          );
-
-          return;
-        }
-
-        audioRef.current.pause();
-
-        audioRef.current.currentTime = 0;
-
-        const playPromise =
-          audioRef.current.play();
-
-        if (playPromise !== undefined) {
-
-          playPromise
-            .then(() => {
-
-              console.log(
-                "Sound played"
-              );
-
-            })
-            .catch((error) => {
-
-              console.log(
-                "Audio play failed:",
-                error
-              );
-
-            });
-
-        }
-
+        return;
       }
 
-      catch (error) {
+      audioRef.current.pause();
 
-        console.log(
-          "Play sound error:",
-          error
-        );
+      audioRef.current.currentTime = 0;
 
+      const playPromise = audioRef.current.play();
+
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log("Sound played");
+          })
+          .catch((error) => {
+            console.log("Audio play failed:", error);
+          });
       }
-
-    };
+    } catch (error) {
+      console.log("Play sound error:", error);
+    }
+  };
 
   // ========================================
   // AUTO HIDE NOTIFICATION
   // ========================================
   useEffect(() => {
-
-    if (
-      !liveNotification
-    ) {
+    if (!liveNotification) {
       return;
     }
 
-    const timer =
-      setTimeout(() => {
+    const timer = setTimeout(() => {
+      setLiveNotification(null);
+    }, 4000);
 
-        setLiveNotification(
-          null
-        );
-
-      }, 4000);
-
-    return () =>
-      clearTimeout(timer);
-
+    return () => clearTimeout(timer);
   }, [liveNotification]);
   console.log("USER OBJECT:", user);
-console.log("USER ID:", user?.id);
-console.log("U:", user?.restaurant_id);
+  console.log("USER ID:", user?.id);
+  console.log("U:", user?.restaurant_id);
 
   // ========================================
   // WEBSOCKET
@@ -247,104 +157,80 @@ console.log("U:", user?.restaurant_id);
   useEffect(() => {
     if (!user?.id || !user?.restaurant_id) return;
 
-  // ======================================
+    // ======================================
     // CLOSE OLD SOCKET
     // ======================================
-    if (
-      socketRef.current
-    ) {
-
+    if (socketRef.current) {
       socketRef.current.close();
-
     }
 
-  const socketUrl = `${WS_BASE_URL}/ws/waiter/${user.id}/`;
+    const socketUrl = `${WS_BASE_URL}/ws/waiter/${user.id}/`;
     console.log("WAITER WS URL:", socketUrl);
-  // ======================================
+    // ======================================
     // CREATE SOCKET
     // ======================================
-    const socket =
-      new WebSocket(
-        socketUrl
-      );
+    const socket = new WebSocket(socketUrl);
 
-    socketRef.current =
-      socket;
+    socketRef.current = socket;
 
-  // ======================================
+    // ======================================
     // OPEN
     // ======================================
-    socket.onopen =
-      () => {
+    socket.onopen = () => {
+      console.log("WebSocket Connected");
 
-        console.log(
-          "WebSocket Connected"
-        );
+      setIsConnected(true);
+    };
 
-        setIsConnected(
-          true
-        );
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
 
-      };
+      console.log("WS EVENT:", data);
 
-  socket.onmessage = (event) => {
-  const data = JSON.parse(event.data);
+      if (data.event === "order_ready") {
+        playNotificationSound();
 
-  console.log("WS EVENT:", data);
+        setLiveNotification({
+          message: `Order Ready ${data.order.order_number}`,
+        });
 
-  if (data.event === "order_ready") {
-    playNotificationSound();
+        // 🔥 DIRECT STATE UPDATE (IMPORTANT)
+        setOrders((prev) => {
+          const exists = prev.find((o) => o.id === data.order.id);
 
-    setLiveNotification({
-      message: `Order Ready ${data.order.order_number}`,
-    });
+          if (exists) return prev;
 
-    // 🔥 DIRECT STATE UPDATE (IMPORTANT)
-    setOrders((prev) => {
-      const exists = prev.find(o => o.id === data.order.id);
-
-      if (exists) return prev;
-
-      return [...prev, data.order];
-    });
-  }
-
-  if (data.event === "order_updated") {
-    fetchOrders();
-  }
-};
-  socket.onerror = (err) => {
-    console.log("WS Error:", err);
-  };
-
-  socket.onclose = (e) => {
-  console.log("WebSocket Disconnected", e.code, e.reason, e.wasClean);
-  setIsConnected(false);
-};
-
-  return () => {
-    if (
-        socket.readyState ===
-          WebSocket.OPEN ||
-        socket.readyState ===
-          WebSocket.CONNECTING
-      ) {
-
-        socket.close();
-
+          return [...prev, data.order];
+        });
       }
-  };
-}, [user?.id]);
+
+      if (data.event === "order_updated") {
+        fetchOrders();
+      }
+    };
+    socket.onerror = (err) => {
+      console.log("WS Error:", err);
+    };
+
+    socket.onclose = (e) => {
+      console.log("WebSocket Disconnected", e.code, e.reason, e.wasClean);
+      setIsConnected(false);
+    };
+
+    return () => {
+      if (
+        socket.readyState === WebSocket.OPEN ||
+        socket.readyState === WebSocket.CONNECTING
+      ) {
+        socket.close();
+      }
+    };
+  }, [user?.id]);
 
   // ========================================
   // UPDATE STATUS
   // ========================================
-  const updateStatus =
-  async (
-    orderId,
-    status
-  ) => {
-
+  const updateStatus = async (orderId, status) => {
     // ======================================
     // INSTANT UI UPDATE
     // ======================================
@@ -355,100 +241,72 @@ console.log("U:", user?.restaurant_id);
               ...order,
               status,
             }
-          : order
-      )
+          : order,
+      ),
     );
 
     try {
-
-      await updateOrder(
-        orderId,
-        {
-          status,
-        }
-      );
-
-    }
-
-    catch (error) {
-
+      await updateOrderStatus(orderId, {
+        status,
+      });
+    } catch (error) {
       console.log(error);
 
       // OPTIONAL:
       // REFRESH IF FAILED
       fetchOrders();
-
     }
-
   };
 
   // ========================================
   // STATUS BADGE
   // ========================================
-  const getStatusBadge =
-    (status) => {
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "saved":
+        return "bg-secondary";
 
-      switch (status) {
+      case "running":
+        return "bg-primary";
 
-        case "saved":
-          return "bg-secondary";
+      case "confirmed":
+        return "bg-info";
 
-        case "running":
-          return "bg-primary";
+      case "preparing":
+        return "bg-warning";
 
-        case "confirmed":
-          return "bg-info";
+      case "ready":
+        return "bg-success";
 
-        case "preparing":
-          return "bg-warning";
+      default:
+        return "bg-dark";
+    }
+  };
 
-        case "ready":
-          return "bg-success";
+  // ==========================================
+  // FORMAT TIME
+  // ==========================================
+  const formatTime = (dateString) => {
+    if (!dateString) {
+      return "-";
+    }
 
-        default:
-          return "bg-dark";
-
-      }
-
-    };
-
-    // ==========================================
-// FORMAT TIME
-// ==========================================
-const formatTime = (dateString) => {
-
-  if (!dateString) {
-    return "-";
-  }
-
-  return new Date(dateString).toLocaleTimeString(
-    "en-IN",
-    {
+    return new Date(dateString).toLocaleTimeString("en-IN", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
-    }
-  );
-
-};
+    });
+  };
 
   return (
-
     <>
       {/* AUDIO */}
-      <audio
-        ref={audioRef}
-        preload="auto"
-      >
-        <source
-          src="/sounds/order-alert.mp3"
-          type="audio/mpeg"
-        />
+      <audio ref={audioRef} preload="auto">
+        <source src="/sounds/order-alert.mp3" type="audio/mpeg" />
       </audio>
 
       {/* LIVE NOTIFICATION */}
       {liveNotification && (
-
         <div
           className="
             position-fixed
@@ -460,7 +318,6 @@ const formatTime = (dateString) => {
             zIndex: 9999,
           }}
         >
-
           <div
             className="
               alert
@@ -470,25 +327,14 @@ const formatTime = (dateString) => {
               align-items-center
             "
           >
+            <div className="me-2">🔔</div>
 
-            <div className="me-2">
-              🔔
-            </div>
-
-            <div>
-              {
-                liveNotification.message
-              }
-            </div>
-
+            <div>{liveNotification.message}</div>
           </div>
-
         </div>
-
       )}
 
       <div className="container-fluid py-3">
-
         {/* HEADER */}
         <div
           className="
@@ -498,48 +344,27 @@ const formatTime = (dateString) => {
             mb-4
           "
         >
-
           <div>
+            <h2 className="fw-bold mb-1">Waiter Orders</h2>
 
-            <h2 className="fw-bold mb-1">
-              Waiter Orders
-            </h2>
-
-            <small className="text-muted">
-              Live Waiter Orders
-            </small>
-
+            <small className="text-muted">Live Waiter Orders</small>
           </div>
 
           {/* SOCKET STATUS */}
           <div>
-
             <span
               className={`
                 badge
-                ${
-                  isConnected
-                    ? "bg-success"
-                    : "bg-danger"
-                }
+                ${isConnected ? "bg-success" : "bg-danger"}
               `}
             >
-
-              {
-                isConnected
-                  ? "Live"
-                  : "Disconnected"
-              }
-
+              {isConnected ? "Live" : "Disconnected"}
             </span>
-
           </div>
-
         </div>
 
         {/* EMPTY */}
         {orders.length === 0 && (
-
           <div
             className="
               card
@@ -547,7 +372,6 @@ const formatTime = (dateString) => {
               shadow-sm
             "
           >
-
             <div
               className="
                 card-body
@@ -555,22 +379,14 @@ const formatTime = (dateString) => {
                 py-5
               "
             >
-
-              <h5>
-                No Active Orders
-              </h5>
-
+              <h5>No Active Orders</h5>
             </div>
-
           </div>
-
         )}
 
         {/* ORDERS */}
         <div className="row">
-
           {orders.map((order) => (
-
             <div
               className="
                 col-12
@@ -580,7 +396,6 @@ const formatTime = (dateString) => {
               "
               key={order.id}
             >
-
               <div
                 className="
                   card
@@ -589,9 +404,7 @@ const formatTime = (dateString) => {
                   h-100
                 "
               >
-
                 <div className="card-body">
-
                   {/* TOP */}
                   <div
                     className="
@@ -601,336 +414,202 @@ const formatTime = (dateString) => {
                       mb-3
                     "
                   >
-
                     <div>
-
-                      <h5 className="fw-bold mb-1">
-                        {
-                          order.order_number
-                        }
-                      </h5>
-
-                      <small className="text-muted">
-
-                        {
-                          order.order_type
-                        }
-
-                      </small>
-
+                      <h5 className="fw-bold mb-1">{order.order_number}</h5>
+                      <div className="d-flex gap-2 flex-wrap">
+                        <span
+                          className={`badge ${getStatusBadge(order.status)}`}
+                        >
+                          {order.status.toUpperCase()}
+                        </span>
+                      </div>
                     </div>
-
-                    <span
-                      className={`
-                        badge
-                        ${getStatusBadge(
-                          order.status
-                        )}
-                      `}
-                    >
-
-                      {order.status}
-
-                    </span>
-
+                    <div style={{ minWidth: "160px" }}>
+                      <select
+                        className="form-select form-select-sm"
+                        value={order.status}
+                        onChange={(e) => updateStatus(order.id, e.target.value)}
+                      >
+                        <option value="saved">Saved</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="preparing">Preparing</option>
+                        <option value="ready">Ready</option>
+                        <option value="served">Served</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </div>
                   </div>
 
                   {/* INFO */}
-<div className="mb-3">
+                  {/* INFO */}
+                  <div
+                    className="
+    border
+    rounded
+    p-3
+    mb-3
+    bg-light
+  "
+                  >
+                    <div className="row g-2">
+                      <div className="col-6">
+                        <small className="text-muted">Order Type</small>
 
-  <div className="row g-2">
+                        <div className="fw-semibold text-capitalize">
+                          {order.order_type || "-"}
+                        </div>
+                      </div>
 
-    <div className="col-6">
+                      <div className="col-6">
+                        <small className="text-muted">Table</small>
 
-      <div className="small text-muted">
-        Order Type
-      </div>
+                        <div className="fw-semibold">
+                          {order.table_name || "-"}
+                        </div>
+                      </div>
 
-      <div className="fw-semibold">
-        {order.order_type || "-"}
-      </div>
+                      <div className="col-6">
+                        <small className="text-muted">Waiter</small>
 
-    </div>
+                        <div className="fw-semibold">
+                          {order.waiter_name || "-"}
+                        </div>
+                      </div>
 
-    <div className="col-6">
+                      <div className="col-6">
+                        <small className="text-muted">Floor</small>
 
-      <div className="small text-muted">
-        Table
-      </div>
+                        <div className="fw-semibold">
+                          {order.floor_name || "-"}
+                        </div>
+                      </div>
 
-      <div className="fw-semibold">
-        {order.table_name || "-"}
-      </div>
+                      <div className="col-6">
+                        <small className="text-muted">Area</small>
 
-    </div>
-    <div className="col-6">
+                        <div className="fw-semibold">
+                          {order.area_name || "-"}
+                        </div>
+                      </div>
+                      <div className="col-6">
+                        <small className="text-muted">Total</small>
+                        <div className="fw-semibold">
+                          ₹{order.grand_total || "-"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-6">
+                      <div className="small text-muted">Created</div>
 
-    <div className="small text-muted">
-        Waiter
-      </div>
-
-      <div className="fw-semibold">
-        {order.waiter_name || "-"}
-      </div>
-
-    </div>
-    <div className="col-6">
-
-      <div className="small text-muted">
-        Floor
-      </div>
-
-      <div className="fw-semibold">
-        {order.floor_name || "-"}
-      </div>
-
-    </div>
-
-    <div className="col-6">
-
-      <div className="small text-muted">
-        Area
-      </div>
-
-      <div className="fw-semibold">
-        {order.area_name || "-"}
-      </div>
-
-    </div>
-                        
-    <div className="col-6">
-
-      <div className="small text-muted">
-        Total
-      </div>
-
-      <div className="fw-semibold">
-        ₹{order.grand_total}
-      </div>
-
-    </div>
-
-    <div className="col-6">
-
-      <div className="small text-muted">
-        Created
-      </div>
-
-      <div className="fw-semibold">
-        {formatTime(order.created_at)}
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
-{/* OVERALL ORDER NOTE */}
-{order.notes && (
-
-  <div
-    className="
+                      <div className="fw-semibold">
+                        {formatTime(order.created_at)}
+                      </div>
+                    </div>
+                  </div>
+                  {/* OVERALL ORDER NOTE */}
+                  {order.notes && (
+                    <div
+                      className="
       alert
       alert-danger
-      py-2
       mb-3
+      fw-bold
     "
-  >
-
-    <strong>
-      Order Note:
-    </strong>{" "}
-
-    {order.notes}
-
-  </div>
-
-)}
+                    >
+                      🚨 {order.notes}
+                    </div>
+                  )}
                   <hr />
 
                   {/* ITEMS */}
                   <div>
-
-                    {order.items?.map(
-                      (item) => (
-
-                        <div
-                          key={item.id}
-                          className="
+                    {order.items?.map((item) => (
+                      <div
+                        key={item.id}
+                        className="
                             border
                             rounded
                             p-3
                             mb-3
                             bg-light
                           "
-                        >
-
-                          <div
-                            className="
+                      >
+                        <div
+                          className="
                               d-flex
                               justify-content-between
                               align-items-center
                               mb-2
                             "
-                          >
+                        >
+                          <div className="fw-bold fs-5 mb-2">
+                            {item.quantity}x {item.item_name}
+                            {item.combo_items?.length > 0 && (
+                              <div
+                                className="
+      bg-light
+      border
+      rounded
+      p-2
+      mb-2
+    "
+                              >
+                                {item.combo_items.map((combo) => (
+                                  <div key={combo.id} className="small">
+                                    • {combo.quantity * item.quantity}x{" "}
+                                    {combo.product_name} ({combo.variant_name})
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
 
-                            <div>
-
-                              <strong>
-
-                                {
-                                  item.quantity
-                                }x{" "}
-
-                                {
-                                  item.item_name
-                                }
-
-                              </strong>
-
-                            </div>
-
-                            <span
-                              className="
+                          <span
+                            className="
                                 badge
                                 bg-dark
                               "
-                            >
-
-                              ₹
-                              {
-                                item.total_price
-                              }
-
-                            </span>
-
-                          </div>
-
-                          {/* NOTES */}
-                          {item.notes && (
-
-                            <div
-                              className="
-                                alert
-                                alert-warning
-                                py-2
-                                mb-2
-                              "
-                            >
-
-                              <strong>
-                                Note:
-                              </strong>{" "}
-
-                              {
-                                item.notes
-                              }
-
-                            </div>
-
-                          )}
-
-                          {/* ADDONS */}
-                          {item.addons
-                            ?.length >
-                            0 && (
-
-                            <div>
-
-                              <small
-                                className="
-                                  fw-bold
-                                  text-muted
-                                "
-                              >
-                                Addons
-                              </small>
-
-                              {item.addons.map(
-                                (
-                                  addon
-                                ) => (
-
-                                  <div
-                                    key={
-                                      addon.id
-                                    }
-                                    className="
-                                      small
-                                      text-muted
-                                      ms-2
-                                    "
-                                  >
-
-                                    •{" "}
-
-                                    {
-                                      addon.quantity
-                                    }x{" "}
-
-                                    {
-                                      addon.addon_name
-                                    }
-
-                                  </div>
-
-                                )
-                              )}
-
-                            </div>
-
-                          )}
-
+                          >
+                            ₹{item.total_price}
+                          </span>
                         </div>
 
-                      )
-                    )}
+                        {/* ADDONS */}
+                        {item.addons?.length > 0 && (
+                          <div
+                            className="
+      bg-light
+      border
+      rounded
+      p-2
+      mt-2
+    "
+                          >
+                            <div className="fw-bold mb-1">Addons</div>
 
+                            {item.addons.map((addon) => (
+                              <div key={addon.id} className="small">
+                                • {addon.quantity}x {addon.addon_name}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* NOTES */}
+                        {item.notes && (
+                          <div className="alert alert-warning py-2 mt-2">
+                            ⚠ {item.notes}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-
-                  {/* ACTIONS */}
-<div className="mt-3">
-
-  <select
-    className="form-select"
-    value={order.status}
-    onChange={(e) =>
-      updateStatus(
-        order.id,
-        e.target.value
-      )
-    }
-  >
-    <option value="ready">
-      Ready
-    </option>
-
-    <option value="served">
-      Served
-    </option>
-
-    <option value="completed">
-      Completed
-    </option>
-
-  </select>
-
-</div>
-
                 </div>
-
               </div>
-
             </div>
-
           ))}
-
         </div>
-
       </div>
-
     </>
-
   );
-
 }

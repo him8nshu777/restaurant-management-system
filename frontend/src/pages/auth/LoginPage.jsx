@@ -1,100 +1,85 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+
+import { Link, useNavigate } from "react-router-dom";
+
 import { useDispatch } from "react-redux";
 
 import { loginUser } from "../../services/authService";
+
 import { loginSuccess } from "../../auth/authSlice";
 
 import ButtonLoader from "../../components/common/ButtonLoader";
 
-/**
- * PAGE: LoginPage
- * PURPOSE:
- * Authenticates restaurant owner/admin user.
- *
- * FLOW:
- * Login → Backend JWT → Redux store → redirect based on restaurant status
- */
+// ==========================================
+// RESTAURANT LOGIN PAGE
+// ==========================================
 export default function LoginPage() {
-
   const navigate = useNavigate();
+
   const dispatch = useDispatch();
 
-  // loading state for login button
-  const [loading, setLoading] = useState("");
+  // ==========================================
+  // LOADING STATE
+  // ==========================================
+  const [loading, setLoading] = useState(false);
 
-  // login form state
+  // ==========================================
+  // FORM STATE
+  // ==========================================
   const [formData, setFormData] = useState({
     email: "",
+
     password: "",
   });
 
-  /**
-   * Handles input changes for login form
-   */
+  // ==========================================
+  // HANDLE INPUT CHANGE
+  // ==========================================
   const handleChange = (e) => {
     setFormData({
       ...formData,
+
       [e.target.name]: e.target.value,
     });
   };
 
-  /**
-   * Handles login API call and routing logic
-   */
+  // ==========================================
+  // HANDLE LOGIN
+  // ==========================================
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setLoading(true);
 
     try {
+      const response = await loginUser(formData.email, formData.password);
 
-      // Call backend login API
-      const response = await loginUser(
-        formData.email,
-        formData.password
-      );
-
-      console.log(response);
-
-      /**
-       * Save user + token in Redux + localStorage
-       */
       dispatch(
         loginSuccess({
           access: response.access,
+
           refresh: response.refresh,
+
           user: response.user,
-        })
+        }),
       );
 
-      // Extract restaurant approval status
-      const restaurantStatus =
-        response.user.restaurant_status;
+      const restaurantStatus = response.user.restaurant_status;
 
-      /**
-       * ROUTING LOGIC BASED ON STATUS:
-       * pending → show approval page
-       * rejected/suspended → show status page
-       * active → dashboard
-       */
       if (
         restaurantStatus === "pending" ||
         restaurantStatus === "rejected" ||
         restaurantStatus === "suspended"
       ) {
         navigate("/account-status", {
-          state: { status: restaurantStatus },
+          state: {
+            status: restaurantStatus,
+          },
         });
-
       } else if (restaurantStatus === "active") {
-
-        // ==========================================
-        // ROLE-BASED ROUTING
-        // ==========================================
         const role = response.user.role;
 
         switch (role) {
-
           case "restaurant_admin":
             navigate("/admin");
             break;
@@ -120,64 +105,119 @@ export default function LoginPage() {
             break;
 
           default:
-
-            // Unknown role fallback
             navigate("/login");
         }
       }
-
     } catch (error) {
-
-      // Show backend error message OR fallback message
       alert(
         error.response?.data?.message ||
-        error.response?.data?.non_field_errors?.[0] ||
-        "Something went wrong"
+          error.response?.data?.non_field_errors?.[0] ||
+          "Login failed",
       );
-
     } finally {
       setLoading(false);
     }
   };
 
   return (
-
-    <div>
-
-      <h1>Login</h1>
-
-      {/* LOGIN FORM */}
-      <form onSubmit={handleSubmit}>
-
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          onChange={handleChange}
-        />
-
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          onChange={handleChange}
-        />
-
-        {/* Submit button with loading state */}
-        <button type="submit" disabled={loading}>
-          {loading ? <ButtonLoader /> : "Login"}
-        </button>
-
-      </form>
-
-      {/* Forgot password navigation */}
-      <p
-        onClick={() => navigate("/forgot-password")}
-        style={{ cursor: "pointer", color: "blue" }}
+    <div
+      className="
+        container-fluid
+        min-vh-100
+        d-flex
+        justify-content-center
+        align-items-center
+        bg-light
+      "
+    >
+      <div
+        className="
+          card
+          border-0
+          shadow
+          p-4
+          p-md-5
+        "
+        style={{
+          width: "100%",
+          maxWidth: "450px",
+        }}
       >
-        Forgot Password?
-      </p>
+        {/* TITLE */}
+        <div className="text-center mb-4">
+          <h2
+            className="
+              fw-bold
+            "
+          >
+            Restaurant Login
+          </h2>
 
+          <p className="text-muted">Login to manage your restaurant</p>
+        </div>
+
+        {/* LOGIN FORM */}
+        <form onSubmit={handleSubmit}>
+          {/* EMAIL */}
+          <div className="mb-3">
+            <label className="form-label">Email</label>
+
+            <input
+              type="email"
+              name="email"
+              className="form-control"
+              placeholder="Enter email"
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* PASSWORD */}
+          <div className="mb-4">
+            <label className="form-label">Password</label>
+
+            <input
+              type="password"
+              name="password"
+              className="form-control"
+              placeholder="Enter password"
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* LOGIN BUTTON */}
+          <button
+            type="submit"
+            className="
+              btn
+              btn-primary
+              w-100
+            "
+            disabled={loading}
+          >
+            {loading ? <ButtonLoader /> : "Login"}
+          </button>
+        </form>
+
+        {/* LINKS */}
+        <div className="text-center mt-4">
+          <p className="mb-2">
+            <span
+              style={{
+                cursor: "pointer",
+                color: "#0d6efd",
+              }}
+              onClick={() => navigate("/forgot-password")}
+            >
+              Forgot Password?
+            </span>
+          </p>
+
+          <p className="mb-0">Don't have a restaurant account? </p>
+          <Link to="/register">Register Restaurant</Link>
+        </div>
+      </div>
     </div>
   );
 }

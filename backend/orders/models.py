@@ -6,7 +6,7 @@ from django.db import models
 from django.utils import timezone
 
 from restaurants.models import Restaurant
-from accounts.models import User
+from accounts.models import User, UserAddress
 from django.db import IntegrityError
 from menu.models import (
     ProductVariant,
@@ -41,6 +41,7 @@ class Order(models.Model):
     # ORDER STATUS
     # =====================================================
     ORDER_STATUS_CHOICES = (
+        ("pending_approval", "Pending Approval"),
         ("saved", "Saved"),
         ("running", "Running"),
         ("confirmed", "Confirmed"),
@@ -60,6 +61,20 @@ class Order(models.Model):
         ("paid", "Paid"),
         ("failed", "Failed"),
         ("refunded", "Refunded"),
+    )
+
+    DELIVERY_STATUS_CHOICES = (
+        ("unassigned", "Unassigned"),
+        ("assigned", "Assigned"),
+        ("picked_up", "Picked Up"),
+        ("on_the_way", "On The Way"),
+        ("delivered", "Delivered"),
+    )
+
+    delivery_status = models.CharField(
+        max_length=20,
+        choices=DELIVERY_STATUS_CHOICES,
+        default="unassigned",
     )
 
     # =====================================================
@@ -89,6 +104,13 @@ class Order(models.Model):
         null=True,
         related_name="customer_orders",
     )
+    delivery_address = models.ForeignKey(
+        UserAddress,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+    )
 
     # =====================================================
     # WAITER
@@ -100,6 +122,18 @@ class Order(models.Model):
         blank=True,
         related_name="waiter_orders",
         limit_choices_to={"role": "waiter"},
+    )
+
+    # =====================================================
+    # DELIVERY STAFF
+    # =====================================================
+    delivery_staff = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="delivery_orders",
+        limit_choices_to={"role": "delivery"},
     )
     # =====================================================
     # CREATED BY STAFF
@@ -308,6 +342,10 @@ class Order(models.Model):
         auto_now=True,
     )
 
+    inventory_deducted = models.BooleanField(
+        default=False
+    )
+
     class Meta:
 
         ordering = ["-id"]
@@ -388,6 +426,7 @@ class Order(models.Model):
         # SAVE
         # =========================================
         super().save(*args, **kwargs)
+
 # =========================================================
 # ORDER ITEM
 # =========================================================
@@ -791,3 +830,66 @@ class OrderServiceCharge(models.Model):
             f"{self.name}"
         )
     
+class OrderItemTax(models.Model):
+
+    order_item = models.ForeignKey(
+        OrderItem,
+        related_name="taxes",
+        on_delete=models.CASCADE,
+    )
+
+    name = models.CharField(max_length=255)
+
+    percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2
+    )
+class OrderComboItem(models.Model):
+
+    order_item = models.ForeignKey(
+        OrderItem,
+        related_name="combo_items",
+        on_delete=models.CASCADE,
+    )
+
+    product_name = models.CharField(max_length=255)
+
+    variant_name = models.CharField(max_length=255)
+
+    quantity = models.PositiveIntegerField()
+
+    allocated_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+    )
+
+class OrderComboItemTax(models.Model):
+
+    combo_item = models.ForeignKey(
+        OrderComboItem,
+        related_name="taxes",
+        on_delete=models.CASCADE,
+    )
+
+    name = models.CharField(max_length=255)
+
+    percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+    )
+
+class OrderAddonTax(models.Model):
+
+    addon = models.ForeignKey(
+        OrderItemAddon,
+        related_name="taxes",
+        on_delete=models.CASCADE,
+    )
+
+    name = models.CharField(max_length=255)
+
+    percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+    )
+

@@ -18,22 +18,48 @@ export default function CheckEmailPage() {
   const email = location.state?.email;
 
   return (
+  <div
+    className="
+      container-fluid
+      min-vh-100
+      d-flex
+      justify-content-center
+      align-items-center
+      bg-light
+    "
+  >
+    <div
+      className="
+        card
+        border-0
+        shadow
+        p-4
+        p-md-5
+        text-center
+      "
+      style={{
+        width: "100%",
+        maxWidth: "500px",
+      }}
+    >
+      <h2 className="fw-bold text-success mb-3">
+        Verify Your Email
+      </h2>
 
-    <div>
-
-      {/* Page heading */}
-      <h1>Verify Your Email</h1>
-
-      {/* Instruction text */}
-      <p>Verification email sent to:</p>
-
-      {/* Display registered email */}
-      <h3>{email}</h3>
-
-      <p>
-        Please check your inbox and click the verification link.
+      <p className="text-muted">
+        Verification email sent to:
       </p>
 
+      <h5 className="fw-semibold mb-3">
+        {email}
+      </h5>
+
+      <p className="mb-0">
+        Please check your inbox and click
+        the verification link to activate
+        your account.
+      </p>
     </div>
-  );
+  </div>
+);
 }

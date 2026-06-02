@@ -1,51 +1,151 @@
 from rest_framework import serializers
 
-from .models import Order, OrderItem,OrderItemAddon, OrderTax,OrderServiceCharge
+from .models import (
+    Order,
+    OrderItem,
+    OrderItemAddon,
+    OrderTax,
+    OrderServiceCharge,
+    OrderAddonTax,
+    OrderItemTax,
+    OrderComboItemTax,
+    OrderComboItem,
+)
 
 
 # =========================================================
-# ORDER ITEM ADDON SERIALIZER
+# ADDON TAX READ SERIALIZER
 # =========================================================
-class OrderItemAddonCreateSerializer(
-    serializers.Serializer
-):
+class OrderAddonTaxSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = OrderAddonTax
+
+        fields = [
+            "id",
+            "name",
+            "percentage",
+        ]
+
+
+# =========================================================
+# ITEM TAX READ SERIALIZER
+# =========================================================
+class OrderItemTaxSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = OrderItemTax
+
+        fields = [
+            "id",
+            "name",
+            "percentage",
+        ]
+
+
+# =========================================================
+# COMBO ITEM TAX READ SERIALIZER
+# =========================================================
+class OrderComboItemTaxSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = OrderComboItemTax
+
+        fields = [
+            "id",
+            "name",
+            "percentage",
+        ]
+
+
+# =========================================================
+# COMBO ITEM READ SERIALIZER
+# =========================================================
+class OrderComboItemSerializer(serializers.ModelSerializer):
+
+    taxes = OrderComboItemTaxSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+
+        model = OrderComboItem
+
+        fields = [
+            "id",
+            "product_name",
+            "variant_name",
+            "quantity",
+            "allocated_price",
+            "taxes",
+        ]
+
+
+# =========================================================
+# ADDON WRITE SERIALIZER
+# USED FOR CREATE / UPDATE
+# =========================================================
+class OrderItemAddonWriteSerializer(serializers.ModelSerializer):
 
     id = serializers.IntegerField(
-        required=False
+        required=False,
     )
 
     addon_id = serializers.IntegerField()
 
-    addon_name = serializers.CharField()
-
-    addon_price = serializers.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-    )
-
     quantity = serializers.IntegerField(
-        default=1
+        default=1,
     )
 
-    total_price = serializers.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        required=False,
-    )
+    class Meta:
+
+        model = OrderItemAddon
+
+        fields = [
+            "id",
+            "addon_id",
+            "quantity",
+        ]
 
 
 # =========================================================
-# ORDER ITEM SERIALIZER
+# ADDON READ SERIALIZER
+# USED FOR LIST / DETAIL
 # =========================================================
-class OrderItemCreateSerializer(
-    serializers.Serializer
-):
+class OrderItemAddonReadSerializer(serializers.ModelSerializer):
 
-    # =========================================
-    # FOR UPDATE
-    # =========================================
+    taxes = OrderAddonTaxSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+
+        model = OrderItemAddon
+
+        fields = [
+            "id",
+            "addon_id",
+            "addon_name",
+            "addon_price",
+            "quantity",
+            "total_price",
+            "taxes",
+        ]
+
+
+# =========================================================
+# ITEM WRITE SERIALIZER
+# USED FOR CREATE / UPDATE
+# =========================================================
+class OrderItemWriteSerializer(serializers.ModelSerializer):
+
     id = serializers.IntegerField(
-        required=False
+        required=False,
     )
 
     item_type = serializers.CharField()
@@ -60,31 +160,7 @@ class OrderItemCreateSerializer(
         allow_null=True,
     )
 
-    item_name = serializers.CharField()
-
-    original_price = serializers.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-    )
-
-    final_price = serializers.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-    )
-
-    dynamic_pricing_name = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        allow_null=True,
-    )
-
     quantity = serializers.IntegerField()
-
-    total_price = serializers.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        required=False,
-    )
 
     notes = serializers.CharField(
         required=False,
@@ -92,21 +168,76 @@ class OrderItemCreateSerializer(
         allow_null=True,
     )
 
-    addons = OrderItemAddonCreateSerializer(
+    addons = OrderItemAddonWriteSerializer(
         many=True,
         required=False,
     )
+
+    class Meta:
+
+        model = OrderItem
+
+        fields = [
+            "id",
+            "item_type",
+            "product_variant_id",
+            "combo_id",
+            "quantity",
+            "notes",
+            "addons",
+        ]
+
+
+# =========================================================
+# ITEM READ SERIALIZER
+# USED FOR LIST / DETAIL
+# =========================================================
+class OrderItemReadSerializer(serializers.ModelSerializer):
+
+    addons = OrderItemAddonReadSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    taxes = OrderItemTaxSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    combo_items = OrderComboItemSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+
+        model = OrderItem
+
+        fields = [
+            "id",
+            "item_type",
+            "product_variant_id",
+            "combo_id",
+            "item_name",
+            "original_price",
+            "final_price",
+            "dynamic_pricing_name",
+            "quantity",
+            "total_price",
+            "notes",
+            "addons",
+            "taxes",
+            "combo_items",
+        ]
 
 
 # =========================================================
 # ORDER TAX SERIALIZER
 # =========================================================
-class OrderTaxCreateSerializer(
-    serializers.Serializer
-):
+class OrderTaxCreateSerializer(serializers.Serializer):
 
     id = serializers.IntegerField(
-        required=False
+        required=False,
     )
 
     name = serializers.CharField()
@@ -125,12 +256,10 @@ class OrderTaxCreateSerializer(
 # =========================================================
 # ORDER SERVICE CHARGE SERIALIZER
 # =========================================================
-class OrderServiceChargeCreateSerializer(
-    serializers.Serializer
-):
+class OrderServiceChargeCreateSerializer(serializers.Serializer):
 
     id = serializers.IntegerField(
-        required=False
+        required=False,
     )
 
     name = serializers.CharField()
@@ -151,12 +280,10 @@ class OrderServiceChargeCreateSerializer(
 # =========================================================
 # CREATE / UPDATE ORDER SERIALIZER
 # =========================================================
-class CreateOrderSerializer(
-    serializers.Serializer
-):
+class CreateOrderSerializer(serializers.Serializer):
 
     order_type = serializers.CharField(
-        required=False
+        required=True,
     )
 
     # =========================================
@@ -199,11 +326,11 @@ class CreateOrderSerializer(
     )
 
     status = serializers.CharField(
-        required=False
+        required=False,
     )
 
     payment_status = serializers.CharField(
-        required=False
+        required=False,
     )
 
     # =========================================
@@ -235,17 +362,15 @@ class CreateOrderSerializer(
     # =========================================
     # SERVICE CHARGES
     # =========================================
-    service_charges = (
-        OrderServiceChargeCreateSerializer(
-            many=True,
-            required=False,
-        )
+    service_charges = OrderServiceChargeCreateSerializer(
+        many=True,
+        required=False,
     )
 
     # =========================================
     # ITEMS
     # =========================================
-    items = OrderItemCreateSerializer(
+    items = OrderItemWriteSerializer(
         many=True,
         required=False,
     )
@@ -254,10 +379,15 @@ class CreateOrderSerializer(
 # =========================================================
 # ORDER LIST SERIALIZER
 # =========================================================
-class OrderListSerializer(
-    serializers.ModelSerializer
-):
-    
+
+
+class OrderListSerializer(serializers.ModelSerializer):
+
+    restaurant_name = serializers.CharField(
+        source="restaurant.name",
+        read_only=True,
+    )
+
     waiter_id = serializers.IntegerField(
         source="waiter.id",
         read_only=True,
@@ -267,20 +397,20 @@ class OrderListSerializer(
 
     floor_name = serializers.CharField(
         source="floor.name",
-        read_only=True
+        read_only=True,
     )
 
     area_name = serializers.CharField(
         source="area.name",
-        read_only=True
+        read_only=True,
     )
 
     table_name = serializers.CharField(
         source="table.table_number",
-        read_only=True
+        read_only=True,
     )
 
-    items = OrderItemCreateSerializer(
+    items = OrderItemReadSerializer(
         many=True,
         read_only=True,
     )
@@ -290,18 +420,30 @@ class OrderListSerializer(
         read_only=True,
     )
 
-    service_charges = (
-        OrderServiceChargeCreateSerializer(
-            many=True,
-            read_only=True,
-        )
+    service_charges = OrderServiceChargeCreateSerializer(
+        many=True,
+        read_only=True,
     )
+    kitchen_started_at = serializers.SerializerMethodField()
+
+    customer_name = serializers.CharField(source="customer.username", read_only=True)
+
+    customer_phone = serializers.CharField(source="customer.phone", read_only=True)
+
+    delivery_status = serializers.CharField()
+
+    delivery_staff_id = serializers.IntegerField(
+        source="delivery_staff.id", read_only=True
+    )
+    delivery_address = serializers.SerializerMethodField()
+    completed_at = serializers.DateTimeField(source="updated_at", read_only=True)
     class Meta:
 
         model = Order
 
         fields = [
             "id",
+            "restaurant_name",
             "order_number",
             "order_type",
             "status",
@@ -317,23 +459,49 @@ class OrderListSerializer(
             "floor_name",
             "area_name",
             "table_name",
-            "created_at",
 
+            "created_at",
+            "completed_at",
             # nested
             "items",
             "taxes",
             "service_charges",
-
             "waiter_id",
             "waiter_name",
+            "kitchen_started_at",
+            "customer_name",
+            "customer_phone",
+            "delivery_status",
+            "delivery_staff_id",
+            "delivery_address",
         ]
-    
+
     def get_waiter_name(self, obj):
 
         if obj.waiter:
 
             full_name = obj.waiter.username
+
             return full_name or obj.waiter.email
 
         return None
-    
+
+    def get_kitchen_started_at(self, obj):
+
+        if obj.status in [
+            "confirmed",
+            "preparing",
+            "ready",
+        ]:
+            dt = obj.confirmed_at or obj.saved_at or obj.created_at
+        else:
+            dt = obj.saved_at or obj.created_at
+
+        return dt.isoformat() if dt else None
+
+    def get_delivery_address(self, obj):
+
+        if not obj.delivery_address:
+            return None
+
+        return f"{obj.delivery_address.address_line_1}, " f"{obj.delivery_address.city}"

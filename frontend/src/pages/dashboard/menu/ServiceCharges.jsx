@@ -41,7 +41,7 @@ export default function ServiceCharges() {
       description: "",
       charge_type: "percentage",
       value: "",
-      auto_apply: false,
+      applicable_order_types: [],
     });
 
   // ====================================================
@@ -101,25 +101,40 @@ const restaurantId =
   };
 
   // ====================================================
-  // HANDLE CHANGE
-  // ====================================================
-  const handleChange = (e) => {
+// HANDLE CHANGE
+// ====================================================
+const handleChange = (e) => {
 
-    const {
-      name,
-      value,
-      type,
-      checked,
-    } = e.target;
+  const {
+    name,
+    value,
+    type,
+    checked,
+  } = e.target;
+
+  // CUSTOM MULTI SELECT
+  if (
+    type ===
+    "custom-multiselect"
+  ) {
 
     setFormData({
       ...formData,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : value,
+      [name]: value,
     });
-  };
+
+    return;
+  }
+
+  // NORMAL INPUTS
+  setFormData({
+    ...formData,
+    [name]:
+      type === "checkbox"
+        ? checked
+        : value,
+  });
+};
 
   // ====================================================
   // RESET FORM
@@ -131,7 +146,7 @@ const restaurantId =
       description: "",
       charge_type: "percentage",
       value: "",
-      auto_apply: false,
+      applicable_order_types: [],
     });
   };
 
@@ -187,8 +202,7 @@ const restaurantId =
       charge_type:
         charge.charge_type,
       value: charge.value,
-      auto_apply:
-        charge.auto_apply,
+        applicable_order_types: charge.applicable_order_types || [],
     });
 
     setShowEditModal(true);
@@ -348,7 +362,7 @@ const restaurantId =
                 <th>Name</th>
                 <th>Type</th>
                 <th>Value</th>
-                <th>Auto Apply</th>
+                <th>Order Type</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -375,8 +389,16 @@ const restaurantId =
                     </td>
 
                     <td>
-                      {charge.charge_type}
-                    </td>
+  {charge.applicable_order_types
+    ?.map((type) =>
+      type === "dine_in"
+        ? "Dine In"
+        : type === "takeaway"
+        ? "Takeaway"
+        : "Delivery"
+    )
+    .join(", ")}
+</td>
 
                     <td>
                       {charge.charge_type ===
@@ -384,13 +406,6 @@ const restaurantId =
                         ? `${charge.value}%`
                         : `₹${charge.value}`}
                     </td>
-
-                    <td>
-                      {charge.auto_apply
-                        ? "Yes"
-                        : "No"}
-                    </td>
-
                     <td>
 
                       <button
@@ -519,10 +534,56 @@ const restaurantId =
 // ======================================================
 // FORM FIELDS
 // ======================================================
+// ======================================================
+// FORM FIELDS
+// ======================================================
 function FormFields({
   formData,
   handleChange,
 }) {
+
+  // ====================================================
+  // TOGGLE ORDER TYPE
+  // ====================================================
+  const toggleOrderType = (
+    orderType
+  ) => {
+
+    const alreadySelected =
+      formData.applicable_order_types.includes(
+        orderType
+      );
+
+    let updatedTypes = [];
+
+    // REMOVE
+    if (alreadySelected) {
+
+      updatedTypes =
+        formData.applicable_order_types.filter(
+          (item) =>
+            item !== orderType
+        );
+
+    } else {
+
+      // ADD
+      updatedTypes = [
+        ...formData.applicable_order_types,
+        orderType,
+      ];
+    }
+
+    // FAKE EVENT
+    handleChange({
+      target: {
+        name:
+          "applicable_order_types",
+        value: updatedTypes,
+        type: "custom-multiselect",
+      },
+    });
+  };
 
   return (
     <>
@@ -574,22 +635,79 @@ function FormFields({
         handleChange={handleChange}
       />
 
-      {/* AUTO APPLY */}
-      <div className="form-check">
+      {/* ORDER TYPES */}
+      <div className="mb-3">
 
-        <input
-          type="checkbox"
-          className="form-check-input"
-          name="auto_apply"
-          checked={
-            formData.auto_apply
-          }
-          onChange={handleChange}
-        />
-
-        <label className="form-check-label">
-          Auto Apply
+        <label className="form-label">
+          Applicable Order Types
         </label>
+
+        <div className="d-flex gap-2 flex-wrap">
+
+          {/* DINE IN */}
+          <button
+            type="button"
+            className={`btn ${
+              formData.applicable_order_types.includes(
+                "dine_in"
+              )
+                ? "btn-primary"
+                : "btn-outline-primary"
+            }`}
+            onClick={() =>
+              toggleOrderType(
+                "dine_in"
+              )
+            }
+          >
+            Dine In
+          </button>
+
+          {/* TAKEAWAY */}
+          <button
+            type="button"
+            className={`btn ${
+              formData.applicable_order_types.includes(
+                "takeaway"
+              )
+                ? "btn-primary"
+                : "btn-outline-primary"
+            }`}
+            onClick={() =>
+              toggleOrderType(
+                "takeaway"
+              )
+            }
+          >
+            Takeaway
+          </button>
+
+          {/* DELIVERY */}
+          <button
+            type="button"
+            className={`btn ${
+              formData.applicable_order_types.includes(
+                "delivery"
+              )
+                ? "btn-primary"
+                : "btn-outline-primary"
+            }`}
+            onClick={() =>
+              toggleOrderType(
+                "delivery"
+              )
+            }
+          >
+            Delivery
+          </button>
+
+        </div>
+
+        <small className="text-muted">
+          Select one or multiple order
+          types
+        </small>
+
       </div>
     </>
   );

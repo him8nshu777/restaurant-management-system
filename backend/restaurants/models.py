@@ -30,6 +30,10 @@ class Restaurant(models.Model):
 
     address = models.TextField(blank=True)
 
+    latitude = models.DecimalField(max_digits=9,decimal_places=6, null=True, blank=True)
+
+    longitude = models.DecimalField(max_digits=9,decimal_places=6, null=True, blank=True)
+    
     # ==========================================
     # DEFAULT RESTAURANT CREATED ON REGISTRATION
     # ==========================================
@@ -188,6 +192,11 @@ class Area(models.Model):
     class Meta:
 
         ordering = ["id"]
+        unique_together = [
+            "restaurant",
+            "floor",
+            "name"
+        ]
 
     def __str__(self):
 
@@ -290,6 +299,7 @@ class RestaurantTable(models.Model):
 
         unique_together = [
             "restaurant",
+            "floor",
             "table_number",
         ]
 

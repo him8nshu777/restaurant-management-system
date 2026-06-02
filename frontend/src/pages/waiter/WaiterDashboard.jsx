@@ -13,10 +13,10 @@ export default function WaiterDashboard() {
         switch (activePage.type) {
             case "pos-dashboard":
                 return <WaiterPOSDashboard />;
-            case "ready-orders":
-                return <WaiterOrders />;
             case "orders":
                 return <OrderList />;
+            case "ready-orders":
+                return <WaiterOrders />;
             default:
                 return <WaiterPOSDashboard />;
         }
