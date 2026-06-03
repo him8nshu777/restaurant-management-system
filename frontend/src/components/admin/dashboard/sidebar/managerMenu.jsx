@@ -42,7 +42,14 @@ import {
   // ==========================================
   // POSH DASHBOARD
   // ==========================================
-  Shop
+  Shop,
+
+  // ==========================================
+  // REPORTS ICONS
+  // ==========================================
+  ClockHistory,
+  ClipboardDataFill,
+  CashStack,
   
 } from "react-bootstrap-icons";
 
@@ -60,23 +67,28 @@ const managerMenu = [
       {
         key: "sales-report",
         label: "Sales Reports",
+        icon: <GraphUpArrow />,
       },
       {
         key: "product-report",
         label: "Product Reports",
+        icon: <CupHotFill />,
       },
       {
         key: "time-analysis",
         label: "Time Analysis",
+        icon: <ClockHistory />,
       },
       {
         key: "kitchen-report",
         label: "Kitchen Report",
+        icon: <ClipboardDataFill />,
       },
 
       {
         key: "financial-report",
         label: "Financial Report",
+        icon: <CashStack />,
       },
     ],
   },
