@@ -37,6 +37,7 @@ import SalesReport from "../reports/SalesReport";
 import ProductReport from "../reports/ProductReport";
 import TimeAnalysisReport from "../reports/TimeAnalysisReport";
 import KitchenReport from "../reports/KitchenReport";
+import FinancialReport from "../reports/FinancialReport";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -69,6 +70,9 @@ export default function ManagerDashboard() {
 
             case "kitchen-report":
                 return <KitchenReport />;
+
+            case "financial-report":
+                return <FinancialReport />;
 
             case "floors":
                 return <Floor />;

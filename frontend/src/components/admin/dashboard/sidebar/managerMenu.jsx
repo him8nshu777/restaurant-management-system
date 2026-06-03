@@ -73,6 +73,11 @@ const managerMenu = [
         key: "kitchen-report",
         label: "Kitchen Report",
       },
+
+      {
+        key: "financial-report",
+        label: "Financial Report",
+      },
     ],
   },
 

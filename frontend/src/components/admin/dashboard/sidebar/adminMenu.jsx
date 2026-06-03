@@ -73,6 +73,11 @@ const adminMenu = [
         key: "kitchen-report",
         label: "Kitchen Report",
       },
+
+      {
+        key: "financial-report",
+        label: "Financial Report",
+      },
     ],
   },
 
