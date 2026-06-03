@@ -69,6 +69,10 @@ const managerMenu = [
         key: "time-analysis",
         label: "Time Analysis",
       },
+      {
+        key: "kitchen-report",
+        label: "Kitchen Report",
+      },
     ],
   },
 

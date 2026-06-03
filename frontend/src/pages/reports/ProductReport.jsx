@@ -272,7 +272,7 @@ export default function ProductReport() {
 
               <ResponsiveContainer
                 width="100%"
-                height={500}
+                height={200}
               >
 
                 <BarChart
@@ -291,13 +291,13 @@ export default function ProductReport() {
                   <YAxis
                     type="category"
                     dataKey="name"
-                    width={250}
+                    width={220}
                   />
 
                   <Tooltip />
 
                   <Bar
-                    dataKey="quantity"
+                    dataKey="quantity" barSize={50}
                   />
 
                 </BarChart>

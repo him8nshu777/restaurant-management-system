@@ -4,6 +4,9 @@ from django.db.models import (
     Sum,
     Count,
     Avg,
+    F,
+    ExpressionWrapper,
+    DurationField,
 )
 
 from django.db.models.functions import (
@@ -297,9 +300,7 @@ class ProductReportView(APIView):
 
         user = request.user
 
-        restaurant_id = request.GET.get(
-            "restaurant_id"
-        )
+        restaurant_id = request.GET.get("restaurant_id")
 
         period = request.GET.get(
             "period",
@@ -311,13 +312,9 @@ class ProductReportView(APIView):
             "best",
         )
 
-        start_date = request.GET.get(
-            "start_date"
-        )
+        start_date = request.GET.get("start_date")
 
-        end_date = request.GET.get(
-            "end_date"
-        )
+        end_date = request.GET.get("end_date")
 
         # ============================
         # RESTAURANT
@@ -332,30 +329,18 @@ class ProductReportView(APIView):
 
         else:
 
-            restaurant = Restaurant.objects.filter(
-                id=restaurant_id
-            ).first()
+            restaurant = Restaurant.objects.filter(id=restaurant_id).first()
 
-            if (
-                not restaurant
-                or user.restaurant_id
-                != restaurant.id
-            ):
+            if not restaurant or user.restaurant_id != restaurant.id:
                 return Response(
-                    {
-                        "detail":
-                        "Access denied"
-                    },
+                    {"detail": "Access denied"},
                     status=403,
                 )
 
         if not restaurant:
 
             return Response(
-                {
-                    "detail":
-                    "Restaurant not found"
-                },
+                {"detail": "Restaurant not found"},
                 status=404,
             )
 
@@ -364,9 +349,7 @@ class ProductReportView(APIView):
         queryset = OrderItem.objects.filter(
             order__restaurant=restaurant,
             product_variant__isnull=False,
-        ).exclude(
-            order__status="cancelled"
-        )
+        ).exclude(order__status="cancelled")
 
         # ============================
         # DATE FILTER
@@ -383,16 +366,9 @@ class ProductReportView(APIView):
 
         elif period == "week":
 
-            start = (
-                today -
-                timedelta(
-                    days=today.weekday()
-                )
-            )
+            start = today - timedelta(days=today.weekday())
 
-            queryset = queryset.filter(
-                order__created_at__date__gte=start
-            )
+            queryset = queryset.filter(order__created_at__date__gte=start)
 
         elif period == "month":
 
@@ -403,38 +379,24 @@ class ProductReportView(APIView):
 
         elif period == "year":
 
-            queryset = queryset.filter(
-                order__created_at__year=today.year
-            )
+            queryset = queryset.filter(order__created_at__year=today.year)
 
         # ============================
         # PRODUCT DATA
         # ============================
 
-        products = (
-            queryset
-            .values(
-                "product_variant__product__name",
-                "product_variant__name",
-            )
-            .annotate(
-                quantity_sold=Sum(
-                    "quantity"
-                )
-            )
-        )
+        products = queryset.values(
+            "product_variant__product__name",
+            "product_variant__name",
+        ).annotate(quantity_sold=Sum("quantity"))
 
         if report_type == "best":
 
-            products = products.order_by(
-                "-quantity_sold"
-            )[:10]
+            products = products.order_by("-quantity_sold")[:10]
 
         else:
 
-            products = products.order_by(
-                "quantity_sold"
-            )[:10]
+            products = products.order_by("quantity_sold")[:10]
 
         labels = []
 
@@ -447,53 +409,29 @@ class ProductReportView(APIView):
                 f"{item['product_variant__name']}"
             )
 
-            quantities.append(
-                item["quantity_sold"]
-            )
+            quantities.append(item["quantity_sold"])
 
-        total_qty = queryset.aggregate(
-            total=Sum("quantity")
-        )["total"] or 0
+        total_qty = queryset.aggregate(total=Sum("quantity"))["total"] or 0
 
         return Response(
             {
-                "report_type":
-                    report_type,
-
+                "report_type": report_type,
                 "summary": {
-
-                    "total_quantity":
-                        total_qty,
-
-                    "unique_products":
-                        queryset
-                        .values(
-                            "product_variant"
-                        )
-                        .distinct()
-                        .count(),
-
-                    "best_product":
-                        labels[0]
-                        if labels
-                        else None,
-
-                    "best_quantity":
-                        quantities[0]
-                        if quantities
-                        else 0,
+                    "total_quantity": total_qty,
+                    "unique_products": queryset.values("product_variant")
+                    .distinct()
+                    .count(),
+                    "best_product": labels[0] if labels else None,
+                    "best_quantity": quantities[0] if quantities else 0,
                 },
-
                 "chart": {
-                    "labels":
-                        labels,
-
-                    "quantities":
-                        quantities,
+                    "labels": labels,
+                    "quantities": quantities,
                 },
             }
         )
-    
+
+
 class TimeAnalysisReportView(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -504,10 +442,7 @@ class TimeAnalysisReportView(APIView):
 
         restaurant_id = request.GET.get("restaurant_id")
 
-        period = request.GET.get(
-            "period",
-            "week"
-        )
+        period = request.GET.get("period", "week")
 
         start_date = request.GET.get("start_date")
         end_date = request.GET.get("end_date")
@@ -525,24 +460,13 @@ class TimeAnalysisReportView(APIView):
 
         else:
 
-            restaurant = Restaurant.objects.filter(
-                id=restaurant_id
-            ).first()
+            restaurant = Restaurant.objects.filter(id=restaurant_id).first()
 
-            if (
-                not restaurant
-                or user.restaurant_id != restaurant.id
-            ):
-                return Response(
-                    {"detail": "Access denied"},
-                    status=403
-                )
+            if not restaurant or user.restaurant_id != restaurant.id:
+                return Response({"detail": "Access denied"}, status=403)
 
         if not restaurant:
-            return Response(
-                {"detail": "Restaurant not found"},
-                status=404
-            )
+            return Response({"detail": "Restaurant not found"}, status=404)
 
         # ==========================
         # BASE QUERYSET
@@ -550,10 +474,7 @@ class TimeAnalysisReportView(APIView):
 
         queryset = Order.objects.filter(
             restaurant=restaurant,
-            
-        ).exclude(
-            status="cancelled"
-        )
+        ).exclude(status="cancelled")
 
         today = timezone.localdate()
 
@@ -563,15 +484,9 @@ class TimeAnalysisReportView(APIView):
 
         if start_date and end_date:
 
-            start_obj = datetime.strptime(
-                start_date,
-                "%Y-%m-%d"
-            ).date()
+            start_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
 
-            end_obj = datetime.strptime(
-                end_date,
-                "%Y-%m-%d"
-            ).date()
+            end_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
 
             queryset = queryset.filter(
                 created_at__date__range=[
@@ -582,14 +497,9 @@ class TimeAnalysisReportView(APIView):
 
         elif period == "week":
 
-            week_start = (
-                today
-                - timedelta(days=today.weekday())
-            )
+            week_start = today - timedelta(days=today.weekday())
 
-            queryset = queryset.filter(
-                created_at__date__gte=week_start
-            )
+            queryset = queryset.filter(created_at__date__gte=week_start)
 
         elif period == "month":
 
@@ -600,66 +510,258 @@ class TimeAnalysisReportView(APIView):
 
         else:
 
-            queryset = queryset.filter(
-                created_at__year=today.year
-            )
+            queryset = queryset.filter(created_at__year=today.year)
 
         # ==========================
         # HOUR ANALYSIS
         # ==========================
 
         hour_data = (
-            queryset
-            .annotate(
-                hour=ExtractHour("created_at")
-            )
+            queryset.annotate(hour=ExtractHour("created_at"))
             .values("hour")
-            .annotate(
-                orders=Count("id")
-            )
+            .annotate(orders=Count("id"))
             .order_by("hour")
         )
 
-        hourly_map = {
-            item["hour"]: item["orders"]
-            for item in hour_data
-        }
+        hourly_map = {item["hour"]: item["orders"] for item in hour_data}
 
         labels = []
         orders = []
 
         for hour in range(24):
 
-            labels.append(
-                f"{hour:02d}:00"
-            )
+            labels.append(f"{hour:02d}:00")
 
-            orders.append(
-                hourly_map.get(hour, 0)
-            )
+            orders.append(hourly_map.get(hour, 0))
 
-        peak_index = (
-            orders.index(max(orders))
-            if orders
-            else 0
-        )
+        peak_index = orders.index(max(orders)) if orders else 0
 
-        slow_index = (
-            orders.index(min(orders))
-            if orders
-            else 0
-        )
+        slow_index = orders.index(min(orders)) if orders else 0
 
-        return Response({
-
-            "peak_hour": labels[peak_index],
-            "peak_orders": orders[peak_index],
-
-            "slow_hour": labels[slow_index],
-            "slow_orders": orders[slow_index],
-
-            "chart": {
-                "labels": labels,
-                "orders": orders,
+        return Response(
+            {
+                "peak_hour": labels[peak_index],
+                "peak_orders": orders[peak_index],
+                "slow_hour": labels[slow_index],
+                "slow_orders": orders[slow_index],
+                "chart": {
+                    "labels": labels,
+                    "orders": orders,
+                },
             }
-        })
+        )
+
+from datetime import datetime, timedelta
+
+from django.db.models import Count
+from django.utils import timezone
+
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from orders.models import Order
+from restaurants.models import Restaurant
+
+
+class KitchenReportView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        restaurant_id = request.GET.get("restaurant_id")
+
+        period = request.GET.get(
+            "period",
+            "week",
+        )
+
+        start_date = request.GET.get("start_date")
+        end_date = request.GET.get("end_date")
+
+        restaurant = Restaurant.objects.filter(
+            id=restaurant_id
+        ).first()
+
+        if not restaurant:
+
+            return Response(
+                {"detail": "Restaurant not found"},
+                status=404,
+            )
+
+        queryset = Order.objects.filter(
+            restaurant=restaurant,
+            ready_at__isnull=False,
+            status__in=[
+                "ready",
+                "served",
+                "completed",
+            ],
+        ).prefetch_related(
+            "items",
+            "items__product_variant",
+            "items__product_variant__product",
+        )
+
+        today = timezone.localdate()
+
+        # ======================================
+        # DATE FILTER
+        # ======================================
+
+        if start_date and end_date:
+
+            queryset = queryset.filter(
+                created_at__date__range=[
+                    start_date,
+                    end_date,
+                ]
+            )
+
+        elif period == "week":
+
+            start = today - timedelta(
+                days=today.weekday()
+            )
+
+            queryset = queryset.filter(
+                created_at__date__gte=start
+            )
+
+        elif period == "month":
+
+            queryset = queryset.filter(
+                created_at__year=today.year,
+                created_at__month=today.month,
+            )
+
+        elif period == "year":
+
+            queryset = queryset.filter(
+                created_at__year=today.year
+            )
+
+        # ======================================
+        # ORDER ANALYSIS
+        # ======================================
+
+        delayed_orders = []
+
+        chart_labels = []
+        chart_times = []
+
+        total_minutes = 0
+
+        kitchen_orders = 0
+
+        delayed_count = 0
+
+        for order in queryset:
+
+            start_time = (
+                order.confirmed_at
+                if order.order_type == "delivery"
+                else order.saved_at
+            )
+
+            if not start_time:
+                continue
+
+            prep_time = round(
+                (
+                    order.ready_at - start_time
+                ).total_seconds()
+                / 60,
+                2,
+            )
+
+            kitchen_orders += 1
+
+            total_minutes += prep_time
+
+            # ==================================
+            # EXPECTED TIME
+            # longest item decides kitchen time
+            # ==================================
+
+            expected_time = 0
+
+            items_list = []
+
+            for item in order.items.all():
+
+                if item.product_variant:
+
+                    product_time = (
+                        item.product_variant.product.preparation_time
+                    )
+
+                    expected_time = max(
+                        expected_time,
+                        product_time,
+                    )
+
+                    items_list.append(
+                        f"{item.product_variant.product.name} - "
+                        f"{item.product_variant.name}"
+                    )
+
+            delay = round(
+                prep_time - expected_time,
+                2,
+            )
+
+            if delay > 0:
+
+                delayed_count += 1
+
+                delayed_orders.append(
+                    {
+                        "order_id": order.id,
+                        "order_number": order.order_number,
+                        "order_type": order.order_type,
+                        "expected_time": expected_time,
+                        "actual_time": prep_time,
+                        "delay": delay,
+                        "items": items_list,
+                    }
+                )
+
+            chart_labels.append(
+                order.order_number
+            )
+
+            chart_times.append(
+                prep_time
+            )
+
+        delayed_orders.sort(
+            key=lambda x: x["delay"],
+            reverse=True,
+        )
+
+        average_prep = round(
+            total_minutes / kitchen_orders,
+            2,
+        ) if kitchen_orders else 0
+
+        return Response(
+            {
+                "summary": {
+                    "total_kitchen_orders": kitchen_orders,
+                    "average_preparation_time": average_prep,
+                    "delayed_orders": delayed_count,
+                    "on_time_orders":
+                        kitchen_orders - delayed_count,
+                },
+
+                "chart": {
+                    "labels": chart_labels[:10],
+                    "times": chart_times[:10],
+                },
+
+                "delayed_orders": delayed_orders,
+            }
+        )

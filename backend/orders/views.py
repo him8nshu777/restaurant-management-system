@@ -1217,6 +1217,8 @@ class DeleteOrderView(APIView):
             status=status.HTTP_200_OK,
         )
 
+from django.utils import timezone
+
 class UpdateOrderStatusView(APIView):
 
     def patch(self, request, order_id):
@@ -1224,19 +1226,33 @@ class UpdateOrderStatusView(APIView):
         order = get_object_or_404(
             Order.objects.select_related(
                 "waiter",
-                # "delivery_partner",
             ),
             id=order_id,
         )
 
         previous_status = order.status
 
-        order.status = request.data.get(
+        new_status = request.data.get(
             "status",
             order.status,
         )
 
-        order.save(update_fields=["status"])
+        update_fields = ["status"]
+
+        # ==========================================
+        # SET READY TIME
+        # ==========================================
+        if (
+            previous_status != "ready"
+            and new_status == "ready"
+            and not order.ready_at
+        ):
+            order.ready_at = timezone.now()
+            update_fields.append("ready_at")
+
+        order.status = new_status
+
+        order.save(update_fields=update_fields)
 
         channel_layer = get_channel_layer()
 
@@ -1248,6 +1264,7 @@ class UpdateOrderStatusView(APIView):
             and not order.inventory_deducted
         ):
             deduct_order_inventory(order)
+
         # ==========================================
         # ORDER READY
         # ==========================================
@@ -1256,9 +1273,6 @@ class UpdateOrderStatusView(APIView):
             and order.status == "ready"
         ):
 
-            # ======================================
-            # DINE IN → WAITER
-            # ======================================
             if (
                 order.order_type == "dine_in"
                 and order.waiter
@@ -1276,11 +1290,9 @@ class UpdateOrderStatusView(APIView):
                     },
                 )
 
-            # ======================================
-            # DELIVERY → DELIVERY PARTNER
-            # ======================================
             elif (
-                order.status == "ready" and order.order_type == "delivery" and order.delivery_status == "unassigned"
+                order.order_type == "delivery"
+                and order.delivery_status == "unassigned"
             ):
                 async_to_sync(
                     channel_layer.group_send
@@ -1290,7 +1302,7 @@ class UpdateOrderStatusView(APIView):
                         "type": "send_order_event",
                         "data": {
                             "event": "delivery_request",
-                            "order": OrderListSerializer(order).data,
+                            "order": serialized_order,
                         },
                     },
                 )
@@ -1300,7 +1312,6 @@ class UpdateOrderStatusView(APIView):
                 "message": "Status updated successfully"
             }
         )
-
 class AcceptDeliveryOrderView(APIView):
 
     # permission_classes = [IsAuthenticated]
