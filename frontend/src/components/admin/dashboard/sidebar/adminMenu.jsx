@@ -50,6 +50,8 @@ import {
   ClockHistory,
   ClipboardDataFill,
   CashStack,
+
+  JournalText,
 } from "react-bootstrap-icons";
 
 
@@ -89,6 +91,12 @@ const adminMenu = [
         label: "Financial Report",
         icon: <CashStack />,
       },
+
+      {
+        key: "activity-logs",
+        label: "Activity Logs",
+        icon: <JournalText />,
+      }
     ],
   },
 

@@ -23,6 +23,7 @@ from .models import (
 )
 from restaurants.models import Restaurant
 from .utils import send_verification_email
+from audits.services import create_activity_log
 
 
 # ==========================================
@@ -203,6 +204,16 @@ class CustomLoginSerializer(serializers.Serializer):
         # JWT TOKEN GENERATION
         # ==========================================
         refresh = RefreshToken.for_user(authenticated_user)
+
+        # ==========================================
+        # LOGIN AUDIT LOG
+        # ==========================================
+        create_activity_log(
+            restaurant=restaurant,
+            user=authenticated_user,
+            action="login",
+            message=f"{authenticated_user.username} logged in",
+        )
 
         # ==========================================
         # RETURN RESPONSE

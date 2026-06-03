@@ -61,7 +61,6 @@ from restaurants.models import Restaurant
 
 from .utils import send_password_reset_email
 
-
 # ==========================================
 # REGISTER API
 # ==========================================

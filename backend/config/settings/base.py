@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "notifications",
     "common",
     "pos",
+    "audits",
 ]
 
 MIDDLEWARE = [
