@@ -38,6 +38,7 @@ import ProductReport from "../reports/ProductReport";
 import TimeAnalysisReport from "../reports/TimeAnalysisReport";
 import KitchenReport from "../reports/KitchenReport";
 import FinancialReport from "../reports/FinancialReport";
+import ActivityLogsPage from "../reports/ActivityLogsPage";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -73,6 +74,9 @@ export default function ManagerDashboard() {
 
             case "financial-report":
                 return <FinancialReport />;
+
+            case "activity-logs":
+                return <ActivityLogsPage />;
 
             case "floors":
                 return <Floor />;

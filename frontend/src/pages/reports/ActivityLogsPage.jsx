@@ -134,6 +134,9 @@ useEffect(() => {
 
       case "order_created":
         return "primary";
+      
+      case "order_deleted":
+        return "danger";
 
       case "order_updated":
         return "info";

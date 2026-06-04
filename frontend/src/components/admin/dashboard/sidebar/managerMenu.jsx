@@ -90,6 +90,12 @@ const managerMenu = [
         label: "Financial Report",
         icon: <CashStack />,
       },
+
+      {
+        key: "activity-logs",
+        label: "Activity Logs",
+        icon: <JournalText />,
+      }
     ],
   },
 

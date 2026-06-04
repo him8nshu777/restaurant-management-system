@@ -11,6 +11,8 @@ class AuditLogConsumer(AsyncWebsocketConsumer):
 
         self.group_name = f"audit_{self.restaurant_id}"
 
+        print("JOINING:", self.group_name)
+
         await self.channel_layer.group_add(
             self.group_name,
             self.channel_name,
@@ -18,6 +20,7 @@ class AuditLogConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
+        print("CONNECTED:", self.channel_name)
     async def disconnect(
         self,
         close_code,
@@ -32,5 +35,6 @@ class AuditLogConsumer(AsyncWebsocketConsumer):
         self,
         event,
     ):
+        print("AUDIT EVENT RECEIVED:", event)
 
         await self.send(text_data=json.dumps(event["data"]))

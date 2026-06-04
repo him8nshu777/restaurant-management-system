@@ -13,6 +13,7 @@ class ActivityLog(models.Model):
 
         ("order_created", "Order Created"),
         ("order_updated", "Order Updated"),
+        ("order_deleted", "Order Deleted"),
 
         ("confirmed", "Confirmed"),
         ("preparing", "Preparing"),
@@ -45,7 +46,7 @@ class ActivityLog(models.Model):
 
     order = models.ForeignKey(
         Order,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         db_index=True,

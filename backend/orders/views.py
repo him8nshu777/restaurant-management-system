@@ -1287,6 +1287,21 @@ class DeleteOrderView(APIView):
 
         # REMOVE WAITER FROM ORDER
         order.waiter = None
+
+        # =============================================
+        # CREATE AUDIT LOG
+        # =============================================
+        create_activity_log(
+            restaurant=order.restaurant,
+            user=request.user,
+            order=order,
+            action="order_deleted",
+            message=(
+                f"{request.user.username} "
+                f"deleted order "
+                f"{order.order_number}"
+            ),
+        )
         # =============================================
         # DELETE ORDER
         # =============================================

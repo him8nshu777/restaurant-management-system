@@ -24,6 +24,10 @@ def create_activity_log(
 
     channel_layer = get_channel_layer()
 
+    print(
+        "SENDING TO:",
+        f"audit_{restaurant.id}"
+    )
     async_to_sync(channel_layer.group_send)(
         f"audit_{restaurant.id}",
         {
