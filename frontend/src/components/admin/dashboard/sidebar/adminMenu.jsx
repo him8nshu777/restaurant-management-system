@@ -52,6 +52,8 @@ import {
   CashStack,
 
   JournalText,
+
+  LaptopFill,
 } from "react-bootstrap-icons";
 
 
@@ -374,6 +376,11 @@ const adminMenu = [
     label: "Kitchen",
     icon: <ReceiptCutoff />,
   },
+  {
+    key: "security",
+    label: "Active Devices",
+    icon: <LaptopFill />,
+  }
 ]
 
 export default adminMenu;

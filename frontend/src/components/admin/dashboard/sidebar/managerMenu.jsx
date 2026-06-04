@@ -50,7 +50,8 @@ import {
   ClockHistory,
   ClipboardDataFill,
   CashStack,
-  
+
+  JournalText,
 } from "react-bootstrap-icons";
 
 

@@ -23,6 +23,7 @@ from channels.auth import (
 
 import kitchen.routing
 import audits.routing
+import security.routing
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
     "config.settings.development",
@@ -41,6 +42,7 @@ application = ProtocolTypeRouter({
         URLRouter(
             kitchen.routing.websocket_urlpatterns 
             + audits.routing.websocket_urlpatterns
+            + security.routing.websocket_urlpatterns
         )
 
     ),

@@ -40,6 +40,7 @@ import TimeAnalysisReport from "../reports/TimeAnalysisReport";
 import KitchenReport from "../reports/KitchenReport";
 import FinancialReport from "../reports/FinancialReport";
 import ActivityLogsPage from "../reports/ActivityLogsPage";
+import ActiveDevicesPage from "../security/ActiveDevicesPage";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -224,6 +225,9 @@ useEffect(() => {
 
             case "kitchen":
                 return <KitchenOrders />;
+
+            case "security":
+                return <ActiveDevicesPage />;
 
             case "restaurant-profile":
 

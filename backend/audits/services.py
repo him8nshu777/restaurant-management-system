@@ -2,7 +2,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from .models import ActivityLog
-
+from .serializers import ActivityLogSerializer
 
 def create_activity_log(
     *,
@@ -32,14 +32,7 @@ def create_activity_log(
         f"audit_{restaurant.id}",
         {
             "type": "activity_log_created",
-            "data": {
-                "id": log.id,
-                "action": log.action,
-                "message": log.message,
-                "role": log.role,
-                "user": user.username,
-                "created_at": log.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-            },
+            "data": ActivityLogSerializer(log).data,
         },
     )
 

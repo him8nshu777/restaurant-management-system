@@ -61,6 +61,12 @@ from restaurants.models import Restaurant
 
 from .utils import send_password_reset_email
 
+from audits.services import create_activity_log
+from security.models import UserSession
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 # ==========================================
 # REGISTER API
 # ==========================================
@@ -153,6 +159,62 @@ class CustomerLoginAPIView(APIView):
         serializer.is_valid(raise_exception=True)
 
         return Response(serializer.validated_data)
+
+
+class LogoutAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        # ======================================
+        # STAFF ONLY
+        # ======================================
+        if request.user.role != "customer":
+
+            session = UserSession.objects.filter(
+                user=request.user,
+                is_active=True,
+            ).first()
+
+            if session:
+
+                session.is_active = False
+
+                session.save(
+                    update_fields=["is_active"]
+                )
+
+                channel_layer = get_channel_layer()
+                async_to_sync(
+                    channel_layer.group_send
+                )(
+                    f"security_{request.user.restaurant.id}",
+                    {
+                        "type": "session_removed",
+                        "data": {
+                            "id": session.id,
+                        },
+                    },
+                )
+
+            create_activity_log(
+                restaurant=request.user.restaurant,
+                user=request.user,
+                action="logout",
+                message=(
+                    f"{request.user.username} "
+                    f"logged out"
+                ),
+            )
+
+        return Response(
+            {
+                "message": "Logged out successfully",
+            },
+            status=status.HTTP_200_OK,
+        )
+    
 
 
 # ==========================================

@@ -16,6 +16,7 @@ import "./sidebar.css";
 
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../../auth/authSlice";
+import { logoutUser } from "../../../services/authService";
 import { setActiveRestaurant } from "../../../features/restaurants/restaurantSlice";
 
 import { getMenuByRole } from "./menuConfig";
@@ -60,17 +61,34 @@ export default function Sidebar({ activePage, setActivePage }) {
   // ==========================================
   const user = useSelector((state) => state.auth.user);
 
-  const handleLogout = () => {
-    const confirmed = window.confirm("Are you sure you want to logout?");
+  const handleLogout = async () => {
 
-    if (!confirmed) return;
+  const confirmed =
+    window.confirm(
+      "Are you sure you want to logout?"
+    );
+
+  if (!confirmed) return;
+
+  try {
+
+    await logoutUser(
+      user?.session_key
+    );
+
+  } catch (error) {
+
+    console.log(error);
+
+  } finally {
 
     dispatch(logout());
 
     localStorage.clear();
 
     navigate("/");
-  };
+  }
+};
 
   // ==========================================
   // ROLE BASED MENU

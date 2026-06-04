@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     "common",
     "pos",
     "audits",
+    "security",
 ]
 
 MIDDLEWARE = [
