@@ -3,17 +3,16 @@ from urllib.parse import parse_qs
 from channels.db import database_sync_to_async
 
 
-from accounts.models import User
 
 from django.http import JsonResponse
 
-from security.models import UserSession
 
 
 @database_sync_to_async
 def get_user(token):
 
     try:
+        from accounts.models import User
         from rest_framework_simplejwt.tokens import AccessToken
         access_token = AccessToken(token)
 
@@ -58,6 +57,7 @@ class ActiveSessionMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        from security.models import UserSession
 
         if (
             request.user.is_authenticated
