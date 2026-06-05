@@ -52,6 +52,8 @@ import {
   CashStack,
 
   JournalText,
+
+  ShieldLockFill,
 } from "react-bootstrap-icons";
 
 
@@ -91,12 +93,6 @@ const managerMenu = [
         label: "Financial Report",
         icon: <CashStack />,
       },
-
-      {
-        key: "activity-logs",
-        label: "Activity Logs",
-        icon: <JournalText />,
-      }
     ],
   },
 
@@ -289,11 +285,11 @@ const managerMenu = [
       // ======================================
       // OFFERS / HAPPY HOURS
       // ======================================
-      {
-        key: "offers",
-        label: "Offers",
-        icon: <ClockFill />,
-      },
+      // {
+      //   key: "offers",
+      //   label: "Offers",
+      //   icon: <ClockFill />,
+      // },
     ],
   },
 
@@ -375,6 +371,20 @@ const managerMenu = [
     label: "Kitchen",
     icon: <ReceiptCutoff />,
   },
+
+  {
+    key: "security",
+    label: "Security",
+    icon: <ShieldLockFill />,
+  
+    children: [  
+      {
+        key: "activity-logs",
+        label: "Activity Logs",
+        icon: <JournalText />,
+      },
+    ],
+  }
 ]
 
 export default managerMenu;

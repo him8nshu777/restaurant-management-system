@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "../../components/admin/dashboard/DashboardLayout";
 import RestaurantProfile from "./RestaurantProfile";
 import CreateRestaurant from "./CreateRestaurant";
-import Reports from "./Reports";
+
 import Staff from "./Staff";
 import { getRestaurants } from "../../services/adminService";
 import Floor from "../../pages/dashboard/Floor";
@@ -148,9 +148,6 @@ useEffect(() => {
             case "financial-report":
                 return <FinancialReport />;
 
-            case "activity-logs":
-                return <ActivityLogsPage />;
-
             case "floors":
                 return <Floor />;
 
@@ -226,8 +223,12 @@ useEffect(() => {
             case "kitchen":
                 return <KitchenOrders />;
 
-            case "security":
+            case "active-devices":
                 return <ActiveDevicesPage />;
+
+            case "activity-logs":
+                return <ActivityLogsPage />;
+
 
             case "restaurant-profile":
 

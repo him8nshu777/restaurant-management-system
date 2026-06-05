@@ -54,6 +54,7 @@ import {
   JournalText,
 
   LaptopFill,
+  ShieldLockFill,
 } from "react-bootstrap-icons";
 
 
@@ -93,12 +94,6 @@ const adminMenu = [
         label: "Financial Report",
         icon: <CashStack />,
       },
-
-      {
-        key: "activity-logs",
-        label: "Activity Logs",
-        icon: <JournalText />,
-      }
     ],
   },
 
@@ -290,11 +285,11 @@ const adminMenu = [
       // ======================================
       // OFFERS / HAPPY HOURS
       // ======================================
-      {
-        key: "offers",
-        label: "Offers",
-        icon: <ClockFill />,
-      },
+      // {
+      //   key: "offers",
+      //   label: "Offers",
+      //   icon: <ClockFill />,
+      // },
     ],
   },
 
@@ -377,10 +372,24 @@ const adminMenu = [
     icon: <ReceiptCutoff />,
   },
   {
-    key: "security",
-    label: "Active Devices",
-    icon: <LaptopFill />,
-  }
+  key: "security",
+  label: "Security",
+  icon: <ShieldLockFill />,
+
+  children: [
+    {
+      key: "active-devices",
+      label: "Active Devices",
+      icon: <LaptopFill />,
+    },
+
+    {
+      key: "activity-logs",
+      label: "Activity Logs",
+      icon: <JournalText />,
+    },
+  ],
+}
 ]
 
 export default adminMenu;

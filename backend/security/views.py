@@ -14,11 +14,15 @@ from .services import send_force_logout, logout_user_session
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from audits.services import create_activity_log
-
+from restaurants.permissions import IsRestaurantAdmin
 
 
 class UserSessionListView(APIView):
 
+    permission_classes = [
+        IsAuthenticated,
+        IsRestaurantAdmin,
+    ]
     def get(
         self,
         request,
@@ -44,7 +48,7 @@ class UserSessionListView(APIView):
     
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsRestaurantAdmin])
 def logout_selected_device(request):
 
     session_id = request.data.get("session_id")
@@ -87,7 +91,7 @@ def logout_selected_device(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsRestaurantAdmin])
 def logout_all_devices(request):
 
     sessions = UserSession.objects.filter(

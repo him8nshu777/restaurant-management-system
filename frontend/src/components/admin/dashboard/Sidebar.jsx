@@ -268,14 +268,18 @@ export default function Sidebar({ activePage, setActivePage }) {
         p-3
         d-flex
         flex-column
-        justify-content-between
         ${collapsed ? "sidebar-collapsed" : "sidebar-expanded"}
       `}
     >
       {/* ======================================
           TOP SECTION
       ====================================== */}
-      <div>
+      <div className="
+    d-flex
+    flex-column
+    flex-grow-1
+    overflow-hidden
+  ">
         {/* ======================================
             HEADER
         ====================================== */}
@@ -312,6 +316,8 @@ export default function Sidebar({ activePage, setActivePage }) {
             d-flex
             flex-column
             gap-2
+            flex-grow-1
+    sidebar-menu-scroll
           "
         >
           {renderMenuItems(menuItems)}

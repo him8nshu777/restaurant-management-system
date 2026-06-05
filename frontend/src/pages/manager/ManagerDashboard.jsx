@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 
 import DashboardLayout from "../../components/admin/dashboard/DashboardLayout";
 
-import Reports from "../admin/Reports";
 import Staff from "../admin/Staff";
 import { getRestaurants } from "../../services/adminService";
 import Floor from "../../pages/dashboard/Floor";
@@ -74,9 +73,6 @@ export default function ManagerDashboard() {
 
             case "financial-report":
                 return <FinancialReport />;
-
-            case "activity-logs":
-                return <ActivityLogsPage />;
 
             case "floors":
                 return <Floor />;
@@ -152,6 +148,9 @@ export default function ManagerDashboard() {
 
             case "kitchen":
                 return <KitchenOrders />;
+
+            case "activity-logs":
+                return <ActivityLogsPage />;
 
             case "profile":
                 return <Profile />;
