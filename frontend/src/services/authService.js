@@ -31,6 +31,20 @@ export const registerUser = async (
   return response.data;
 };
 
+export const logoutUser = async (
+  sessionKey
+) => {
+
+  const response =
+    await axiosInstance.post(
+      "/auth/logout/",
+      {
+        session_key: sessionKey,
+      }
+    );
+
+  return response.data;
+};
 
 export const customerRegister =
   async (data) => {

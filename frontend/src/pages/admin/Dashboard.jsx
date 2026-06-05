@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "../../components/admin/dashboard/DashboardLayout";
 import RestaurantProfile from "./RestaurantProfile";
 import CreateRestaurant from "./CreateRestaurant";
-import Reports from "./Reports";
+
 import Staff from "./Staff";
 import { getRestaurants } from "../../services/adminService";
 import Floor from "../../pages/dashboard/Floor";
@@ -34,13 +34,20 @@ import ComboDynamicPricing from "../dashboard/menu/ComboDynamicPricing";
 import OrderList from "../dashboard/orders/OrderList";
 import KitchenOrders from "../kitchen/KitchenOrders";
 import Profile from "../profile/Profile";
+import SalesReport from "../reports/SalesReport";
+import ProductReport from "../reports/ProductReport";
+import TimeAnalysisReport from "../reports/TimeAnalysisReport";
+import KitchenReport from "../reports/KitchenReport";
+import FinancialReport from "../reports/FinancialReport";
+import ActivityLogsPage from "../reports/ActivityLogsPage";
+import ActiveDevicesPage from "../security/ActiveDevicesPage";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
 export default function Dashboard() {
 
     // Default page
-    const [activePage, setActivePage] = useState({ type: "reports", });
+    const [activePage, setActivePage] = useState({ type: "sales-report", });
     // ==========================================
     // RESTAURANT STATE
     // ==========================================
@@ -126,8 +133,20 @@ useEffect(() => {
             case "staff":
                 return <Staff />;
 
-            case "reports":
-                return <Reports />;
+            case "sales-report":
+                return <SalesReport />;
+
+            case "product-report":
+                return <ProductReport />;
+
+            case "time-analysis":
+                return <TimeAnalysisReport />;
+
+            case "kitchen-report":
+                return <KitchenReport />;
+                
+            case "financial-report":
+                return <FinancialReport />;
 
             case "floors":
                 return <Floor />;
@@ -204,6 +223,13 @@ useEffect(() => {
             case "kitchen":
                 return <KitchenOrders />;
 
+            case "active-devices":
+                return <ActiveDevicesPage />;
+
+            case "activity-logs":
+                return <ActivityLogsPage />;
+
+
             case "restaurant-profile":
 
                 return (
@@ -224,7 +250,7 @@ useEffect(() => {
                 );
 
             default:
-                return <Reports />;
+                return <SalesReport />;
         }
     };
 

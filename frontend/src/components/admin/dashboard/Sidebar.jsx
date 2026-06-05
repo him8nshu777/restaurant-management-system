@@ -16,6 +16,7 @@ import "./sidebar.css";
 
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../../auth/authSlice";
+import { logoutUser } from "../../../services/authService";
 import { setActiveRestaurant } from "../../../features/restaurants/restaurantSlice";
 
 import { getMenuByRole } from "./menuConfig";
@@ -60,17 +61,34 @@ export default function Sidebar({ activePage, setActivePage }) {
   // ==========================================
   const user = useSelector((state) => state.auth.user);
 
-  const handleLogout = () => {
-    const confirmed = window.confirm("Are you sure you want to logout?");
+  const handleLogout = async () => {
 
-    if (!confirmed) return;
+  const confirmed =
+    window.confirm(
+      "Are you sure you want to logout?"
+    );
+
+  if (!confirmed) return;
+
+  try {
+
+    await logoutUser(
+      user?.session_key
+    );
+
+  } catch (error) {
+
+    console.log(error);
+
+  } finally {
 
     dispatch(logout());
 
     localStorage.clear();
 
     navigate("/");
-  };
+  }
+};
 
   // ==========================================
   // ROLE BASED MENU
@@ -250,14 +268,18 @@ export default function Sidebar({ activePage, setActivePage }) {
         p-3
         d-flex
         flex-column
-        justify-content-between
         ${collapsed ? "sidebar-collapsed" : "sidebar-expanded"}
       `}
     >
       {/* ======================================
           TOP SECTION
       ====================================== */}
-      <div>
+      <div className="
+    d-flex
+    flex-column
+    flex-grow-1
+    overflow-hidden
+  ">
         {/* ======================================
             HEADER
         ====================================== */}
@@ -294,6 +316,8 @@ export default function Sidebar({ activePage, setActivePage }) {
             d-flex
             flex-column
             gap-2
+            flex-grow-1
+    sidebar-menu-scroll
           "
         >
           {renderMenuItems(menuItems)}

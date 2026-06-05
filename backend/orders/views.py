@@ -35,7 +35,7 @@ from menu.utils.pricing import (
 )
 from orders.utils.pricing import calculate_order_totals
 from inventory.services import (deduct_order_inventory)
-
+from audits.services import create_activity_log
 User = get_user_model()
 
 # =========================================================
@@ -454,6 +454,17 @@ class CreateOrderView(APIView):
                 ]
             )
 
+        create_activity_log(
+            restaurant=order.restaurant,
+            user=request.user,
+            order=order,
+            action="order_created",
+            message=(
+                f"{request.user.username} "
+                f"created order "
+                f"{order.order_number}"
+            ),
+        )
         # =========================================
         # SEND TO KITCHEN
         # =========================================
@@ -657,6 +668,8 @@ class UpdateOrderView(APIView):
         previous_status = order.status
 
         previous_waiter = order.waiter
+
+        previous_total = order.grand_total
 
         serializer = CreateOrderSerializer(
             data=request.data,
@@ -1040,6 +1053,91 @@ class UpdateOrderView(APIView):
             ]
         )
 
+        # ==========================================
+        # ORDER UPDATED
+        # ==========================================
+        create_activity_log(
+            restaurant=order.restaurant,
+            user=request.user,
+            order=order,
+            action="order_updated",
+            message=(
+                f"{request.user.get_full_name() or request.user.email} "
+                f"updated order {order.order_number}"
+            ),
+        )
+
+        if previous_status != order.status:
+
+            action_mapping = {
+                "confirmed": "confirmed",
+                "preparing": "preparing",
+                "ready": "ready",
+                "served": "served",
+                "completed": "completed",
+                "cancelled": "cancelled",
+            }
+
+            action = action_mapping.get(
+                order.status,
+                "status_changed",
+            )
+
+            create_activity_log(
+                restaurant=order.restaurant,
+                user=request.user,
+                order=order,
+                action=action,
+                message=(
+                    f"{request.user.get_full_name() or request.user.email} "
+                    f"changed order {order.order_number} "
+                    f"from {previous_status} to {order.status}"
+                ),
+            )
+
+            if (
+                previous_status == "pending_approval"
+                and order.status == "confirmed"
+            ):
+                create_activity_log(
+                    restaurant=order.restaurant,
+                    user=request.user,
+                    order=order,
+                    action="confirmed",
+                    message=(
+                        f"Customer order {order.order_number} "
+                        f"approved by "
+                        f"{request.user.get_full_name() or request.user.email}"
+                    ),
+                )
+        
+        if previous_waiter != order.waiter:
+
+            create_activity_log(
+                restaurant=order.restaurant,
+                user=request.user,
+                order=order,
+                action="waiter_changed",
+                message=(
+                    f"Waiter changed for order "
+                    f"{order.order_number}"
+                ),
+            )
+
+        if (
+            previous_status != "cancelled"
+            and order.status == "cancelled"
+        ):
+
+            create_activity_log(
+                restaurant=order.restaurant,
+                user=request.user,
+                order=order,
+                action="cancelled",
+                message=(
+                    f"Order {order.order_number} cancelled"
+                ),
+            )
         # =================================================
         # SAVE TAXES
         # =================================================
@@ -1189,6 +1287,21 @@ class DeleteOrderView(APIView):
 
         # REMOVE WAITER FROM ORDER
         order.waiter = None
+
+        # =============================================
+        # CREATE AUDIT LOG
+        # =============================================
+        create_activity_log(
+            restaurant=order.restaurant,
+            user=request.user,
+            order=order,
+            action="order_deleted",
+            message=(
+                f"{request.user.username} "
+                f"deleted order "
+                f"{order.order_number}"
+            ),
+        )
         # =============================================
         # DELETE ORDER
         # =============================================
@@ -1217,6 +1330,7 @@ class DeleteOrderView(APIView):
             status=status.HTTP_200_OK,
         )
 
+
 class UpdateOrderStatusView(APIView):
 
     def patch(self, request, order_id):
@@ -1224,20 +1338,53 @@ class UpdateOrderStatusView(APIView):
         order = get_object_or_404(
             Order.objects.select_related(
                 "waiter",
-                # "delivery_partner",
             ),
             id=order_id,
         )
 
         previous_status = order.status
 
-        order.status = request.data.get(
+        new_status = request.data.get(
             "status",
             order.status,
         )
 
-        order.save(update_fields=["status"])
+        update_fields = ["status"]
 
+        # ==========================================
+        # SET READY TIME
+        # ==========================================
+        if (
+            previous_status != "ready"
+            and new_status == "ready"
+            and not order.ready_at
+        ):
+            order.ready_at = timezone.now()
+            update_fields.append("ready_at")
+
+        order.status = new_status
+
+        order.save(update_fields=update_fields)
+
+        if (
+            request.user.role != "customer"
+            and previous_status != new_status
+        ):
+            create_activity_log(
+                restaurant=order.restaurant,
+                user=request.user,
+                order=order,
+                action=new_status,
+                message=(
+                    f"{request.user.username} "
+                    f"changed order "
+                    f"{order.order_number} "
+                    f"from "
+                    f"{previous_status} "
+                    f"to "
+                    f"{new_status}"
+                ),
+            )
         channel_layer = get_channel_layer()
 
         serialized_order = OrderListSerializer(order).data
@@ -1248,6 +1395,7 @@ class UpdateOrderStatusView(APIView):
             and not order.inventory_deducted
         ):
             deduct_order_inventory(order)
+
         # ==========================================
         # ORDER READY
         # ==========================================
@@ -1256,9 +1404,6 @@ class UpdateOrderStatusView(APIView):
             and order.status == "ready"
         ):
 
-            # ======================================
-            # DINE IN → WAITER
-            # ======================================
             if (
                 order.order_type == "dine_in"
                 and order.waiter
@@ -1276,11 +1421,9 @@ class UpdateOrderStatusView(APIView):
                     },
                 )
 
-            # ======================================
-            # DELIVERY → DELIVERY PARTNER
-            # ======================================
             elif (
-                order.status == "ready" and order.order_type == "delivery" and order.delivery_status == "unassigned"
+                order.order_type == "delivery"
+                and order.delivery_status == "unassigned"
             ):
                 async_to_sync(
                     channel_layer.group_send
@@ -1290,7 +1433,7 @@ class UpdateOrderStatusView(APIView):
                         "type": "send_order_event",
                         "data": {
                             "event": "delivery_request",
-                            "order": OrderListSerializer(order).data,
+                            "order": serialized_order,
                         },
                     },
                 )
@@ -1300,6 +1443,7 @@ class UpdateOrderStatusView(APIView):
                 "message": "Status updated successfully"
             }
         )
+
 
 class AcceptDeliveryOrderView(APIView):
 
@@ -1326,6 +1470,18 @@ class AcceptDeliveryOrderView(APIView):
         order.delivery_staff = request.user
         order.delivery_status = "assigned"
         order.save()
+
+        create_activity_log(
+            restaurant=order.restaurant,
+            user=request.user,
+            order=order,
+            action="delivery_accepted",
+            message=(
+                f"{request.user.username} "
+                f"accepted delivery "
+                f"{order.order_number}"
+            ),
+        )
 
         return Response(
             {
@@ -1378,6 +1534,22 @@ class UpdateDeliveryStatusView(APIView):
         order.save(
             update_fields=update_fields
         )
+
+        if delivery_status:
+
+            create_activity_log(
+                restaurant=order.restaurant,
+                user=request.user,
+                order=order,
+                action=delivery_status,
+                message=(
+                    f"{request.user.username} "
+                    f"changed delivery "
+                    f"{order.order_number} "
+                    f"to "
+                    f"{delivery_status}"
+                ),
+            )
 
         return Response({
             "message": "Updated"

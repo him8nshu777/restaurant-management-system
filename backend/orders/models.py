@@ -342,6 +342,11 @@ class Order(models.Model):
         auto_now=True,
     )
 
+    ready_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
     inventory_deducted = models.BooleanField(
         default=False
     )

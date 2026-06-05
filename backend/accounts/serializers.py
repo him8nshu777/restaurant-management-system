@@ -23,8 +23,10 @@ from .models import (
 )
 from restaurants.models import Restaurant
 from .utils import send_verification_email
-
-
+from audits.services import create_activity_log
+from security.services import create_user_session
+from user_agents import parse
+from security.helpers import get_client_ip
 # ==========================================
 # REGISTER SERIALIZER
 # ==========================================
@@ -183,6 +185,24 @@ class CustomLoginSerializer(serializers.Serializer):
         # ==========================================
         authenticated_user = authenticate(username=user.username, password=password)
 
+        request = self.context.get("request")
+
+
+        user_agent_string = request.META.get(
+            "HTTP_USER_AGENT",
+            "",
+        )
+
+        ua = parse(user_agent_string)
+
+        device_name = (
+            f"{ua.os.family} "
+            f"{ua.os.version_string}"
+        )
+
+        browser = ua.browser.family
+
+
         # ==========================================
         # GET RESTAURANT
         # ==========================================
@@ -203,6 +223,26 @@ class CustomLoginSerializer(serializers.Serializer):
         # JWT TOKEN GENERATION
         # ==========================================
         refresh = RefreshToken.for_user(authenticated_user)
+
+
+        session = create_user_session(
+            user=authenticated_user,
+            session_key=str(refresh),
+            ip_address=get_client_ip(request),
+            user_agent=user_agent_string,
+            device_name=device_name,
+            browser=browser,
+        )
+                
+        # ==========================================
+        # LOGIN AUDIT LOG
+        # ==========================================
+        create_activity_log(
+            restaurant=restaurant,
+            user=authenticated_user,
+            action="login",
+            message=f"{authenticated_user.username} logged in",
+        )
 
         # ==========================================
         # RETURN RESPONSE

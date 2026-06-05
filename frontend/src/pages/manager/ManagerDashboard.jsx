@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 
 import DashboardLayout from "../../components/admin/dashboard/DashboardLayout";
 
-import Reports from "../admin/Reports";
 import Staff from "../admin/Staff";
 import { getRestaurants } from "../../services/adminService";
 import Floor from "../../pages/dashboard/Floor";
@@ -33,13 +32,19 @@ import ComboDynamicPricing from "../dashboard/menu/ComboDynamicPricing";
 import OrderList from "../dashboard/orders/OrderList";
 import KitchenOrders from "../kitchen/KitchenOrders";
 import Profile from "../profile/Profile";
+import SalesReport from "../reports/SalesReport";
+import ProductReport from "../reports/ProductReport";
+import TimeAnalysisReport from "../reports/TimeAnalysisReport";
+import KitchenReport from "../reports/KitchenReport";
+import FinancialReport from "../reports/FinancialReport";
+import ActivityLogsPage from "../reports/ActivityLogsPage";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
 export default function ManagerDashboard() {
 
     // Default page
-    const [activePage, setActivePage] = useState({ type: "reports", });
+    const [activePage, setActivePage] = useState({ type: "sales-report", });
 
     // ==========================================
     // PAGE RENDERER
@@ -54,8 +59,20 @@ export default function ManagerDashboard() {
             case "staff":
                 return <Staff />;
 
-            case "reports":
-                return <Reports />;
+            case "sales-report":
+                return <SalesReport />;
+
+            case "product-report":
+                return <ProductReport />;
+
+            case "time-analysis":
+                return <TimeAnalysisReport />;
+
+            case "kitchen-report":
+                return <KitchenReport />;
+
+            case "financial-report":
+                return <FinancialReport />;
 
             case "floors":
                 return <Floor />;
@@ -132,10 +149,13 @@ export default function ManagerDashboard() {
             case "kitchen":
                 return <KitchenOrders />;
 
+            case "activity-logs":
+                return <ActivityLogsPage />;
+
             case "profile":
                 return <Profile />;
             default:
-                return <Reports />;
+                return <SalesReport />;
         }
     };
 

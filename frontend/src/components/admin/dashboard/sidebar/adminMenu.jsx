@@ -42,8 +42,19 @@ import {
   // ==========================================
   // POSH DASHBOARD
   // ==========================================
-  Shop
+  Shop,
   
+  // ==========================================
+  // REPORTS ICONS
+  // ==========================================
+  ClockHistory,
+  ClipboardDataFill,
+  CashStack,
+
+  JournalText,
+
+  LaptopFill,
+  ShieldLockFill,
 } from "react-bootstrap-icons";
 
 
@@ -56,6 +67,34 @@ const adminMenu = [
     key: "reports",
     label: "Reports",
     icon: <BarChartFill />,
+    children: [
+      {
+        key: "sales-report",
+        label: "Sales Reports",
+        icon: <GraphUpArrow />,
+      },
+      {
+        key: "product-report",
+        label: "Product Reports",
+        icon: <CupHotFill />,
+      },
+      {
+        key: "time-analysis",
+        label: "Time Analysis",
+        icon: <ClockHistory />,
+      },
+      {
+        key: "kitchen-report",
+        label: "Kitchen Report",
+        icon: <ClipboardDataFill />,
+      },
+
+      {
+        key: "financial-report",
+        label: "Financial Report",
+        icon: <CashStack />,
+      },
+    ],
   },
 
   // ==========================================
@@ -246,11 +285,11 @@ const adminMenu = [
       // ======================================
       // OFFERS / HAPPY HOURS
       // ======================================
-      {
-        key: "offers",
-        label: "Offers",
-        icon: <ClockFill />,
-      },
+      // {
+      //   key: "offers",
+      //   label: "Offers",
+      //   icon: <ClockFill />,
+      // },
     ],
   },
 
@@ -332,6 +371,25 @@ const adminMenu = [
     label: "Kitchen",
     icon: <ReceiptCutoff />,
   },
+  {
+  key: "security",
+  label: "Security",
+  icon: <ShieldLockFill />,
+
+  children: [
+    {
+      key: "active-devices",
+      label: "Active Devices",
+      icon: <LaptopFill />,
+    },
+
+    {
+      key: "activity-logs",
+      label: "Activity Logs",
+      icon: <JournalText />,
+    },
+  ],
+}
 ]
 
 export default adminMenu;

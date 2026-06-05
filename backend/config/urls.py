@@ -25,7 +25,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls), 
 
     path("api/auth/",include("accounts.urls")),
     path("api/restaurants/",include("restaurants.urls")),
@@ -38,6 +38,11 @@ urlpatterns = [
 
     
     path("api/customers/", include("customers.urls")),
+
+    path("api/reports/", include("reports.urls")),
+    path("api/audits/", include("audits.urls")),
+
+    path("api/security/", include("security.urls")),
 ]
 # =========================================================
 # MEDIA FILES

@@ -77,9 +77,11 @@ export default function WaiterOrders() {
   // ========================================
   const fetchOrders = async () => {
     try {
-      if (!user?.restaurant_id) return;
+  console.log("-->",restaurantId)
 
-      const data = await getOrderList(user.restaurant_id);
+      if (!restaurantId) return;
+
+      const data = await getOrderList({restaurantId});
 
       const filteredOrders = data.filter(
         (order) =>
@@ -97,7 +99,7 @@ export default function WaiterOrders() {
   // INITIAL LOAD
   // ========================================
   useEffect(() => {
-    if (user?.restaurant_id) {
+    if (restaurantId) {
       fetchOrders();
     }
   }, [user]);
@@ -155,7 +157,7 @@ export default function WaiterOrders() {
   // WEBSOCKET
   // ========================================
   useEffect(() => {
-    if (!user?.id || !user?.restaurant_id) return;
+    if (!user?.id || !restaurantId) return;
 
     // ======================================
     // CLOSE OLD SOCKET
