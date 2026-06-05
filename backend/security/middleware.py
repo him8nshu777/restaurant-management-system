@@ -2,7 +2,6 @@ from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async
 
-from rest_framework_simplejwt.tokens import AccessToken
 
 from accounts.models import User
 
@@ -15,6 +14,7 @@ from security.models import UserSession
 def get_user(token):
 
     try:
+        from rest_framework_simplejwt.tokens import AccessToken
         access_token = AccessToken(token)
 
         user_id = access_token["user_id"]
@@ -31,7 +31,7 @@ class JwtAuthMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-
+        
         query_string = scope["query_string"].decode()
 
         params = parse_qs(query_string)
