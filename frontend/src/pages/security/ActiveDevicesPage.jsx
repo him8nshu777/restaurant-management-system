@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from "react";
-
 import { useSelector } from "react-redux";
-
 import { Badge } from "react-bootstrap";
 
-import { getActiveSessions } from "../../services/securityService";
+import {
+  getActiveSessions,
+  logoutDevice,
+  logoutAllDevices,
+} from "../../services/securityService";
 
 const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || "ws://127.0.0.1:8000";
 
@@ -14,6 +16,8 @@ export default function ActiveDevicesPage() {
   const [sessions, setSessions] = useState([]);
 
   const [loading, setLoading] = useState(false);
+
+  const [actionLoading, setActionLoading] = useState(false);
 
   const activeRestaurant = useSelector(
     (state) => state.restaurant.activeRestaurant,
@@ -46,6 +50,44 @@ export default function ActiveDevicesPage() {
   };
 
   // ==========================================
+  // LOGOUT SINGLE DEVICE
+  // ==========================================
+  const handleLogoutDevice = async (sessionId) => {
+    const confirmed = window.confirm("Logout this device?");
+
+    if (!confirmed) return;
+
+    try {
+      setActionLoading(true);
+
+      await logoutDevice(sessionId);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ==========================================
+  // LOGOUT ALL DEVICES
+  // ==========================================
+  const handleLogoutAllDevices = async () => {
+    const confirmed = window.confirm("Logout all active devices?");
+
+    if (!confirmed) return;
+
+    try {
+      setActionLoading(true);
+
+      await logoutAllDevices(restaurantId);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ==========================================
   // INITIAL LOAD
   // ==========================================
   useEffect(() => {
@@ -53,7 +95,7 @@ export default function ActiveDevicesPage() {
   }, [restaurantId]);
 
   // ==========================================
-  // LIVE DEVICES
+  // LIVE DEVICE EVENTS
   // ==========================================
   useEffect(() => {
     if (!restaurantId) return;
@@ -71,30 +113,35 @@ export default function ActiveDevicesPage() {
     };
 
     socket.onmessage = (event) => {
-  const data = JSON.parse(event.data);
+      const data = JSON.parse(event.data);
 
-  if (data.event === "session_removed") {
+      // single device removed
+      if (data.event === "session_removed") {
+        setSessions((prev) => prev.filter((session) => session.id !== data.id));
 
-    setSessions((prev) =>
-      prev.filter(
-        (session) => session.id !== data.id
-      )
-    );
+        return;
+      }
 
-    return;
-  }
+      // logout all devices
+      if (data.event === "multiple_sessions_removed") {
+        setSessions((prev) =>
+          prev.filter(
+            (session) => !data.ids.includes(session.id)
+          )
+        );
 
-  setSessions((prev) => {
-    const exists = prev.some(
-      (s) => s.id === data.id
-    );
+        return;
+      }
 
-    if (exists) return prev;
+      // new login
+      setSessions((prev) => {
+        const exists = prev.some((session) => session.id === data.id);
 
-    return [data, ...prev];
-  });
-};
+        if (exists) return prev;
 
+        return [data, ...prev];
+      });
+    };
 
     socket.onerror = (error) => {
       console.log("Session WS Error", error);
@@ -127,15 +174,33 @@ export default function ActiveDevicesPage() {
       >
         <h2 className="fw-bold">Active Devices</h2>
 
-        <button
+        <div
           className="
-            btn
-            btn-outline-primary
+            d-flex
+            gap-2
           "
-          onClick={fetchSessions}
         >
-          Refresh
-        </button>
+          <button
+            className="
+              btn
+              btn-outline-primary
+            "
+            onClick={fetchSessions}
+          >
+            Refresh
+          </button>
+
+          <button
+            className="
+              btn
+              btn-danger
+            "
+            disabled={actionLoading}
+            onClick={handleLogoutAllDevices}
+          >
+            Logout All Devices
+          </button>
+        </div>
       </div>
 
       {/* LOADING */}
@@ -143,7 +208,14 @@ export default function ActiveDevicesPage() {
 
       {/* EMPTY */}
       {!loading && sessions.length === 0 && (
-        <div className="alert alert-light">No active devices found.</div>
+        <div
+          className="
+              alert
+              alert-light
+            "
+        >
+          No active devices found.
+        </div>
       )}
 
       {/* TABLE */}
@@ -173,6 +245,8 @@ export default function ActiveDevicesPage() {
                 <th>Login At</th>
 
                 <th>Status</th>
+
+                <th>Actions</th>
               </tr>
             </thead>
 
@@ -195,6 +269,20 @@ export default function ActiveDevicesPage() {
                     <Badge bg={session.is_active ? "success" : "secondary"}>
                       {session.is_active ? "Active" : "Offline"}
                     </Badge>
+                  </td>
+
+                  <td>
+                    <button
+                      className="
+                            btn
+                            btn-sm
+                            btn-outline-danger
+                          "
+                      disabled={actionLoading}
+                      onClick={() => handleLogoutDevice(session.id)}
+                    >
+                      Logout
+                    </button>
                   </td>
                 </tr>
               ))}

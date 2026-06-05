@@ -4,6 +4,9 @@ from asgiref.sync import async_to_sync
 from .serializers import UserSessionSerializer
 from .models import UserSession
 
+from django.contrib.sessions.models import Session
+from django.db import transaction
+
 
 def create_user_session(
     *,
@@ -62,4 +65,36 @@ def logout_user_session(
                 "id": session.id,
             },
         },
+    )
+
+
+@transaction.atomic
+def logout_all_devices(user):
+    # 1. Get all session keys
+    sessions = UserSession.objects.filter(user=user, is_active=True)
+
+    session_keys = list(sessions.values_list("session_key", flat=True))
+
+    # 2. Mark inactive in DB
+    sessions.update(is_active=False)
+
+    # 3. Delete Django sessions
+    Session.objects.filter(
+        session_key__in=session_keys
+    ).delete()
+
+
+def send_force_logout(user_id, session_key=None, logout_all=False):
+
+
+    channel_layer = get_channel_layer()
+
+    async_to_sync(channel_layer.group_send)(
+        f"user_{user_id}",
+        {
+            "type": "force_logout",
+            "session_key": session_key,
+            "logout_all": logout_all,
+            "message": "You have been logged out by admin"
+        }
     )

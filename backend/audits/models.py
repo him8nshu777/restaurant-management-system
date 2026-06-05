@@ -28,6 +28,10 @@ class ActivityLog(models.Model):
         ("picked_up", "Picked Up"),
         ("on_the_way", "On The Way"),
         ("delivered", "Delivered"),
+
+        ("device_logout", "Device Logout"),
+        ("all_devices_logout", "All Devices Logout"),
+        ("forced_logout", "Forced Logout"),
     )
 
     restaurant = models.ForeignKey(
