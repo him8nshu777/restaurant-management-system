@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { useSelector } from "react-redux";
-
+import { useNavigate } from "react-router-dom";
 import { getPOSProducts } from "../../services/posService";
 import {
   getTableList,
@@ -11,11 +11,13 @@ import {
 import { ChevronDown, ChevronUp } from "react-bootstrap-icons";
 import { createOrder } from "../../services/orderService";
 import { getStaffList } from "../../services/adminService";
-
 // ==========================================
 // POS DASHBOARD
 // ==========================================
-export default function POSDashboard() {
+export default function POSDashboard({
+  setActivePage
+}) {
+  const navigate = useNavigate();
   // ==========================================
   // ACTIVE RESTAURANT
   // ==========================================
@@ -534,38 +536,8 @@ export default function POSDashboard() {
     setCartItems(updatedCart);
   };
 
-  // ==========================================
-  // SAVE ORDER
-  // ==========================================
-  const handleSaveOrder = async () => {
-    try {
-      if (cartItems.length === 0) {
-        setAlert({
-          type: "danger",
-          message: "Cart is empty",
-        });
-
-        return;
-      }
-
-      if (orderType === "dine_in" && !selectedTable) {
-        setAlert({
-          type: "danger",
-          message: "Please select table",
-        });
-
-        return;
-      }
-      if (orderType === "dine_in" && !selectedWaiter) {
-        setAlert({
-          type: "danger",
-          message: "Please select waiter",
-        });
-
-        return;
-      }
-
-      const payload = {
+  const createPOSOrder = async () => {
+    const payload = {
         order_type: orderType,
 
         floor_id: selectedFloor,
@@ -632,8 +604,42 @@ export default function POSDashboard() {
         })),
       };
 
-      const data = await createOrder(restaurantId, payload);
+  return await createOrder(restaurantId, payload);
+};
 
+  // ==========================================
+  // SAVE ORDER
+  // ==========================================
+  const handleSaveOrder = async () => {
+    try {
+      if (cartItems.length === 0) {
+        setAlert({
+          type: "danger",
+          message: "Cart is empty",
+        });
+
+        return;
+      }
+
+      if (orderType === "dine_in" && !selectedTable) {
+        setAlert({
+          type: "danger",
+          message: "Please select table",
+        });
+
+        return;
+      }
+      if (orderType === "dine_in" && !selectedWaiter) {
+        setAlert({
+          type: "danger",
+          message: "Please select waiter",
+        });
+
+        return;
+      }
+
+      const data = await createPOSOrder();
+      
       setAlert({
         type: "success",
         message: `Order ${data.order_number} saved successfully`,
@@ -649,6 +655,39 @@ export default function POSDashboard() {
       setShowCart(false);
 
       fetchTables();
+    } catch (error) {
+      console.log("FULL ERROR:", error.response?.data);
+
+      console.log("ITEM ERROR:", error.response?.data?.items?.[0]);
+      setAlert({
+        type: "danger",
+        message: "Failed to save order",
+      });
+    }
+  };
+  // ==========================================
+  // CHECKOUT ORDER
+  // ==========================================
+  const handleCheckout = async () => {
+    try {
+      console.log("CHECKOUT CLICKED");
+      if (cartItems.length === 0) {
+        setAlert({
+          type: "danger",
+          message: "Cart is empty",
+        });
+        return;
+      }
+
+      
+      const data = await createPOSOrder();
+      console.log("ORDER RESPONSE:", data);
+
+      setActivePage({
+    type: "payment",
+    orderId: data.order_id,
+    order: data,
+});
     } catch (error) {
       console.log("FULL ERROR:", error.response?.data);
 
@@ -1424,7 +1463,6 @@ export default function POSDashboard() {
 
               <option value="takeaway">Takeaway</option>
 
-              <option value="delivery">Delivery</option>
             </select>
           </div>
 
@@ -1691,21 +1729,23 @@ export default function POSDashboard() {
           {/* ========================================== ACTION BUTTONS ========================================== */}
           <div className="d-grid gap-2">
             {" "}
+            {orderType === "dine_in" && (
             <button
               className=" btn btn-outline-dark rounded-pill fw-semibold "
               onClick={handleSaveOrder}
-            >
+              > 
               {" "}
               Save Order{" "}
-            </button>{" "}
-            <button className=" btn btn-primary rounded-pill fw-semibold ">
+                </button>
+              )}
+                {" "}
+            {orderType === "takeaway" && (
+            <button className=" btn btn-primary rounded-pill fw-semibold " onClick={handleCheckout}>
               {" "}
               Checkout{" "}
-            </button>{" "}
-            <button className=" btn btn-success rounded-pill fw-semibold ">
-              {" "}
-              Take Payment{" "}
-            </button>{" "}
+            </button>
+            )}{" "}
+            
           </div>
         </div>
       )}

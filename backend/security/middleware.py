@@ -2,19 +2,18 @@ from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async
 
-from rest_framework_simplejwt.tokens import AccessToken
 
-from accounts.models import User
 
 from django.http import JsonResponse
 
-from security.models import UserSession
 
 
 @database_sync_to_async
 def get_user(token):
 
     try:
+        from accounts.models import User
+        from rest_framework_simplejwt.tokens import AccessToken
         access_token = AccessToken(token)
 
         user_id = access_token["user_id"]
@@ -31,7 +30,7 @@ class JwtAuthMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-
+        
         query_string = scope["query_string"].decode()
 
         params = parse_qs(query_string)
@@ -58,7 +57,12 @@ class ActiveSessionMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        from security.models import UserSession
 
+        # Skip Django admin
+        if not request.path.startswith("/api/"):
+            return self.get_response(request)
+        
         if (
             request.user.is_authenticated
             and request.session.session_key

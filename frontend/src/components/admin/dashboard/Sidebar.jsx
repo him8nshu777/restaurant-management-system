@@ -24,13 +24,14 @@ import { useNavigate } from "react-router-dom";
 // ==========================================
 // REUSABLE SIDEBAR
 // ==========================================
-export default function Sidebar({ activePage, setActivePage }) {
+export default function Sidebar({ activePage, setActivePage, collapsed,
+  setCollapsed }) {
   const navigate = useNavigate();
 
   // ==========================================
   // SIDEBAR COLLAPSE STATE
   // ==========================================
-  const [collapsed, setCollapsed] = useState(false);
+  // const [collapsed, setCollapsed] = useState(false);
 
   // ==========================================
   // PROFILE DROPDOWN STATE
@@ -279,7 +280,8 @@ export default function Sidebar({ activePage, setActivePage }) {
     flex-column
     flex-grow-1
     overflow-hidden
-  ">
+  "
+  style={{ minHeight: 0 }}>
         {/* ======================================
             HEADER
         ====================================== */}

@@ -1555,3 +1555,67 @@ class UpdateDeliveryStatusView(APIView):
             "message": "Updated"
         })
     
+class UpdatePaymentStatusView(APIView):
+
+    def patch(self, request, order_id):
+
+        order = get_object_or_404(
+            Order,
+            id=order_id,
+        )
+
+        payment_status = request.data.get(
+            "payment_status"
+        )
+
+        payment_method = request.data.get(
+            "payment_method"
+        )
+
+        if not payment_status:
+            return Response(
+                {"error": "payment_status required"},
+                status=400,
+            )
+
+        order.payment_status = payment_status
+
+        update_fields = ["payment_status"]
+
+        if payment_method:
+
+            order.payment_method = payment_method
+
+            update_fields.append(
+                "payment_method"
+            )
+        if payment_status == "paid":
+
+            order.paid_at = timezone.now()
+
+            update_fields.append("paid_at")
+
+            # Optional
+            if order.order_type == "takeaway":
+                order.status = "confirmed"
+                update_fields.append("status")
+
+        order.save(
+            update_fields=update_fields
+        )
+
+        create_activity_log(
+            restaurant=order.restaurant,
+            user=request.user,
+            order=order,
+            action="payment_received",
+            message=(
+                f"Payment received for "
+                f"{order.order_number}"
+            ),
+        )
+
+        return Response({
+            "message": "Payment updated successfully"
+        })
+    

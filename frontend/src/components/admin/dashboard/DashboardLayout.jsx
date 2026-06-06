@@ -1,5 +1,5 @@
 import Sidebar from "./Sidebar";
-
+import "./dashboard.css";
 
 // ==========================================
 // REUSABLE DASHBOARD LAYOUT

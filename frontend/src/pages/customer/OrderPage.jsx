@@ -7,8 +7,11 @@ import { createOrder } from "../../services/orderService";
 // ==========================================
 // CUSTOMER RESTAURANT PAGE (FIXED)
 // ==========================================
-export default function OrderPage() {
-  const { restaurantId } = useParams();
+export default function OrderPage({
+  setActivePage, restaurant
+}) {
+  // const { restaurantId } = useParams();
+  const restaurantId = restaurant?.id;
 
   // STATES
   const [productList, setProductList] = useState([]);
@@ -301,36 +304,9 @@ export default function OrderPage() {
     setCartItems(updatedCart);
   };
 
-  // ==========================================
-  // CUSTOMER CHECKOUT
-  // ==========================================
-  const handleCheckout = async () => {
-    try {
-      // ==========================================
-      // EMPTY CART
-      // ==========================================
-      if (cartItems.length === 0) {
-        setAlert({
-          type: "danger",
-          message: "Cart is empty",
-        });
-
-        return;
-      }
-
-      // ==========================================
-      // FUTURE PAYMENT GATEWAY
-      // ==========================================
-      if (paymentMethod !== "cash") {
-        setAlert({
-          type: "warning",
-          message: "Online payment coming soon",
-        });
-
-        return;
-      }
-
-      // ==========================================
+  const createPOSOrder = async () => {
+    
+    // ==========================================
       // PAYLOAD
       // ==========================================
       const payload = {
@@ -426,11 +402,41 @@ export default function OrderPage() {
         })),
       };
 
+  return await createOrder(restaurantId, payload);
+};
+  // ==========================================
+  // CUSTOMER CHECKOUT
+  // ==========================================
+  const handleCheckout = async () => {
+    try {
       // ==========================================
-      // CREATE ORDER
+      // EMPTY CART
       // ==========================================
-      const data = await createOrder(restaurantId, payload);
+      if (cartItems.length === 0) {
+        setAlert({
+          type: "danger",
+          message: "Cart is empty",
+        });
 
+        return;
+      }
+
+      // ==========================================
+      // FUTURE PAYMENT GATEWAY
+      // ==========================================
+      // if (paymentMethod !== "cash") {
+      //   setAlert({
+      //     type: "warning",
+      //     message: "Online payment coming soon",
+      //   });
+
+      //   return;
+      // }
+
+      
+      const data = await createPOSOrder();
+
+     
       // ==========================================
       // SUCCESS
       // ==========================================
@@ -454,6 +460,40 @@ export default function OrderPage() {
       setAlert({
         type: "danger",
         message: "Failed to save order",
+      });
+    }
+  };
+
+  // ==========================================
+  // CHECKOUT ORDER
+  // ==========================================
+  const handleOnlinePayment = async () => {
+    try {
+      console.log("CHECKOUT CLICKED");
+      if (cartItems.length === 0) {
+        setAlert({
+          type: "danger",
+          message: "Cart is empty",
+        });
+        return;
+      }
+
+      
+      const data = await createPOSOrder();
+      console.log("ORDER RESPONSE:", data);
+
+      setActivePage({
+    type: "payment",
+    orderId: data.order_id,
+    order: data,
+});
+    } catch (error) {
+      console.log("FULL ERROR:", error.response?.data);
+
+      console.log("ITEM ERROR:", error.response?.data?.items?.[0]);
+      setAlert({
+        type: "danger",
+        message: "Failed to place order",
       });
     }
   };
@@ -1177,7 +1217,7 @@ export default function OrderPage() {
 
               <option value="card">Card</option>
 
-              <option value="wallet">Wallet</option>
+              {/* <option value="wallet">Wallet</option> */}
             </select>
           </div>
 
@@ -1332,9 +1372,21 @@ export default function OrderPage() {
           </div>
 
           <div className="border-top pt-3 mt-3">
-            <button className="btn btn-primary w-100" onClick={handleCheckout}>
-              Proceed To Checkout
-            </button>
+            {paymentMethod === "cash" ? (
+              <button
+                className="btn btn-primary w-100"
+                onClick={handleCheckout}
+              >
+                Place Order
+              </button>
+            ) : (
+              <button
+                className="btn btn-success w-100"
+                onClick={handleOnlinePayment}
+              >
+                Pay ₹{totalPrice}
+              </button>
+            )}
           </div>
         </div>
       )}

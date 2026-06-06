@@ -2,18 +2,14 @@ import { useEffect, useState } from "react";
 
 import { useSelector } from "react-redux";
 
-import {
-  getCustomerOrderList
-} from "../../services/customerService";
+import { getCustomerOrderList } from "../../services/customerService";
 
+import { updatePaymentStatus } from "../../services/orderService";
 // ==========================================
 // ORDER MANAGEMENT
 // ==========================================
 export default function ActiveOrders() {
-
-
   const user = useSelector((state) => state.auth.user);
-
 
   console.log("USER:", user);
 
@@ -37,6 +33,11 @@ export default function ActiveOrders() {
   // ==========================================
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  const [paymentOrder, setPaymentOrder] = useState(null);
+
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cash");
   // ==========================================
   // FORM DATA
   // ==========================================
@@ -157,6 +158,39 @@ export default function ActiveOrders() {
     setShowEditModal(true);
   };
 
+  // ==========================================
+  // OPEN PAYMENT MODAL
+  // ==========================================
+  const openPaymentModal = (order) => {
+    setPaymentOrder(order);
+
+    setSelectedPaymentMethod(order.payment_method || "cash");
+
+    setShowPaymentModal(true);
+  };
+
+  const handlePayment = async () => {
+    try {
+      await updatePaymentStatus(paymentOrder.id, "paid", selectedPaymentMethod);
+
+      await fetchOrders();
+
+      setShowPaymentModal(false);
+
+      setAlert({
+        type: "success",
+        message: "Payment collected successfully",
+      });
+    } catch (error) {
+      console.log(error);
+
+      setAlert({
+        type: "danger",
+        message: "Failed to collect payment",
+      });
+    }
+  };
+
   return (
     <div className="container-fluid">
       {/* ALERT */}
@@ -226,6 +260,14 @@ export default function ActiveOrders() {
                       </span>
                     </td>
                     <td>
+                      {order.payment_status !== "paid" && (
+                        <button
+                          className="btn btn-success btn-sm me-2"
+                          onClick={() => openPaymentModal(order)}
+                        >
+                          Payment
+                        </button>
+                      )}
                       <button
                         className="btn btn-sm btn-primary"
                         onClick={() => openEditModal(order)}
@@ -246,6 +288,7 @@ export default function ActiveOrders() {
         <ModalWrapper
           title="Edit Order"
           onClose={() => setShowEditModal(false)}
+           showFooter={false}
         >
           {/* STATUS */}
           <div className="mb-3">
@@ -256,8 +299,7 @@ export default function ActiveOrders() {
               name="delivery_status"
               value={formData.delivery_status}
               readOnly
-            >
-            </input>
+            ></input>
           </div>
           {/* PAYMENT STATUS */}
           <div className="mb-3">
@@ -268,8 +310,7 @@ export default function ActiveOrders() {
               name="payment_status"
               value={formData.payment_status}
               readOnly
-            >
-            </input>
+            ></input>
           </div>
 
           {/* NOTES */}
@@ -281,7 +322,7 @@ export default function ActiveOrders() {
               rows={3}
               name="notes"
               value={formData.notes}
-            readOnly
+              readOnly
             />
           </div>
 
@@ -331,8 +372,6 @@ export default function ActiveOrders() {
                         </div>
                       )}
                     </div>
-
-                
                   </div>
 
                   {/* QUANTITY */}
@@ -345,7 +384,6 @@ export default function ActiveOrders() {
                 align-items-center
               "
                     >
-                      
                       <input
                         type="number"
                         className="
@@ -357,9 +395,8 @@ export default function ActiveOrders() {
                           width: "80px",
                         }}
                         value={item.quantity}
-                      
                       />
-</div>
+                    </div>
                   </div>
 
                   {/* NOTES */}
@@ -421,12 +458,13 @@ export default function ActiveOrders() {
                               min="1"
                               className="
                           form-control
-                        " readOnly
+                        "
+                              readOnly
                               style={{
                                 width: "90px",
                               }}
                               value={addon.quantity}
-                             />
+                            />
 
                             <span className="ms-3">
                               Total: ₹{addon.total_price}
@@ -445,9 +483,8 @@ export default function ActiveOrders() {
               p-2
             "
                   >
-                    <strong>Total Price:</strong> 
-                    ₹{item.total_price}
-                    </div>
+                    <strong>Total Price:</strong>₹{item.total_price}
+                  </div>
                 </div>
               </div>
             ))}
@@ -480,8 +517,7 @@ export default function ActiveOrders() {
           <div className="mb-4">
             <h5 className="fw-bold mb-3">Service Charges</h5>
 
-            {selectedOrder?.service_charge_breakdown?.map(
-  (charge, index) => (
+            {selectedOrder?.service_charge_breakdown?.map((charge, index) => (
               <div
                 key={`${charge.name}-${index}`}
                 className="
@@ -550,11 +586,10 @@ export default function ActiveOrders() {
       mb-2
     "
             >
-              <span>Discount</span> 
+              <span>Discount</span>
               {formData.discount_amount ? (
                 <span>₹{formData.discount_amount}</span>
               ) : null}
-
             </div>
 
             <div
@@ -602,6 +637,49 @@ export default function ActiveOrders() {
           </div>
         </ModalWrapper>
       )}
+
+      {/* PAYMENT MODAL */}
+      {showPaymentModal && (
+        <ModalWrapper
+          title="Collect Payment"
+          onClose={() => setShowPaymentModal(false)}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handlePayment();
+          }}
+          submitText="Make Payment"
+        >
+          <div className="mb-3">
+            <label className="form-label">Payment Method</label>
+
+            <select
+              className="form-select"
+              value={selectedPaymentMethod}
+              onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+            >
+              <option value="cash">Cash</option>
+
+              <option value="upi">UPI</option>
+
+              <option value="card">Card</option>
+
+              {/* <option value="wallet">
+          Wallet
+        </option> */}
+            </select>
+          </div>
+
+          <div
+            className="
+        alert
+        alert-info
+      "
+          >
+            Amount:
+            <strong>₹{paymentOrder?.grand_total}</strong>
+          </div>
+        </ModalWrapper>
+      )}
     </div>
   );
 }
@@ -609,7 +687,14 @@ export default function ActiveOrders() {
 // ==========================================
 // REUSABLE MODAL
 // ==========================================
-function ModalWrapper({ title, children, onClose, onSubmit }) {
+function ModalWrapper({
+  title,
+  children,
+  onClose,
+  onSubmit,
+  showFooter = true,
+  submitText = "Save Changes",
+}) {
   return (
     <div
       className="
@@ -672,9 +757,21 @@ function ModalWrapper({ title, children, onClose, onSubmit }) {
             </div>
 
             {/* FOOTER */}
-            <div className="modal-footer">
-              
-            </div>
+            {showFooter && (
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={onClose}
+                >
+                  Cancel
+                </button>
+
+                <button type="submit" className="btn btn-primary">
+                  {submitText}
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>

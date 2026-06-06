@@ -1412,10 +1412,6 @@ export default function WaiterPOSDashboard() {
               onChange={(e) => setOrderType(e.target.value)}
             >
               <option value="dine_in">Dine In</option>
-
-              <option value="takeaway">Takeaway</option>
-
-              <option value="delivery">Delivery</option>
             </select>
           </div>
 
@@ -1665,14 +1661,6 @@ export default function WaiterPOSDashboard() {
             >
               {" "}
               Save Order{" "}
-            </button>{" "}
-            <button className=" btn btn-primary rounded-pill fw-semibold ">
-              {" "}
-              Checkout{" "}
-            </button>{" "}
-            <button className=" btn btn-success rounded-pill fw-semibold ">
-              {" "}
-              Take Payment{" "}
             </button>{" "}
           </div>
         </div>

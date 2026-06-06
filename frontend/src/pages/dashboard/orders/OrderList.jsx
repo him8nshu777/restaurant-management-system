@@ -6,6 +6,7 @@ import {
   getOrderList,
   updateOrder,
   deleteOrder,
+  updatePaymentStatus,
 } from "../../../services/orderService";
 
 // ==========================================
@@ -56,6 +57,11 @@ export default function OrderList() {
   // ==========================================
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  const [paymentOrder, setPaymentOrder] = useState(null);
+
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cash");
   // ==========================================
   // FORM DATA
   // ==========================================
@@ -178,6 +184,39 @@ export default function OrderList() {
     });
 
     setShowEditModal(true);
+  };
+
+  // ==========================================
+  // OPEN PAYMENT MODAL
+  // ==========================================
+  const openPaymentModal = (order) => {
+    setPaymentOrder(order);
+
+    setSelectedPaymentMethod(order.payment_method || "cash");
+
+    setShowPaymentModal(true);
+  };
+
+  const handlePayment = async () => {
+    try {
+      await updatePaymentStatus(paymentOrder.id, "paid", selectedPaymentMethod);
+
+      await fetchOrders();
+
+      setShowPaymentModal(false);
+
+      setAlert({
+        type: "success",
+        message: "Payment collected successfully",
+      });
+    } catch (error) {
+      console.log(error);
+
+      setAlert({
+        type: "danger",
+        message: "Failed to collect payment",
+      });
+    }
   };
 
   // ==========================================
@@ -684,6 +723,14 @@ export default function OrderList() {
                     <td>{new Date(order.created_at).toLocaleString()}</td>
 
                     <td>
+                      {order.payment_status !== "paid" && (
+                        <button
+                          className="btn btn-success btn-sm me-2"
+                          onClick={() => openPaymentModal(order)}
+                        >
+                          Payment
+                        </button>
+                      )}
                       <button
                         className="
                           btn
@@ -1154,6 +1201,49 @@ export default function OrderList() {
           </div>
         </ModalWrapper>
       )}
+
+      {/* PAYMENT MODAL */}
+      {showPaymentModal && (
+        <ModalWrapper
+          title="Collect Payment"
+          onClose={() => setShowPaymentModal(false)}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handlePayment();
+          }}
+          submitText="Collect Payment"
+        >
+          <div className="mb-3">
+            <label className="form-label">Payment Method</label>
+
+            <select
+              className="form-select"
+              value={selectedPaymentMethod}
+              onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+            >
+              <option value="cash">Cash</option>
+
+              <option value="upi">UPI</option>
+
+              <option value="card">Card</option>
+
+              {/* <option value="wallet">
+          Wallet
+        </option> */}
+            </select>
+          </div>
+
+          <div
+            className="
+        alert
+        alert-info
+      "
+          >
+            Amount:
+            <strong>₹{paymentOrder?.grand_total}</strong>
+          </div>
+        </ModalWrapper>
+      )}
     </div>
   );
 }
@@ -1161,7 +1251,8 @@ export default function OrderList() {
 // ==========================================
 // REUSABLE MODAL
 // ==========================================
-function ModalWrapper({ title, children, onClose, onSubmit }) {
+function ModalWrapper({ title, children, onClose, onSubmit, showFooter = true,
+  submitText = "Save Changes", }) {
   return (
     <div
       className="
@@ -1224,28 +1315,21 @@ function ModalWrapper({ title, children, onClose, onSubmit }) {
             </div>
 
             {/* FOOTER */}
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="
-                  btn
-                  btn-secondary
-                "
-                onClick={onClose}
-              >
-                Cancel
-              </button>
+            {showFooter && (
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={onClose}
+                >
+                  Cancel
+                </button>
 
-              <button
-                type="submit"
-                className="
-                  btn
-                  btn-primary
-                "
-              >
-                Save Changes
-              </button>
-            </div>
+                <button type="submit" className="btn btn-primary">
+                  {submitText}
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>
