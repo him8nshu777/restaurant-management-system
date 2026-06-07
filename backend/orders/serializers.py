@@ -375,6 +375,10 @@ class CreateOrderSerializer(serializers.Serializer):
         required=False,
     )
 
+    delivery_address_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+    )
 
 # =========================================================
 # ORDER LIST SERIALIZER

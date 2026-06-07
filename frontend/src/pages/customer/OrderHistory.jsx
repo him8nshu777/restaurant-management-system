@@ -6,6 +6,7 @@ import {
   getCustomerOrderList
 } from "../../services/customerService";
 
+import { printOrderBill } from "../../services/orderService";
 // ==========================================
 // ORDER MANAGEMENT
 // ==========================================
@@ -157,6 +158,27 @@ export default function OrderHistory() {
     setShowEditModal(true);
   };
 
+    // ==========================================
+// PRINT BILL
+// ==========================================
+const handlePrintBill = async (orderId) => {
+  try {
+    const pdfBlob = await printOrderBill(orderId);
+
+    const fileURL = window.URL.createObjectURL(pdfBlob);
+
+    window.open(fileURL, "_blank");
+  } catch (error) {
+    console.log(error);
+
+    setAlert({
+      type: "danger",
+      message: "Failed to generate bill.",
+    });
+  }
+};
+
+
   return (
     <div className="container-fluid">
       {/* ALERT */}
@@ -249,6 +271,12 @@ export default function OrderHistory() {
         <ModalWrapper
           title="Edit Order"
           onClose={() => setShowEditModal(false)}
+          showBillButton={
+            selectedOrder?.payment_status === "paid"
+          }
+          onPrintBill={() =>
+            handlePrintBill(selectedOrder.id)
+          }
         >
           {/* STATUS */}
           <div className="mb-3">
@@ -612,7 +640,8 @@ export default function OrderHistory() {
 // ==========================================
 // REUSABLE MODAL
 // ==========================================
-function ModalWrapper({ title, children, onClose, onSubmit }) {
+function ModalWrapper({ title, children, onClose, onSubmit, showBillButton,
+  onPrintBill, }) {
   return (
     <div
       className="
@@ -676,8 +705,26 @@ function ModalWrapper({ title, children, onClose, onSubmit }) {
 
             {/* FOOTER */}
             <div className="modal-footer">
-              
-            </div>
+
+  {showBillButton && (
+    <button
+      type="button"
+      className="btn btn-success"
+      onClick={onPrintBill}
+    >
+      Print Bill
+    </button>
+  )}
+
+  <button
+    type="button"
+    className="btn btn-secondary"
+    onClick={onClose}
+  >
+    Close
+  </button>
+
+</div>
           </form>
         </div>
       </div>

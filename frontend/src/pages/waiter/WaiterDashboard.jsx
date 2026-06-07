@@ -12,7 +12,19 @@ export default function WaiterDashboard() {
     const renderPage = () => {
         switch (activePage.type) {
             case "pos-dashboard":
-                return <WaiterPOSDashboard />;
+                return <WaiterPOSDashboard 
+                setActivePage={setActivePage}
+                />;
+
+            case "payment":
+                return (
+                    <PaymentPage
+                        orderId={activePage.orderId}
+                        order={activePage.order}
+                        setActivePage={setActivePage}
+                    />
+                );
+                
             case "orders":
                 return <OrderList />;
             case "ready-orders":

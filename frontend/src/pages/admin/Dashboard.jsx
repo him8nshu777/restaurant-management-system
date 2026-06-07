@@ -41,6 +41,7 @@ import KitchenReport from "../reports/KitchenReport";
 import FinancialReport from "../reports/FinancialReport";
 import ActivityLogsPage from "../reports/ActivityLogsPage";
 import ActiveDevicesPage from "../security/ActiveDevicesPage";
+import PaymentPage from "../payment/PaymentPage";
 // ==========================================
 // ADMIN DASHBOARD CONTROLLER
 // ==========================================
@@ -125,10 +126,21 @@ useEffect(() => {
         switch (activePage.type) {
 
             case "pos-dashboard":
-                return <POSDashboard />;
+                return <POSDashboard 
+                setActivePage={setActivePage}
+                />;
 
             case "profile":
                 return <Profile />;
+
+            case "payment":
+                return (
+                    <PaymentPage
+                        orderId={activePage.orderId}
+                        order={activePage.order}
+                        setActivePage={setActivePage}
+                    />
+                );
 
             case "staff":
                 return <Staff />;

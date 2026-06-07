@@ -31,6 +31,7 @@ import CustomerDashboard from "../pages/customer/CustomerDashboard";
 import OrderPage from "../pages/customer/OrderPage";
 import DeliveryDashboard from "../pages/delivery/DeliveryDashboard";
 import RestaurantsPage from "../pages/customer/RestaurantsPage";
+import PaymentPage from "../pages/payment/PaymentPage";
 // import WaiterPage from "../pages/waiter/WaiterPage";
 
 // import ReportsPage from "../pages/manager/ReportsPage";
@@ -152,7 +153,7 @@ export default function AppRouter() {
                     }
                 />
                 <Route
-                    path="/restaurants/:restaurantId/menu"
+                    path="/restaurant-menu"
                     element={
                         <ProtectedRoute>
                             <OrderPage />
@@ -166,8 +167,16 @@ export default function AppRouter() {
                             <DeliveryDashboard />
                         </ProtectedRoute>
                     }
-                />
+                    />
+                <Route
+                    path="/payment/:orderId"
+                    element={
+                        <ProtectedRoute>
+                            <PaymentPage />
+                        </ProtectedRoute>
 
+                    }
+                />
                 {/* <Route
           path="/waiter"
           element={<WaiterPage />}

@@ -6,6 +6,8 @@ import RestaurantsPage from "./RestaurantsPage";
 import ActiveOrders from "./ActiveOrders";
 import OrderHistory from "./OrderHistory";
 import Profile from "../profile/Profile";
+import PaymentPage from "../payment/PaymentPage";
+import OrderPage from "./OrderPage";
 
 export default function CustomerDashboard() {
   // ==========================================
@@ -26,8 +28,27 @@ export default function CustomerDashboard() {
       case "restaurants":
         return (
           <RestaurantsPage
+            setActivePage={setActivePage}
           />
         );
+      
+      case "restaurant-menu":
+        return (
+          <OrderPage
+            restaurant={activePage.restaurant}
+            setActivePage={setActivePage}
+          />
+        );
+
+      case "payment":
+        return (
+            <PaymentPage
+                orderId={activePage.orderId}
+                order={activePage.order}
+                setActivePage={setActivePage}
+            />
+        );
+
       case "active-orders":
         return <ActiveOrders />;
 

@@ -118,18 +118,36 @@ export const updateOrderStatus = async (
 export const updatePaymentStatus =
   async (
     orderId,
-    payload
+    paymentStatus,
+    paymentMethod = null
   ) => {
 
     const response =
       await axiosInstance.patch(
-        `/order/${orderId}/payment-status/`,
-        payload
+        `/order/${orderId}/payment/`,
+        {
+          payment_status: paymentStatus,
+          payment_method: paymentMethod,
+        }
       );
 
     return response.data;
 
   };
+
+// ==========================================
+// PRINT BILL
+// ==========================================
+export const printOrderBill = async (orderId) => {
+  const response = await axiosInstance.get(
+    `/order/${orderId}/invoice/`,
+    {
+      responseType: "blob",
+    }
+  );
+
+  return response.data;
+};
 
 // ==========================================
 // TAKE PAYMENT

@@ -8,7 +8,9 @@ import { useSelector } from "react-redux";
 
 import { getNearbyRestaurants } from "../../services/customerService";
 
-export default function RestaurantsPage() {
+export default function RestaurantsPage({
+  setActivePage
+}) {
   const navigate = useNavigate();
 
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -130,9 +132,12 @@ export default function RestaurantsPage() {
   const handleRestaurantClick = (restaurant) => {
     // CUSTOMER
     if (isAuthenticated && user?.role === "customer") {
-      navigate(`/restaurants/${restaurant.id}/menu`);
+      setActivePage({
+      type: "restaurant-menu",
+      restaurant,
+    });
 
-      return;
+    return;
     }
 
     // PUBLIC USER

@@ -59,6 +59,10 @@ class ActiveSessionMiddleware:
     def __call__(self, request):
         from security.models import UserSession
 
+        # Skip Django admin
+        if not request.path.startswith("/api/"):
+            return self.get_response(request)
+        
         if (
             request.user.is_authenticated
             and request.session.session_key
