@@ -7,6 +7,8 @@ import {
   updateOrder,
   deleteOrder,
   updatePaymentStatus,
+
+  printOrderBill,
 } from "../../../services/orderService";
 
 // ==========================================
@@ -197,6 +199,7 @@ export default function OrderList() {
     setShowPaymentModal(true);
   };
 
+
   const handlePayment = async () => {
     try {
       await updatePaymentStatus(paymentOrder.id, "paid", selectedPaymentMethod);
@@ -218,6 +221,26 @@ export default function OrderList() {
       });
     }
   };
+
+  // ==========================================
+// PRINT BILL
+// ==========================================
+const handlePrintBill = async (orderId) => {
+  try {
+    const pdfBlob = await printOrderBill(orderId);
+
+    const fileURL = window.URL.createObjectURL(pdfBlob);
+
+    window.open(fileURL, "_blank");
+  } catch (error) {
+    console.log(error);
+
+    setAlert({
+      type: "danger",
+      message: "Failed to generate bill.",
+    });
+  }
+};
 
   // ==========================================
   // HANDLE INPUT CHANGE
@@ -767,6 +790,17 @@ export default function OrderList() {
         <ModalWrapper
           title="Edit Order"
           onClose={() => setShowEditModal(false)}
+          footerActions={
+    selectedOrder?.payment_status === "paid" && (
+      <button
+        type="button"
+        className="btn btn-success"
+        onClick={() => handlePrintBill(selectedOrder.id)}
+      >
+        Print Bill
+      </button>
+    )
+  }
           onSubmit={handleUpdateOrder}
         >
           {/* STATUS */}
@@ -1252,7 +1286,7 @@ export default function OrderList() {
 // REUSABLE MODAL
 // ==========================================
 function ModalWrapper({ title, children, onClose, onSubmit, showFooter = true,
-  submitText = "Save Changes", }) {
+  submitText = "Save Changes", footerActions, }) {
   return (
     <div
       className="
@@ -1317,6 +1351,7 @@ function ModalWrapper({ title, children, onClose, onSubmit, showFooter = true,
             {/* FOOTER */}
             {showFooter && (
               <div className="modal-footer">
+                {footerActions}
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -1328,6 +1363,13 @@ function ModalWrapper({ title, children, onClose, onSubmit, showFooter = true,
                 <button type="submit" className="btn btn-primary">
                   {submitText}
                 </button>
+
+                {/* <Button
+                  variant="primary"
+                  onClick={() => printBill(order.id)}
+                >
+                  Print Bill
+                </Button> */}
               </div>
             )}
           </form>

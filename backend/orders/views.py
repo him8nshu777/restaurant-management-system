@@ -34,9 +34,19 @@ from menu.utils.pricing import (
     calculate_product_taxes,
 )
 from orders.utils.pricing import calculate_order_totals
-from inventory.services import (deduct_order_inventory)
+from inventory.services import deduct_order_inventory
 from audits.services import create_activity_log
+from io import BytesIO
+
+from django.http import FileResponse
+
+from reportlab.pdfgen import canvas
+
+from reportlab.lib.units import mm
+
+from accounts.models import UserAddress
 User = get_user_model()
+
 
 # =========================================================
 # CREATE ORDER
@@ -70,17 +80,51 @@ class CreateOrderView(APIView):
             ).first()
 
         initial_status = (
-            "pending_approval"
-            if request.user.role == "customer"
-            else "saved"
+            "pending_approval" if request.user.role == "customer" else "saved"
         )
 
+        delivery_address = None
+
+        if (
+            data["order_type"] == "delivery"
+            and request.user.role == "customer"
+        ):
+
+            delivery_address = (
+                UserAddress.objects.filter(
+                    user=request.user,
+                    is_default=True,
+                )
+                .first()
+            )
+
+            # fallback if no default address
+            if not delivery_address:
+
+                delivery_address = (
+                    UserAddress.objects.filter(
+                        user=request.user
+                    )
+                    .first()
+                )
+
+            if not delivery_address:
+
+                return Response(
+                    {
+                        "error":
+                        "Please add a delivery address first."
+                    },
+                    status=400,
+                )
         # =================================================
         # CREATE ORDER
         # =================================================
         order = Order.objects.create(
             restaurant_id=restaurant_id,
             customer=(request.user if request.user.role == "customer" else None),
+            delivery_address=delivery_address,
+
             created_by=request.user,
             waiter=waiter,
             order_type=data["order_type"],
@@ -189,26 +233,19 @@ class CreateOrderView(APIView):
 
                     total_combo_items = len(combo_recipes)
 
-                    item_original_total = (
-                        variant.price * recipe.quantity
-                    )
+                    item_original_total = variant.price * recipe.quantity
 
                     allocated_price = (
-                        item_original_total
-                        / total_original_price
+                        item_original_total / total_original_price
                     ) * original_price
-                    allocated_price = allocated_price.quantize(
-                        Decimal("0.01")
-                    )
+                    allocated_price = allocated_price.quantize(Decimal("0.01"))
                     allocated_price = round(
                         allocated_price,
                         2,
                     )
                     tax_data = calculate_product_taxes(
                         product=product,
-                        taxable_amount=(
-                            allocated_price * quantity
-                        ),
+                        taxable_amount=(allocated_price * quantity),
                     )
                     combo_snapshot_items.append(
                         {
@@ -220,7 +257,7 @@ class CreateOrderView(APIView):
                             "taxes": tax_data["taxes"],
                         }
                     )
-                  
+
                     prepared_combo_items.append(
                         {
                             "product_id": product.id,
@@ -232,12 +269,7 @@ class CreateOrderView(APIView):
             else:
 
                 return Response(
-                    {
-                        "error": (
-                            f"Invalid item_type: "
-                            f"{item_data.get('item_type')}"
-                        )
-                    },
+                    {"error": (f"Invalid item_type: " f"{item_data.get('item_type')}")},
                     status=400,
                 )
             # =============================================
@@ -261,9 +293,7 @@ class CreateOrderView(APIView):
 
                 tax_data = calculate_product_taxes(
                     product=product_variant.product,
-                    taxable_amount=(
-                        final_price * quantity
-                    ),
+                    taxable_amount=(final_price * quantity),
                 )
 
                 for tax in tax_data["taxes"]:
@@ -292,7 +322,7 @@ class CreateOrderView(APIView):
                             name=tax["name"],
                             percentage=tax["percentage"],
                         )
-            
+
             # =============================================
             # ADDONS
             # =============================================
@@ -302,9 +332,7 @@ class CreateOrderView(APIView):
                 "addons",
                 [],
             ):
-                addon = Addon.objects.get(
-                    id=addon_data["addon_id"]
-                )
+                addon = Addon.objects.get(id=addon_data["addon_id"])
                 addon_quantity = Decimal(
                     str(
                         addon_data.get(
@@ -314,26 +342,19 @@ class CreateOrderView(APIView):
                     )
                 )
 
-                addon_price = Decimal(
-                        str(addon.price)
-                 )
+                addon_price = Decimal(str(addon.price))
 
-                addon_total = (
-                    addon_price
-                    * addon_quantity
-                )
+                addon_total = addon_price * addon_quantity
 
-                created_addon = (
-                    OrderItemAddon.objects.create(
-                        order_item=order_item,
-                        addon_id=addon.id,
-                        addon_name=addon.name,
-                        addon_price=addon_price,
-                        quantity=addon_quantity,
-                        total_price=addon_total,
-                    )
+                created_addon = OrderItemAddon.objects.create(
+                    order_item=order_item,
+                    addon_id=addon.id,
+                    addon_name=addon.name,
+                    addon_price=addon_price,
+                    quantity=addon_quantity,
+                    total_price=addon_total,
                 )
-                # add below when create tax mapping with addon items 
+                # add below when create tax mapping with addon items
                 # =========================================
                 # ADDON TAXES
                 # =========================================
@@ -460,9 +481,7 @@ class CreateOrderView(APIView):
             order=order,
             action="order_created",
             message=(
-                f"{request.user.username} "
-                f"created order "
-                f"{order.order_number}"
+                f"{request.user.username} " f"created order " f"{order.order_number}"
             ),
         )
         # =========================================
@@ -525,40 +544,27 @@ class OrderListView(APIView):
         # ======================================
         # BASE QUERY
         # ======================================
-        orders = Order.objects.filter(
-            restaurant_id=restaurant_id
-        )
+        orders = Order.objects.filter(restaurant_id=restaurant_id)
 
         # ======================================
         # KITCHEN FILTER
         # ======================================
-        if (
-            request.query_params.get("kitchen")
-            == "true"
-        ):
-            orders = orders.exclude(
-                status="pending_approval"
-            )
+        if request.query_params.get("kitchen") == "true":
+            orders = orders.exclude(status="pending_approval")
 
         # ======================================
         # WAITER ONLY SEES HIS ORDERS
         # ======================================
         if request.user.role == "waiter":
 
-            orders = orders.filter(
-                waiter=request.user
-            )
+            orders = orders.filter(waiter=request.user)
 
         # ======================================
         # DELIVERY STAFF
         # ======================================
         elif request.user.role == "delivery":
-            delivery_requests = request.query_params.get(
-                "delivery_requests"
-            )
-            delivery_history = request.query_params.get(
-                "delivery_history"
-            )
+            delivery_requests = request.query_params.get("delivery_requests")
+            delivery_history = request.query_params.get("delivery_history")
 
             # ======================================
             # AVAILABLE ORDERS TO ACCEPT
@@ -588,13 +594,10 @@ class OrderListView(APIView):
             # ======================================
             else:
 
-                orders = orders.filter(
-                    delivery_staff=request.user
-                ).exclude(
+                orders = orders.filter(delivery_staff=request.user).exclude(
                     delivery_status="delivered"
                 )
-        
-       
+
         # ======================================
         # LOAD RELATIONS
         # ======================================
@@ -842,7 +845,6 @@ class UpdateOrderView(APIView):
 
             existing_addon_ids = []
 
-
             # =================================================
             # UPDATE ADDONS
             # =================================================
@@ -857,9 +859,7 @@ class UpdateOrderView(APIView):
 
                 addon_row_id = addon_data.get("id")
 
-                addon_master = Addon.objects.get(
-                    id=addon_data["addon_id"]
-                )
+                addon_master = Addon.objects.get(id=addon_data["addon_id"])
 
                 addon_quantity = Decimal(
                     str(
@@ -870,14 +870,9 @@ class UpdateOrderView(APIView):
                     )
                 )
 
-                addon_price = Decimal(
-                    str(addon_master.price)
-                )
+                addon_price = Decimal(str(addon_master.price))
 
-                addon_total = (
-                    addon_price
-                    * addon_quantity
-                )
+                addon_total = addon_price * addon_quantity
 
                 # =============================================
                 # UPDATE EXISTING ADDON
@@ -922,9 +917,7 @@ class UpdateOrderView(APIView):
             # =================================================
             # DELETE REMOVED ADDONS
             # =================================================
-            order_item.addons.exclude(
-                id__in=existing_addon_ids
-            ).delete()
+            order_item.addons.exclude(id__in=existing_addon_ids).delete()
             # =================================================
             # DELETE REMOVED ADDONS
             # =================================================
@@ -934,7 +927,6 @@ class UpdateOrderView(APIView):
         # DELETE REMOVED ITEMS
         # =================================================
         order.items.exclude(id__in=existing_item_ids).delete()
-
 
         # =================================================
         # CLEAR OLD SERVICE CHARGES
@@ -1023,17 +1015,12 @@ class UpdateOrderView(APIView):
 
         order.tax_amount = totals["tax_total"]
 
-        order.service_charge_amount = (
-            totals["service_charge_total"]
-        )
+        order.service_charge_amount = totals["service_charge_total"]
 
         order.grand_total = totals["grand_total"]
         new_status = data.get("status")
 
-        if (
-            previous_status != "confirmed"
-            and new_status == "confirmed"
-        ):
+        if previous_status != "confirmed" and new_status == "confirmed":
             order.confirmed_at = timezone.now()
 
         if new_status:
@@ -1095,10 +1082,7 @@ class UpdateOrderView(APIView):
                 ),
             )
 
-            if (
-                previous_status == "pending_approval"
-                and order.status == "confirmed"
-            ):
+            if previous_status == "pending_approval" and order.status == "confirmed":
                 create_activity_log(
                     restaurant=order.restaurant,
                     user=request.user,
@@ -1110,7 +1094,7 @@ class UpdateOrderView(APIView):
                         f"{request.user.get_full_name() or request.user.email}"
                     ),
                 )
-        
+
         if previous_waiter != order.waiter:
 
             create_activity_log(
@@ -1118,25 +1102,17 @@ class UpdateOrderView(APIView):
                 user=request.user,
                 order=order,
                 action="waiter_changed",
-                message=(
-                    f"Waiter changed for order "
-                    f"{order.order_number}"
-                ),
+                message=(f"Waiter changed for order " f"{order.order_number}"),
             )
 
-        if (
-            previous_status != "cancelled"
-            and order.status == "cancelled"
-        ):
+        if previous_status != "cancelled" and order.status == "cancelled":
 
             create_activity_log(
                 restaurant=order.restaurant,
                 user=request.user,
                 order=order,
                 action="cancelled",
-                message=(
-                    f"Order {order.order_number} cancelled"
-                ),
+                message=(f"Order {order.order_number} cancelled"),
             )
         # =================================================
         # SAVE TAXES
@@ -1215,9 +1191,7 @@ class UpdateOrderView(APIView):
         # SOCKET EVENT
         # =================================================
         channel_layer = get_channel_layer()
-        if (
-            order.status != "pending_approval"
-        ):
+        if order.status != "pending_approval":
             async_to_sync(channel_layer.group_send)(
                 f"kitchen_{order.restaurant.id}",
                 {
@@ -1228,7 +1202,6 @@ class UpdateOrderView(APIView):
                     },
                 },
             )
-
 
         return Response(
             {
@@ -1297,9 +1270,7 @@ class DeleteOrderView(APIView):
             order=order,
             action="order_deleted",
             message=(
-                f"{request.user.username} "
-                f"deleted order "
-                f"{order.order_number}"
+                f"{request.user.username} " f"deleted order " f"{order.order_number}"
             ),
         )
         # =============================================
@@ -1354,11 +1325,7 @@ class UpdateOrderStatusView(APIView):
         # ==========================================
         # SET READY TIME
         # ==========================================
-        if (
-            previous_status != "ready"
-            and new_status == "ready"
-            and not order.ready_at
-        ):
+        if previous_status != "ready" and new_status == "ready" and not order.ready_at:
             order.ready_at = timezone.now()
             update_fields.append("ready_at")
 
@@ -1366,10 +1333,7 @@ class UpdateOrderStatusView(APIView):
 
         order.save(update_fields=update_fields)
 
-        if (
-            request.user.role != "customer"
-            and previous_status != new_status
-        ):
+        if request.user.role != "customer" and previous_status != new_status:
             create_activity_log(
                 restaurant=order.restaurant,
                 user=request.user,
@@ -1399,18 +1363,10 @@ class UpdateOrderStatusView(APIView):
         # ==========================================
         # ORDER READY
         # ==========================================
-        if (
-            previous_status != "ready"
-            and order.status == "ready"
-        ):
+        if previous_status != "ready" and order.status == "ready":
 
-            if (
-                order.order_type == "dine_in"
-                and order.waiter
-            ):
-                async_to_sync(
-                    channel_layer.group_send
-                )(
+            if order.order_type == "dine_in" and order.waiter:
+                async_to_sync(channel_layer.group_send)(
                     f"waiter_{order.waiter.id}",
                     {
                         "type": "send_order_event",
@@ -1422,12 +1378,9 @@ class UpdateOrderStatusView(APIView):
                 )
 
             elif (
-                order.order_type == "delivery"
-                and order.delivery_status == "unassigned"
+                order.order_type == "delivery" and order.delivery_status == "unassigned"
             ):
-                async_to_sync(
-                    channel_layer.group_send
-                )(
+                async_to_sync(channel_layer.group_send)(
                     f"delivery_{order.restaurant.id}",
                     {
                         "type": "send_order_event",
@@ -1438,11 +1391,7 @@ class UpdateOrderStatusView(APIView):
                     },
                 )
 
-        return Response(
-            {
-                "message": "Status updated successfully"
-            }
-        )
+        return Response({"message": "Status updated successfully"})
 
 
 class AcceptDeliveryOrderView(APIView):
@@ -1459,13 +1408,7 @@ class AcceptDeliveryOrderView(APIView):
 
         if order.delivery_staff:
 
-            return Response(
-                {
-                    "error":
-                    "Order already assigned"
-                },
-                status=400
-            )
+            return Response({"error": "Order already assigned"}, status=400)
 
         order.delivery_staff = request.user
         order.delivery_status = "assigned"
@@ -1483,12 +1426,8 @@ class AcceptDeliveryOrderView(APIView):
             ),
         )
 
-        return Response(
-            {
-                "message":
-                "Order accepted"
-            }
-        )
+        return Response({"message": "Order accepted"})
+
 
 class UpdateDeliveryStatusView(APIView):
 
@@ -1500,40 +1439,28 @@ class UpdateDeliveryStatusView(APIView):
             delivery_staff=request.user,
         )
 
-        delivery_status = request.data.get(
-            "delivery_status"
-        )
+        delivery_status = request.data.get("delivery_status")
 
-        payment_status = request.data.get(
-            "payment_status"
-        )
+        payment_status = request.data.get("payment_status")
 
         update_fields = []
 
         if delivery_status:
             order.delivery_status = delivery_status
-            update_fields.append(
-                "delivery_status"
-            )
+            update_fields.append("delivery_status")
 
             # Auto complete order
             if delivery_status == "delivered":
                 order.status = "completed"
 
-                update_fields.append(
-                    "status"
-                )
+                update_fields.append("status")
 
         if payment_status:
             order.payment_status = payment_status
 
-            update_fields.append(
-                "payment_status"
-            )
+            update_fields.append("payment_status")
 
-        order.save(
-            update_fields=update_fields
-        )
+        order.save(update_fields=update_fields)
 
         if delivery_status:
 
@@ -1551,10 +1478,9 @@ class UpdateDeliveryStatusView(APIView):
                 ),
             )
 
-        return Response({
-            "message": "Updated"
-        })
-    
+        return Response({"message": "Updated"})
+
+
 class UpdatePaymentStatusView(APIView):
 
     def patch(self, request, order_id):
@@ -1564,13 +1490,9 @@ class UpdatePaymentStatusView(APIView):
             id=order_id,
         )
 
-        payment_status = request.data.get(
-            "payment_status"
-        )
+        payment_status = request.data.get("payment_status")
 
-        payment_method = request.data.get(
-            "payment_method"
-        )
+        payment_method = request.data.get("payment_method")
 
         if not payment_status:
             return Response(
@@ -1586,9 +1508,7 @@ class UpdatePaymentStatusView(APIView):
 
             order.payment_method = payment_method
 
-            update_fields.append(
-                "payment_method"
-            )
+            update_fields.append("payment_method")
         if payment_status == "paid":
 
             order.paid_at = timezone.now()
@@ -1600,22 +1520,427 @@ class UpdatePaymentStatusView(APIView):
                 order.status = "confirmed"
                 update_fields.append("status")
 
-        order.save(
-            update_fields=update_fields
-        )
+        order.save(update_fields=update_fields)
 
         create_activity_log(
             restaurant=order.restaurant,
             user=request.user,
             order=order,
             action="payment_received",
-            message=(
-                f"Payment received for "
-                f"{order.order_number}"
-            ),
+            message=(f"Payment received for " f"{order.order_number}"),
         )
 
-        return Response({
-            "message": "Payment updated successfully"
-        })
-    
+        return Response({"message": "Payment updated successfully"})
+
+
+# =========================================================
+# THERMAL BILL PDF
+# =========================================================
+class PrintInvoiceView(APIView):
+
+    def get(self, request, order_id):
+
+        order = (
+            Order.objects.select_related(
+                "restaurant",
+                "table",
+                "floor",
+                "area",
+                "waiter",
+                "customer",
+                "delivery_staff",
+                "delivery_address",
+            )
+            .prefetch_related(
+                "items",
+                "items__addons",
+                "taxes",
+                "service_charges",
+            )
+            .get(id=order_id)
+        )
+
+        buffer = BytesIO()
+
+        # ======================================
+        # 80MM THERMAL SIZE
+        # ======================================
+        width = 80 * mm
+        height = 300 * mm
+
+        pdf = canvas.Canvas(
+            buffer,
+            pagesize=(width, height),
+        )
+
+        y = height - 20
+
+        restaurant = order.restaurant
+
+        # ======================================
+        # RESTAURANT DETAILS
+        # ======================================
+        pdf.setFont(
+            "Helvetica-Bold",
+            12,
+        )
+
+        pdf.drawCentredString(
+            width / 2,
+            y,
+            restaurant.name,
+        )
+
+        y -= 15
+
+        pdf.setFont(
+            "Helvetica",
+            8,
+        )
+
+        pdf.drawCentredString(
+            width / 2,
+            y,
+            restaurant.address or "",
+        )
+
+        y -= 12
+
+        pdf.drawCentredString(width / 2, y, f"GST: {restaurant.gst_number}")
+
+        y -= 15
+
+        pdf.line(
+            5,
+            y,
+            width - 5,
+            y,
+        )
+
+        y -= 15
+
+        # ======================================
+        # ORDER DETAILS
+        # ======================================
+        pdf.drawString(5, y, f"Order: {order.order_number}")
+
+        y -= 12
+        created_time = timezone.localtime(
+            order.created_at
+        )
+        pdf.drawString(
+            5,
+            y,
+            f"Order Time: {created_time.strftime('%d-%m-%Y %I:%M %p')}",
+        )
+        print("order.created_at",order.created_at)
+        y -= 12
+
+        if order.paid_at:
+
+            paid_time = timezone.localtime(
+                order.paid_at
+            )
+            pdf.drawString(
+                5,
+                y,
+                f"Payment Time: {paid_time.strftime('%d-%m-%Y %I:%M %p')}",
+            )
+
+            y -= 12
+            print("order.paid_at",order.paid_at)
+
+        y -= 12
+
+        pdf.drawString(
+            5,
+            y,
+            f"Printed: {timezone.localtime().strftime('%d-%m-%Y %I:%M %p')}",
+        )
+
+        y -= 12
+        if order.order_type == "dine_in":
+
+            if order.floor:
+                pdf.drawString(
+                    5,
+                    y,
+                    f"Floor: {order.floor.name}",
+                )
+                y -= 12
+
+            if order.area:
+                pdf.drawString(
+                    5,
+                    y,
+                    f"Area: {order.area.name}",
+                )
+                y -= 12
+
+            if order.table:
+                pdf.drawString(
+                    5,
+                    y,
+                    f"Table: {order.table.table_number}",
+                )
+                y -= 12
+
+            if order.waiter:
+                pdf.drawString(
+                    5,
+                    y,
+                    f"Waiter: {order.waiter.username}",
+                )
+                y -= 12
+
+
+        if order.order_type == "delivery":
+
+            pdf.drawString(
+                5,
+                y,
+                f"Customer: {order.customer.username}",
+            )
+
+            y -= 12
+
+            if order.customer.phone:
+                pdf.drawString(
+                    5,
+                    y,
+                    f"Phone: {order.customer.phone}",
+                )
+
+                y -= 12
+
+            if order.delivery_address:
+
+                address = (
+                    f"{order.delivery_address.address_line_1}, "
+                    f"{order.delivery_address.city}"
+                )
+
+                pdf.drawString(
+                    5,
+                    y,
+                    "Delivery Address:",
+                )
+
+                y -= 12
+                print("address", address)
+                pdf.drawString(
+                    10,
+                    y,
+                    address[:55],
+                )
+
+                y -= 12
+
+            if order.delivery_staff:
+
+                pdf.drawString(
+                    5,
+                    y,
+                    f"Delivery By: {order.delivery_staff.username}",
+                )
+
+                y -= 12
+        
+        
+        if order.order_type == "takeaway":
+
+            if order.customer:
+
+                pdf.drawString(
+                    5,
+                    y,
+                    f"Customer: {order.customer.username}",
+                )
+
+                y -= 12
+
+                if order.customer.phone:
+
+                    pdf.drawString(
+                        5,
+                        y,
+                        f"Phone: {order.customer.phone}",
+                    )
+
+                    y -= 12
+                    
+        pdf.line(
+            5,
+            y,
+            width - 5,
+            y,
+        )
+
+        y -= 15
+
+        # ======================================
+        # ITEMS
+        # ======================================
+        pdf.setFont(
+            "Helvetica-Bold",
+            8,
+        )
+
+
+        pdf.drawString(5, y, "ITEM")
+
+        pdf.drawRightString(width - 5, y, "AMOUNT")
+
+        y -= 12
+
+        pdf.setFont(
+            "Helvetica",
+            8,
+        )
+
+        for item in order.items.all():
+
+            pdf.drawString(5, y, f"{item.item_name} x{item.quantity}")
+
+            pdf.drawRightString(width - 5, y, f"{item.total_price}")
+
+            y -= 10
+
+            # ===============================
+            # ADDONS
+            # ===============================
+            for addon in item.addons.all():
+
+                pdf.drawString(15, y, f"+ {addon.addon_name}")
+
+                pdf.drawRightString(width - 5, y, str(addon.total_price))
+
+                y -= 10
+
+        pdf.line(
+            5,
+            y,
+            width - 5,
+            y,
+        )
+
+        y -= 15
+
+        # ======================================
+        # TAXES
+        # ======================================
+        for tax in order.taxes.all():
+
+            pdf.drawString(
+                5,
+                y,
+                tax.name,
+            )
+
+            pdf.drawRightString(
+                width - 5,
+                y,
+                str(tax.amount),
+            )
+
+            y -= 10
+
+        # ======================================
+        # SERVICE CHARGES
+        # ======================================
+        for charge in order.service_charges.all():
+
+            pdf.drawString(
+                5,
+                y,
+                charge.name,
+            )
+
+            pdf.drawRightString(
+                width - 5,
+                y,
+                str(charge.amount),
+            )
+
+            y -= 10
+
+        y -= 10
+
+        # ======================================
+        # SUMMARY
+        # ======================================
+        pdf.drawString(5, y, "Subtotal")
+
+        pdf.drawRightString(width - 5, y, str(order.subtotal))
+
+        y -= 12
+
+        pdf.drawString(5, y, "Tax")
+
+        pdf.drawRightString(width - 5, y, str(order.tax_amount))
+
+        y -= 12
+
+        pdf.drawString(5, y, "Service")
+
+        pdf.drawRightString(width - 5, y, str(order.service_charge_amount))
+
+        y -= 12
+
+        pdf.drawString(5, y, "Discount")
+
+        pdf.drawRightString(width - 5, y, str(order.discount_amount))
+
+        y -= 15
+
+        pdf.line(
+            5,
+            y,
+            width - 5,
+            y,
+        )
+
+        y -= 15
+
+        pdf.setFont(
+            "Helvetica-Bold",
+            10,
+        )
+
+        pdf.drawString(5, y, "Grand Total")
+
+        pdf.drawRightString(width - 5, y, str(order.grand_total))
+
+        y -= 20
+
+        # ======================================
+        # PAYMENT
+        # ======================================
+        pdf.setFont(
+            "Helvetica",
+            8,
+        )
+
+        pdf.drawString(5, y, f"Payment: {order.payment_method}")
+
+        y -= 12
+
+        pdf.drawString(5, y, f"Status: {order.payment_status}")
+
+        y -= 20
+
+        # ======================================
+        # FOOTER
+        # ======================================
+        pdf.drawCentredString(width / 2, y, "Thank You Visit Again")
+
+        pdf.save()
+
+        buffer.seek(0)
+
+        return FileResponse(
+            buffer,
+            as_attachment=False,
+            filename=f"{order.order_number}.pdf",
+            content_type="application/pdf",
+        )

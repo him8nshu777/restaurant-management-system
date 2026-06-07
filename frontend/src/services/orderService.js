@@ -136,6 +136,20 @@ export const updatePaymentStatus =
   };
 
 // ==========================================
+// PRINT BILL
+// ==========================================
+export const printOrderBill = async (orderId) => {
+  const response = await axiosInstance.get(
+    `/order/${orderId}/invoice/`,
+    {
+      responseType: "blob",
+    }
+  );
+
+  return response.data;
+};
+
+// ==========================================
 // TAKE PAYMENT
 // ==========================================
 export const takePayment = async (
