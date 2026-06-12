@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
+import {useSelector, useDispatch } from "react-redux";
 
 import { logout } from "../../src/auth/authSlice";
 
@@ -7,8 +7,17 @@ const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || "ws://127.0.0.1:8000";
 
 export default function ForceLogoutListener() {
   const dispatch = useDispatch();
+  const user = useSelector(
+  (state) => state.auth.user
+);
 
   useEffect(() => {
+    if (!user) return;
+
+  // STAFF ONLY
+  if (user.role === "customer") {
+    return;
+  }
     const token = localStorage.getItem("access");
 
     if (!token) return;
@@ -42,7 +51,7 @@ export default function ForceLogoutListener() {
     return () => {
       socket.close();
     };
-  }, []);
+  }, [user, dispatch]);
 
   return null;
 }

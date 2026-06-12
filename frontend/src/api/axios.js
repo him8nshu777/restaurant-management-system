@@ -8,6 +8,17 @@ axiosInstance.interceptors.request.use(
 
   (config) => {
 
+     const publicUrls = [
+      "/auth/login/",
+      "/auth/customer/login/",
+      "/auth/register/",
+      "/auth/customer/register/",
+    ];
+    const isPublic = publicUrls.some(
+      (url) => config.url?.includes(url)
+    );
+
+    if (!isPublic) {
     const token =
       localStorage.getItem(
         "access"
@@ -18,6 +29,7 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization =
         `Bearer ${token}`;
     }
+  }
 
     return config;
   },
