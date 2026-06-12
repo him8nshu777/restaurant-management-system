@@ -361,11 +361,11 @@ const managerMenu = [
   // ==========================================
   // BILLING
   // ==========================================
-  {
-    key: "billing",
-    label: "Billing",
-    icon: <ReceiptCutoff />,
-  },
+  // {
+  //   key: "billing",
+  //   label: "Billing",
+  //   icon: <ReceiptCutoff />,
+  // },
   {
     key: "kitchen",
     label: "Kitchen",
