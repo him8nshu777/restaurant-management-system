@@ -320,6 +320,7 @@ export default function ServiceCharges() {
                       </td>
 
                       <td>
+                        <div className="action-buttons">
                         <button
                           className="
                           btn
@@ -342,6 +343,7 @@ export default function ServiceCharges() {
                         >
                           Delete
                         </button>
+                        </div>
                       </td>
                     </tr>
                   ))

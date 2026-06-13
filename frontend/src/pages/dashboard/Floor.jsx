@@ -303,6 +303,7 @@ export default function Floor() {
                     </td>
 
                     <td>
+                      <div className="action-buttons">
                       {/* EDIT */}
                       <button
                         className="
@@ -340,6 +341,7 @@ export default function Floor() {
                       >
                         Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

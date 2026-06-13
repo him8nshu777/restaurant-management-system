@@ -258,6 +258,7 @@ export default function Addons() {
                     <td>{new Date(addon.created_at).toLocaleDateString()}</td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => openEditModal(addon)}
@@ -280,6 +281,7 @@ export default function Addons() {
                       >
                         {addon.is_active ? "Deactivate" : "Activate"}
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

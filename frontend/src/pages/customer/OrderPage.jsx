@@ -7,9 +7,7 @@ import { createOrder } from "../../services/orderService";
 // ==========================================
 // CUSTOMER RESTAURANT PAGE (FIXED)
 // ==========================================
-export default function OrderPage({
-  setActivePage, restaurant
-}) {
+export default function OrderPage({ setActivePage, restaurant }) {
   // const { restaurantId } = useParams();
   const restaurantId = restaurant?.id;
 
@@ -305,105 +303,104 @@ export default function OrderPage({
   };
 
   const createPOSOrder = async () => {
-    
     // ==========================================
-      // PAYLOAD
+    // PAYLOAD
+    // ==========================================
+    const payload = {
       // ==========================================
-      const payload = {
-        // ==========================================
-        // ORDER TYPE
-        // ==========================================
-        order_type: "delivery",
+      // ORDER TYPE
+      // ==========================================
+      order_type: "delivery",
+
+      // ==========================================
+      // NOTES
+      // ==========================================
+      notes: orderNotes,
+
+      payment_method: paymentMethod,
+
+      // ==========================================
+      // TOTALS
+      // ==========================================
+      subtotal: cartSubtotal,
+
+      tax_total: totalTax,
+
+      service_charge_total: totalServiceCharge,
+
+      grand_total: totalPrice,
+
+      // ==========================================
+      // PAYMENT STATUS
+      // ==========================================
+      payment_status: paymentMethod === "cash" ? "pending" : "paid",
+
+      // order_status: "pending_approval",
+
+      // ==========================================
+      // SERVICE CHARGES
+      // ==========================================
+      service_charges: serviceChargeBreakdown.map((charge) => ({
+        name: charge.name,
+        charge_type: charge.charge_type,
+        value: charge.value,
+        amount: charge.amount,
+      })),
+
+      // ==========================================
+      // ITEMS
+      // ==========================================
+      items: cartItems.map((item) => ({
+        item_type: item.type,
+
+        product_variant_id: item.type === "product" ? item.variant_id : null,
+
+        combo_id: item.type === "combo" ? item.combo_id : null,
+
+        item_name:
+          item.type === "product" ? item.product_name : item.combo_name,
+
+        original_price: item.original_price,
+
+        final_price: item.final_price,
+
+        dynamic_pricing_name: item.dynamic_pricing_name,
+
+        quantity: item.quantity,
+
+        notes: item.item_notes,
 
         // ==========================================
-        // NOTES
+        // ITEM TOTAL
         // ==========================================
-        notes: orderNotes,
-
-        payment_method: paymentMethod,
-
-        // ==========================================
-        // TOTALS
-        // ==========================================
-        subtotal: cartSubtotal,
-
-        tax_total: totalTax,
-
-        service_charge_total: totalServiceCharge,
-
-        grand_total: totalPrice,
+        total_price:
+          (Number(item.final_price) +
+            item.selected_addons.reduce(
+              (sum, addon) => sum + Number(addon.price),
+              0,
+            )) *
+          item.quantity,
 
         // ==========================================
-        // PAYMENT STATUS
+        // ITEM TAXES
         // ==========================================
-        payment_status: paymentMethod === "cash" ? "pending" : "paid",
-
-        // order_status: "pending_approval",
+        taxes: item.taxes || [],
 
         // ==========================================
-        // SERVICE CHARGES
+        // ADDONS
         // ==========================================
-        service_charges: serviceChargeBreakdown.map((charge) => ({
-          name: charge.name,
-          charge_type: charge.charge_type,
-          value: charge.value,
-          amount: charge.amount,
+        addons: item.selected_addons.map((addon) => ({
+          addon_id: addon.id,
+          addon_name: addon.name,
+          addon_price: addon.price,
+
+          quantity: addon.quantity,
         })),
+      })),
+    };
 
-        // ==========================================
-        // ITEMS
-        // ==========================================
-        items: cartItems.map((item) => ({
-          item_type: item.type,
-
-          product_variant_id: item.type === "product" ? item.variant_id : null,
-
-          combo_id: item.type === "combo" ? item.combo_id : null,
-
-          item_name:
-            item.type === "product" ? item.product_name : item.combo_name,
-
-          original_price: item.original_price,
-
-          final_price: item.final_price,
-
-          dynamic_pricing_name: item.dynamic_pricing_name,
-
-          quantity: item.quantity,
-
-          notes: item.item_notes,
-
-          // ==========================================
-          // ITEM TOTAL
-          // ==========================================
-          total_price:
-            (Number(item.final_price) +
-              item.selected_addons.reduce(
-                (sum, addon) => sum + Number(addon.price),
-                0,
-              )) *
-            item.quantity,
-
-          // ==========================================
-          // ITEM TAXES
-          // ==========================================
-          taxes: item.taxes || [],
-
-          // ==========================================
-          // ADDONS
-          // ==========================================
-          addons: item.selected_addons.map((addon) => ({
-            addon_id: addon.id,
-            addon_name: addon.name,
-            addon_price: addon.price,
-
-            quantity: addon.quantity,
-          })),
-        })),
-      };
-
-  return await createOrder(restaurantId, payload);
-};
+    return await createOrder(restaurantId, payload);
+  };
   // ==========================================
   // CUSTOMER CHECKOUT
   // ==========================================
@@ -433,10 +430,8 @@ export default function OrderPage({
       //   return;
       // }
 
-      
       const data = await createPOSOrder();
 
-     
       // ==========================================
       // SUCCESS
       // ==========================================
@@ -478,15 +473,14 @@ export default function OrderPage({
         return;
       }
 
-      
       const data = await createPOSOrder();
       console.log("ORDER RESPONSE:", data);
 
       setActivePage({
-    type: "payment",
-    orderId: data.order_id,
-    order: data,
-});
+        type: "payment",
+        orderId: data.order_id,
+        order: data,
+      });
     } catch (error) {
       console.log("FULL ERROR:", error.response?.data);
 
@@ -638,7 +632,9 @@ export default function OrderPage({
     <div className="container-fluid py-4">
       {/* ALERT */}
       {alert && (
-        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
+        <div className={`alert alert-${alert.type} d-none d-md-block`}>
+          {alert.message}
+        </div>
       )}
 
       {/* HEADER */}
@@ -950,15 +946,16 @@ export default function OrderPage({
 
       {/* CART */}
       {showCart && (
-        <div
-          className="position-fixed top-0 end-0 bg-white shadow-lg h-100 p-4"
-          style={{ width: "500px", zIndex: 9999, overflowY: "auto" }}
-        >
+        <div className="pos-cart">
           <div className="d-flex justify-content-between mb-4">
             <h4>Cart</h4>
             <button className="btn-close" onClick={() => setShowCart(false)} />
           </div>
-
+          {alert && (
+            <div className={`alert alert-${alert.type} mb-3 d-block d-md-none`}>
+              {alert.message}
+            </div>
+          )}
           {cartItems.length === 0 && (
             <div className="text-center text-muted">Cart is empty</div>
           )}

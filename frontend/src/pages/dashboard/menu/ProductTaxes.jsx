@@ -233,6 +233,7 @@ export default function ProductTaxes() {
                     <td>{mapping.tax_percentage}%</td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => openEditModal(mapping)}
@@ -246,6 +247,7 @@ export default function ProductTaxes() {
                       >
                         Remove
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

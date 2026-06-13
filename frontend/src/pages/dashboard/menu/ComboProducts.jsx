@@ -237,6 +237,7 @@ export default function ComboProducts() {
                     <td>{mapping.quantity}</td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => openEditModal(mapping)}
@@ -250,6 +251,7 @@ export default function ComboProducts() {
                       >
                         Remove
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

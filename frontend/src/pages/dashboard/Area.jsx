@@ -304,6 +304,7 @@ export default function Area() {
                     </td>
 
                     <td>
+                      <div className="action-buttons">
                       {/* EDIT */}
                       <button
                         className="btn btn-warning btn-sm me-2"
@@ -329,6 +330,7 @@ export default function Area() {
                       >
                         Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

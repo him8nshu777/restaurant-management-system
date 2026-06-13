@@ -252,6 +252,7 @@ export default function DynamicPricing() {
                     <td>{item.is_active ? "Active" : "Inactive"}</td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => openEditModal(item)}
@@ -265,6 +266,7 @@ export default function DynamicPricing() {
                       >
                         Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

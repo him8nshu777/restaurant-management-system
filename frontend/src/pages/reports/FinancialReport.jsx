@@ -103,9 +103,13 @@ export default function FinancialReport() {
       <div
         className="
           d-flex
-          justify-content-between
-          align-items-center
-          mb-4
+    flex-column
+    flex-md-row
+    justify-content-between
+    align-items-start
+    align-items-md-center
+    gap-3
+    mb-4
         "
       >
         <h2 className="fw-bold">Financial Report</h2>
@@ -113,12 +117,14 @@ export default function FinancialReport() {
         <div
           className="
             d-flex
-            gap-2
-            align-items-center
-          "
+      flex-column
+      flex-md-row
+      gap-2
+      align-items-stretch
+    align-items-md-center"
         >
           <select
-            className="form-select"
+            className="form-select w-auto"
             value={period}
             onChange={(e) => {
               const value = e.target.value;
@@ -142,30 +148,70 @@ export default function FinancialReport() {
 
           {period === "custom" && (
             <>
+        {/* Desktop */}
+        <div className="d-none d-md-flex gap-2">
+          <input
+            type="date"
+            className="form-control"
+            value={startDate}
+            onChange={(e) =>
+              setStartDate(e.target.value)
+            }
+          />
+
+          <input
+            type="date"
+            className="form-control"
+            value={endDate}
+            onChange={(e) =>
+              setEndDate(e.target.value)
+            }
+          />
+
+          <button
+            className="btn btn-primary"
+            onClick={handleApplyCustom}
+          >
+            Apply
+          </button>
+        </div>
+
+        {/* Mobile */}
+        <div className="d-md-none w-100">
+          <div className="row g-2">
+            <div className="col-6">
               <input
                 type="date"
                 className="form-control"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) =>
+                  setStartDate(e.target.value)
+                }
               />
+            </div>
 
+            <div className="col-6">
               <input
                 type="date"
                 className="form-control"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) =>
+                  setEndDate(e.target.value)
+                }
               />
+            </div>
 
+            <div className="col-12">
               <button
-                className="
-                  btn
-                  btn-primary
-                "
+                className="btn btn-primary w-100"
                 onClick={handleApplyCustom}
               >
                 Apply
               </button>
-            </>
+            </div>
+          </div>
+        </div>
+      </>
           )}
         </div>
       </div>

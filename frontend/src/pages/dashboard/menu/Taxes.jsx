@@ -258,6 +258,7 @@ export default function Taxes() {
                     </td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => openEditModal(tax)}
@@ -280,6 +281,7 @@ export default function Taxes() {
                       >
                         {tax.is_active ? "Deactivate" : "Activate"}
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

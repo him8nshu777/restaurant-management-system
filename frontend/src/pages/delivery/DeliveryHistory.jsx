@@ -254,12 +254,14 @@ export default function DeliveryHistory() {
                     </td>
                     <td>{new Date(order.completed_at).toLocaleString()}</td>
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-sm btn-primary"
                         onClick={() => openEditModal(order)}
                       >
                         Detail
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

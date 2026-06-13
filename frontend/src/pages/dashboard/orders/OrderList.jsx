@@ -746,6 +746,7 @@ const handlePrintBill = async (orderId) => {
                     <td>{new Date(order.created_at).toLocaleString()}</td>
 
                     <td>
+                      <div className="action-buttons">
                       {order.payment_status !== "paid" && (
                         <button
                           className="btn btn-success btn-sm me-2"
@@ -776,6 +777,7 @@ const handlePrintBill = async (orderId) => {
                       >
                         Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -323,6 +323,7 @@ export default function Ingredients() {
                     </td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => openEditModal(ingredient)}
@@ -345,6 +346,7 @@ export default function Ingredients() {
                       >
                         Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

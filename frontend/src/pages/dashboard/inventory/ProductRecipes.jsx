@@ -274,6 +274,7 @@ export default function ProductRecipes() {
                     </td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="
                         btn
@@ -296,6 +297,7 @@ export default function ProductRecipes() {
                       >
                         Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

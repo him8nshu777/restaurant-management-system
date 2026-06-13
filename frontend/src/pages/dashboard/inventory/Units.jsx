@@ -222,6 +222,7 @@ export default function Units() {
                     </td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => openEditModal(unit)}
@@ -242,6 +243,7 @@ export default function Units() {
                       >
                         Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

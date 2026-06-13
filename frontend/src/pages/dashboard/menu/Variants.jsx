@@ -325,6 +325,7 @@ export default function Variants() {
                     </td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => openEditModal(variant)}
@@ -347,6 +348,7 @@ export default function Variants() {
                       >
                         {variant.is_available ? "Disable" : "Enable"}
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

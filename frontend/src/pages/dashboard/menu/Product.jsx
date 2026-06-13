@@ -404,6 +404,7 @@ export default function Products() {
 
                     {/* ACTIONS */}
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => openEditModal(product)}
@@ -426,6 +427,8 @@ export default function Products() {
                       >
                         {product.is_available ? "Disable" : "Enable"}
                       </button>
+                      </div>
+
                     </td>
                   </tr>
                 ))}

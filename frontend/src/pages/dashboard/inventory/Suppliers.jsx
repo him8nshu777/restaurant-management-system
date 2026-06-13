@@ -291,6 +291,7 @@ export default function Suppliers() {
                     </td>
 
                     <td>
+                      <div className="action-buttons">
                       {/* EDIT */}
                       <button
                         className="
@@ -328,6 +329,7 @@ export default function Suppliers() {
                       >
                         Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

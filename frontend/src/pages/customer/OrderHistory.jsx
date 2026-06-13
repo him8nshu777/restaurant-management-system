@@ -195,7 +195,7 @@ const handlePrintBill = async (orderId) => {
           mb-4
         "
       >
-        <h2 className="fw-bold">Orders</h2>
+        <h2 className="fw-bold">Order History</h2>
       </div>
 
       {/* TABLE */}

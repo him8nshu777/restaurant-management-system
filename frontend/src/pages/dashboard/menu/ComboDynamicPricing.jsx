@@ -240,6 +240,7 @@ export default function ComboDynamicPricing() {
                     <td>{mapping.pricing_value}</td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => openEditModal(mapping)}
@@ -253,6 +254,7 @@ export default function ComboDynamicPricing() {
                       >
                         Remove
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

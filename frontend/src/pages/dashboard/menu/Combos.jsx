@@ -306,6 +306,7 @@ export default function Combos() {
                     </td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-warning btn-sm me-2"
                         onClick={() => openEditModal(combo)}
@@ -328,6 +329,7 @@ export default function Combos() {
                       >
                         {combo.is_active ? "Deactivate" : "Activate"}
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -249,6 +249,7 @@ export default function ComboRecipes() {
                     <td>{recipe.quantity}</td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="
                         btn
@@ -271,6 +272,7 @@ export default function ComboRecipes() {
                       >
                         Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

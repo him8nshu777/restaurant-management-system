@@ -378,6 +378,7 @@ export default function Categories() {
 
                     {/* ACTIONS */}
                     <td>
+                      <div className="action-buttons">
                       {/* EDIT */}
                       <button
                         className="
@@ -420,6 +421,7 @@ export default function Categories() {
                       >
                         Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -292,12 +292,14 @@ export default function ActiveOrders() {
                       </span>
                     </td>
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="btn btn-sm btn-primary"
                         onClick={() => openEditModal(order)}
                       >
                         Update
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

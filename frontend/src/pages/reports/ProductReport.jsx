@@ -96,8 +96,13 @@ export default function ProductReport() {
       <div
         className="
         d-flex
-        justify-content-between
-        mb-4
+    flex-column
+    flex-md-row
+    justify-content-between
+    align-items-start
+    align-items-md-center
+    gap-3
+    mb-4
       "
       >
 
@@ -105,93 +110,128 @@ export default function ProductReport() {
           Product Reports
         </h2>
 
-        <div
-          className="
-          d-flex
+        <div className="w-auto">
+  
+  {/* Main Filters */}
+  <div
+    className="
+      d-flex
+      flex-column
+      flex-md-row
+      gap-2
+      mb-2
+    "
+  >
+    <select
+      className="form-select"
+      style={{ minWidth: "140px" }}
+      value={period}
+      onChange={(e) =>
+        setPeriod(e.target.value)
+      }
+    >
+      <option value="week">Week</option>
+      <option value="month">Month</option>
+      <option value="year">Year</option>
+      <option value="custom">Custom</option>
+    </select>
+
+    <select
+      className="form-select"
+      value={reportType}
+      onChange={(e) =>
+        setReportType(e.target.value)
+      }
+    >
+      <option value="best">
+        Best Selling
+      </option>
+
+      <option value="worst">
+        Worst Selling
+      </option>
+    </select>
+  </div>
+
+  {/* Custom Date Filters */}
+  {period === "custom" && (
+    <>
+      {/* Desktop & Tablet */}
+      <div
+        className="
+          d-none
+          d-md-flex
           gap-2
         "
+      >
+        <input
+          type="date"
+          className="form-control"
+          value={startDate}
+          onChange={(e) =>
+            setStartDate(e.target.value)
+          }
+        />
+
+        <input
+          type="date"
+          className="form-control"
+          value={endDate}
+          onChange={(e) =>
+            setEndDate(e.target.value)
+          }
+        />
+
+        <button
+          className="btn btn-primary"
+          onClick={() =>
+            fetchReport("custom")
+          }
         >
+          Apply
+        </button>
+      </div>
 
-          <select
-            className="form-select"
-            value={period}
-            onChange={(e)=>
-              setPeriod(
-                e.target.value
-              )
-            }
-          >
-            <option value="week">
-              Week
-            </option>
+      {/* Mobile */}
+      <div className="d-md-none">
+        <div className="row g-2">
+          <div className="col-6">
+            <input
+              type="date"
+              className="form-control"
+              value={startDate}
+              onChange={(e) =>
+                setStartDate(e.target.value)
+              }
+            />
+          </div>
 
-            <option value="month">
-              Month
-            </option>
+          <div className="col-6">
+            <input
+              type="date"
+              className="form-control"
+              value={endDate}
+              onChange={(e) =>
+                setEndDate(e.target.value)
+              }
+            />
+          </div>
 
-            <option value="year">
-              Year
-            </option>
-
-            <option value="custom">
-              Custom
-            </option>
-          </select>
-
-          <select
-            className="form-select"
-            value={reportType}
-            onChange={(e)=>
-              setReportType(
-                e.target.value
-              )
-            }
-          >
-            <option value="best">
-              Best Selling
-            </option>
-
-            <option value="worst">
-              Worst Selling
-            </option>
-          </select>
-
-          {period === "custom" && (
-            <>
-              <input
-                type="date"
-                className="form-control"
-                value={startDate}
-                onChange={(e)=>
-                  setStartDate(
-                    e.target.value
-                  )
-                }
-              />
-
-              <input
-                type="date"
-                className="form-control"
-                value={endDate}
-                onChange={(e)=>
-                  setEndDate(
-                    e.target.value
-                  )
-                }
-              />
-
-              <button
-                className="btn btn-primary"
-                onClick={() =>
-                  fetchReport("custom")
-                }
-              >
-                Apply
-              </button>
-            </>
-          )}
-
+          <div className="col-12">
+            <button
+              className="btn btn-primary w-100"
+              onClick={() =>
+                fetchReport("custom")
+              }
+            >
+              Apply
+            </button>
+          </div>
         </div>
+      </div>
+    </>
+  )}
+</div>
 
       </div>
 

@@ -217,6 +217,7 @@ export default function Purchases() {
                     <td>{purchase.purchase_date}</td>
 
                     <td>
+                      <div className="action-buttons">
                       <button
                         className="
                         btn
@@ -239,6 +240,7 @@ export default function Purchases() {
                       >
                         Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -278,6 +278,7 @@ export default function Staff() {
                     </td>
 
                     <td>
+                    <div className="action-buttons">    
                       {/* EDIT BUTTON */}
                       <button
                         className="btn btn-warning btn-sm me-2"
@@ -297,6 +298,8 @@ export default function Staff() {
                       >
                         {staff.is_active ? "Disable" : "Enable"}
                       </button>
+                    </div>
+
                     </td>
                   </tr>
                 ))}
