@@ -1,21 +1,60 @@
-/* ==========================================
-SIDEBAR BASE
-========================================== */
 .sidebar {
+  position: sticky;
+  top: 0;
+  width: 260px;
+  height: 100dvh;
+  background-color: #111827;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-expanded {
+  width: 260px;
+}
+
+.sidebar-collapsed {
+  width: 90px;
+}
+
+.sidebar-menu-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+@media (max-width: 992px) {
+  .sidebar:not(.mobile-open) {
+    width: 90px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
     top: 0;
-    left: 0;
-
+    left: -260px;
     width: 260px;
-    height: 100vh;
+    height: 100dvh;
+    z-index: 2000;
+  }
 
-    background-color: #111827;
+  .sidebar.mobile-open {
+    left: 0;
+  }
+}
+.sidebar-backdrop{
 
-    overflow-y: auto;
-    overflow-x: hidden;
+    position:fixed;
 
-    transition: all 0.3s ease;
+    inset:0;
 
-    z-index: 1000;
+    background:rgba(0,0,0,.5);
+
+    z-index:1999;
 }
 
 .sidebar-menu-scroll {

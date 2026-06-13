@@ -1,6 +1,7 @@
+import { useState } from "react";
 import Sidebar from "./Sidebar";
 import "./dashboard.css";
-
+import { List } from "react-bootstrap-icons";
 // ==========================================
 // REUSABLE DASHBOARD LAYOUT
 // ==========================================
@@ -17,9 +18,22 @@ export default function DashboardLayout({
 
 }) {
 
-    return (
+    const [mobileSidebarOpen, setMobileSidebarOpen] =
+    useState(false);
 
-        <div className="d-flex">
+    return (
+        <>
+        {
+        mobileSidebarOpen && (
+            <div
+                className="sidebar-backdrop"
+                onClick={() =>
+                    setMobileSidebarOpen(false)
+                }
+            />
+        )
+    }
+        <div className="dashboard-shell" >
 
             {/* ==========================================
                 SIDEBAR
@@ -33,18 +47,36 @@ export default function DashboardLayout({
                 activeRestaurant={activeRestaurant}
 
                 setActiveRestaurant={setActiveRestaurant}
+
+                mobileSidebarOpen={mobileSidebarOpen}
+    setMobileSidebarOpen={setMobileSidebarOpen}
             />
 
 
             {/* ==========================================
                 MAIN CONTENT AREA
             ========================================== */}
-            <div className="dashboard-content flex-grow-1 p-4 bg-light min-vh-100">
+            <div className="dashboard-content">
+
+                <div className="mobile-header mb-3">
+
+        <button
+            className="btn btn-dark"
+            onClick={() =>
+                setMobileSidebarOpen(true)
+            }
+        >
+            <List />
+        </button>
+
+    </div>
+
 
                 {children}
 
             </div>
 
         </div>
+        </>
     );
 }

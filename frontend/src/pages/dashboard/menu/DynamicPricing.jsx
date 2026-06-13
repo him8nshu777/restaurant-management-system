@@ -43,17 +43,15 @@ export default function DynamicPricing() {
   const activeRestaurant = useSelector(
     (state) => state.restaurant.activeRestaurant,
   );
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ====================================================
   // FETCH DATA
@@ -222,55 +220,57 @@ const restaurantId =
       {/* TABLE */}
       <div className="card border-0 shadow-sm">
         <div className="card-body">
-          <table className="table align-middle">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Time</th>
-                <th>Days</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {pricingList.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.name}</td>
-
-                  <td>{item.pricing_type}</td>
-
-                  <td>{item.value}</td>
-
-                  <td>
-                    {item.start_time} -{item.end_time}
-                  </td>
-
-                  <td>{item.days}</td>
-
-                  <td>{item.is_active ? "Active" : "Inactive"}</td>
-
-                  <td>
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() => openEditModal(item)}
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Value</th>
+                  <th>Time</th>
+                  <th>Days</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {pricingList.map((item) => (
+                  <tr key={item.id}>
+                    <td>{item.name}</td>
+
+                    <td>{item.pricing_type}</td>
+
+                    <td>{item.value}</td>
+
+                    <td>
+                      {item.start_time} -{item.end_time}
+                    </td>
+
+                    <td>{item.days}</td>
+
+                    <td>{item.is_active ? "Active" : "Inactive"}</td>
+
+                    <td>
+                      <button
+                        className="btn btn-warning btn-sm me-2"
+                        onClick={() => openEditModal(item)}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

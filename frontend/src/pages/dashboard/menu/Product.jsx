@@ -63,17 +63,15 @@ export default function Products() {
   const activeRestaurant = useSelector(
     (state) => state.restaurant.activeRestaurant,
   );
-  const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ==================================================
   // FETCH DATA
@@ -326,112 +324,114 @@ const restaurantId =
       ====================================== */}
       <div className="card border-0 shadow-sm">
         <div className="card-body">
-          <table className="table align-middle">
-            <thead>
-              <tr>
-                <th>Image</th>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Image</th>
 
-                <th>Name</th>
+                  <th>Name</th>
 
-                <th>Category</th>
+                  <th>Category</th>
 
-                <th>Price</th>
+                  <th>Price</th>
 
-                <th>Veg</th>
+                  <th>Veg</th>
 
-                <th>Status</th>
+                  <th>Status</th>
 
-                <th>Actions</th>
-              </tr>
-            </thead>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {productList.map((product) => (
-                <tr key={product.id}>
-                  {/* IMAGE */}
-                  <td>
-                    {product.image ? (
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        width="60"
-                        height="60"
-                        className="rounded"
-                        style={{
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : (
-                      <div
-                        className="
+              <tbody>
+                {productList.map((product) => (
+                  <tr key={product.id}>
+                    {/* IMAGE */}
+                    <td>
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          width="60"
+                          height="60"
+                          className="rounded"
+                          style={{
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="
                           bg-light
                           rounded
                           d-flex
                           align-items-center
                           justify-content-center
                         "
-                        style={{
-                          width: "60px",
-                          height: "60px",
-                        }}
+                          style={{
+                            width: "60px",
+                            height: "60px",
+                          }}
+                        >
+                          No Image
+                        </div>
+                      )}
+                    </td>
+
+                    {/* NAME */}
+                    <td>{product.name}</td>
+
+                    {/* CATEGORY */}
+                    <td>{product.category_name}</td>
+
+                    {/* PRICE */}
+                    <td>₹{product.base_price}</td>
+
+                    {/* VEG */}
+                    <td>{product.is_veg ? "Veg" : "Non Veg"}</td>
+
+                    {/* STATUS */}
+                    <td>
+                      <span
+                        className={`badge ${
+                          product.is_available ? "bg-success" : "bg-danger"
+                        }`}
                       >
-                        No Image
-                      </div>
-                    )}
-                  </td>
+                        {product.is_available ? "Available" : "Unavailable"}
+                      </span>
+                    </td>
 
-                  {/* NAME */}
-                  <td>{product.name}</td>
+                    {/* ACTIONS */}
+                    <td>
+                      <button
+                        className="btn btn-warning btn-sm me-2"
+                        onClick={() => openEditModal(product)}
+                      >
+                        Edit
+                      </button>
 
-                  {/* CATEGORY */}
-                  <td>{product.category_name}</td>
+                      <button
+                        className="btn btn-danger btn-sm me-2"
+                        onClick={() => handleDeleteProduct(product.id)}
+                      >
+                        Delete
+                      </button>
 
-                  {/* PRICE */}
-                  <td>₹{product.base_price}</td>
-
-                  {/* VEG */}
-                  <td>{product.is_veg ? "Veg" : "Non Veg"}</td>
-
-                  {/* STATUS */}
-                  <td>
-                    <span
-                      className={`badge ${
-                        product.is_available ? "bg-success" : "bg-danger"
-                      }`}
-                    >
-                      {product.is_available ? "Available" : "Unavailable"}
-                    </span>
-                  </td>
-
-                  {/* ACTIONS */}
-                  <td>
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() => openEditModal(product)}
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      className="btn btn-danger btn-sm me-2"
-                      onClick={() => handleDeleteProduct(product.id)}
-                    >
-                      Delete
-                    </button>
-
-                    <button
-                      className={`btn btn-sm ${
-                        product.is_available ? "btn-secondary" : "btn-success"
-                      }`}
-                      onClick={() => handleToggleStatus(product.id)}
-                    >
-                      {product.is_available ? "Disable" : "Enable"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <button
+                        className={`btn btn-sm ${
+                          product.is_available ? "btn-secondary" : "btn-success"
+                        }`}
+                        onClick={() => handleToggleStatus(product.id)}
+                      >
+                        {product.is_available ? "Disable" : "Enable"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

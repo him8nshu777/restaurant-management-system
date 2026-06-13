@@ -54,17 +54,15 @@ export default function Floor() {
     (state) => state.restaurant.activeRestaurant,
   );
 
-  const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ==========================================
   // TOGGLE FLOOR STATUS
@@ -275,77 +273,79 @@ const restaurantId =
                 "
       >
         <div className="card-body">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Floor Number</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+          <div className="table-responsive">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Floor Number</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {floorList.map((floor) => (
-                <tr key={floor.id}>
-                  <td>{floor.name}</td>
+              <tbody>
+                {floorList.map((floor) => (
+                  <tr key={floor.id}>
+                    <td>{floor.name}</td>
 
-                  <td>{floor.floor_number}</td>
+                    <td>{floor.floor_number}</td>
 
-                  <td>
-                    <span
-                      className={`
+                    <td>
+                      <span
+                        className={`
         badge
         ${floor.is_active ? "bg-success" : "bg-danger"}
       `}
-                    >
-                      {floor.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
+                      >
+                        {floor.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
 
-                  <td>
-                    {/* EDIT */}
-                    <button
-                      className="
+                    <td>
+                      {/* EDIT */}
+                      <button
+                        className="
         btn
         btn-warning
         btn-sm
         me-2
       "
-                      onClick={() => openEditModal(floor)}
-                    >
-                      Edit
-                    </button>
+                        onClick={() => openEditModal(floor)}
+                      >
+                        Edit
+                      </button>
 
-                    {/* ACTIVE / INACTIVE */}
-                    <button
-                      className={`
+                      {/* ACTIVE / INACTIVE */}
+                      <button
+                        className={`
         btn
         btn-sm
         me-2
         ${floor.is_active ? "btn-secondary" : "btn-success"}
       `}
-                      onClick={() => handleToggleStatus(floor.id)}
-                    >
-                      {floor.is_active ? "Deactivate" : "Activate"}
-                    </button>
+                        onClick={() => handleToggleStatus(floor.id)}
+                      >
+                        {floor.is_active ? "Deactivate" : "Activate"}
+                      </button>
 
-                    {/* DELETE */}
-                    <button
-                      className="
+                      {/* DELETE */}
+                      <button
+                        className="
         btn
         btn-danger
         btn-sm
       "
-                      onClick={() => handleDeleteFloor(floor.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        onClick={() => handleDeleteFloor(floor.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

@@ -34,17 +34,15 @@ export default function Units() {
   const activeRestaurant = useSelector(
     (state) => state.restaurant.activeRestaurant,
   );
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   useEffect(() => {
     if (restaurantId) {
@@ -197,57 +195,59 @@ const restaurantId =
 
       <div className="card border-0 shadow-sm">
         <div className="card-body">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Code</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {unitList.map((unit) => (
-                <tr key={unit.id}>
-                  <td>{unit.name}</td>
-
-                  <td>{unit.code}</td>
-
-                  <td>
-                    <span
-                      className={`badge ${unit.is_active ? "bg-success" : "bg-danger"}`}
-                    >
-                      {unit.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-
-                  <td>
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() => openEditModal(unit)}
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      className={`btn btn-sm me-2 ${unit.is_active ? "btn-secondary" : "btn-success"}`}
-                      onClick={() => handleToggleStatus(unit.id)}
-                    >
-                      {unit.is_active ? "Deactivate" : "Activate"}
-                    </button>
-
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeleteUnit(unit.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Code</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {unitList.map((unit) => (
+                  <tr key={unit.id}>
+                    <td>{unit.name}</td>
+
+                    <td>{unit.code}</td>
+
+                    <td>
+                      <span
+                        className={`badge ${unit.is_active ? "bg-success" : "bg-danger"}`}
+                      >
+                        {unit.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+
+                    <td>
+                      <button
+                        className="btn btn-warning btn-sm me-2"
+                        onClick={() => openEditModal(unit)}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className={`btn btn-sm me-2 ${unit.is_active ? "btn-secondary" : "btn-success"}`}
+                        onClick={() => handleToggleStatus(unit.id)}
+                      >
+                        {unit.is_active ? "Deactivate" : "Activate"}
+                      </button>
+
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteUnit(unit.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

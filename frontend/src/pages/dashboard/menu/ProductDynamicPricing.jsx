@@ -17,97 +17,68 @@ import {
 // PRODUCT DYNAMIC PRICING
 // ======================================================
 export default function ProductDynamicPricing() {
+  const [mappingList, setMappingList] = useState([]);
 
-  const [mappingList, setMappingList] =
-    useState([]);
+  const [productList, setProductList] = useState([]);
 
-  const [productList, setProductList] =
-    useState([]);
+  const [pricingList, setPricingList] = useState([]);
 
-  const [pricingList, setPricingList] =
-    useState([]);
+  const [alert, setAlert] = useState(null);
 
-  const [alert, setAlert] =
-    useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const [showCreateModal, setShowCreateModal] =
-    useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  const [showEditModal, setShowEditModal] =
-    useState(false);
+  const [selectedMapping, setSelectedMapping] = useState(null);
 
-  const [selectedMapping, setSelectedMapping] =
-    useState(null);
-
-  const [formData, setFormData] =
-    useState({
-      product: "",
-      dynamic_pricing: "",
-    });
+  const [formData, setFormData] = useState({
+    product: "",
+    dynamic_pricing: "",
+  });
 
   const activeRestaurant = useSelector(
-    (state) =>
-      state.restaurant.activeRestaurant,
+    (state) => state.restaurant.activeRestaurant,
   );
 
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ====================================================
   // FETCH DATA
   // ====================================================
   useEffect(() => {
-
     if (restaurantId) {
-
       fetchInitialData();
     }
-
   }, [restaurantId]);
 
   // ====================================================
   // FETCH INITIAL DATA
   // ====================================================
   const fetchInitialData = async () => {
-
     try {
+      const products = await getProductList(restaurantId);
 
-      const products =
-        await getProductList(
-          restaurantId
-        );
+      const pricings = await getDynamicPricingList(restaurantId);
 
-      const pricings =
-        await getDynamicPricingList(
-          restaurantId
-        );
-
-      const mappings =
-        await getProductDynamicPricingList(
-          restaurantId
-        );
+      const mappings = await getProductDynamicPricingList(restaurantId);
 
       setProductList(products);
 
       setPricingList(pricings);
 
       setMappingList(mappings);
-
     } catch (error) {
-
       setAlert({
         type: "danger",
-        message:
-          "Failed to load data",
+        message: "Failed to load data",
       });
     }
   };
@@ -116,11 +87,9 @@ const restaurantId =
   // HANDLE CHANGE
   // ====================================================
   const handleChange = (e) => {
-
     setFormData({
       ...formData,
-      [e.target.name]:
-        e.target.value,
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -128,14 +97,10 @@ const restaurantId =
   // CREATE
   // ====================================================
   const handleCreate = async (e) => {
-
     e.preventDefault();
 
     try {
-
-      await createProductDynamicPricing(
-        formData,
-      );
+      await createProductDynamicPricing(formData);
 
       fetchInitialData();
 
@@ -148,18 +113,12 @@ const restaurantId =
 
       setAlert({
         type: "success",
-        message:
-          "Mapping created successfully",
+        message: "Mapping created successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
-        message:
-          error.response?.data
-            ?.message ||
-          "Mapping already exists",
+        message: error.response?.data?.message || "Mapping already exists",
       });
     }
   };
@@ -168,13 +127,11 @@ const restaurantId =
   // OPEN EDIT
   // ====================================================
   const openEditModal = (mapping) => {
-
     setSelectedMapping(mapping);
 
     setFormData({
       product: mapping.product,
-      dynamic_pricing:
-        mapping.dynamic_pricing,
+      dynamic_pricing: mapping.dynamic_pricing,
     });
 
     setShowEditModal(true);
@@ -184,15 +141,10 @@ const restaurantId =
   // UPDATE
   // ====================================================
   const handleUpdate = async (e) => {
-
     e.preventDefault();
 
     try {
-
-      await updateProductDynamicPricing(
-        selectedMapping.id,
-        formData,
-      );
+      await updateProductDynamicPricing(selectedMapping.id, formData);
 
       fetchInitialData();
 
@@ -200,18 +152,12 @@ const restaurantId =
 
       setAlert({
         type: "success",
-        message:
-          "Mapping updated successfully",
+        message: "Mapping updated successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
-        message:
-          error.response?.data
-            ?.message ||
-          "Failed to update mapping",
+        message: error.response?.data?.message || "Failed to update mapping",
       });
     }
   };
@@ -219,65 +165,44 @@ const restaurantId =
   // ====================================================
   // DELETE
   // ====================================================
-  const handleDelete = async (
-    mappingId,
-  ) => {
-
-    const confirmDelete =
-      window.confirm(
-        "Delete this mapping?",
-      );
+  const handleDelete = async (mappingId) => {
+    const confirmDelete = window.confirm("Delete this mapping?");
 
     if (!confirmDelete) {
       return;
     }
 
     try {
-
-      await deleteProductDynamicPricing(
-        mappingId,
-      );
+      await deleteProductDynamicPricing(mappingId);
 
       fetchInitialData();
 
       setAlert({
         type: "success",
-        message:
-          "Mapping deleted successfully",
+        message: "Mapping deleted successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
-        message:
-          "Failed to delete mapping",
+        message: "Failed to delete mapping",
       });
     }
   };
 
   return (
     <div>
-
       {/* ALERT */}
       {alert && (
-        <div className={`alert alert-${alert.type}`}>
-          {alert.message}
-        </div>
+        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
       {/* HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-
-        <h2 className="fw-bold">
-          Product Dynamic Pricing
-        </h2>
+        <h2 className="fw-bold">Product Dynamic Pricing</h2>
 
         <button
           className="btn btn-primary"
-          onClick={() =>
-            setShowCreateModal(true)
-          }
+          onClick={() => setShowCreateModal(true)}
         >
           Create Mapping
         </button>
@@ -285,71 +210,50 @@ const restaurantId =
 
       {/* TABLE */}
       <div className="card border-0 shadow-sm">
-
         <div className="card-body">
-
-          <table className="table align-middle">
-
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Pricing Rule</th>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-
-              {mappingList.map((mapping) => (
-
-                <tr key={mapping.id}>
-
-                  <td>
-                    {mapping.product_name}
-                  </td>
-
-                  <td>
-                    {mapping.dynamic_pricing_name}
-                  </td>
-
-                  <td>
-                    {mapping.pricing_type}
-                  </td>
-
-                  <td>
-                    {mapping.pricing_value}
-                  </td>
-
-                  <td>
-
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() =>
-                        openEditModal(mapping)
-                      }
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() =>
-                        handleDelete(
-                          mapping.id,
-                        )
-                      }
-                    >
-                      Remove
-                    </button>
-
-                  </td>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Pricing Rule</th>
+                  <th>Type</th>
+                  <th>Value</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
+              </thead>
 
-          </table>
+              <tbody>
+                {mappingList.map((mapping) => (
+                  <tr key={mapping.id}>
+                    <td>{mapping.product_name}</td>
+
+                    <td>{mapping.dynamic_pricing_name}</td>
+
+                    <td>{mapping.pricing_type}</td>
+
+                    <td>{mapping.pricing_value}</td>
+
+                    <td>
+                      <button
+                        className="btn btn-warning btn-sm me-2"
+                        onClick={() => openEditModal(mapping)}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDelete(mapping.id)}
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -361,9 +265,7 @@ const restaurantId =
           handleChange={handleChange}
           productList={productList}
           pricingList={pricingList}
-          onClose={() =>
-            setShowCreateModal(false)
-          }
+          onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreate}
         />
       )}
@@ -376,9 +278,7 @@ const restaurantId =
           handleChange={handleChange}
           productList={productList}
           pricingList={pricingList}
-          onClose={() =>
-            setShowEditModal(false)
-          }
+          onClose={() => setShowEditModal(false)}
           onSubmit={handleUpdate}
         />
       )}
@@ -398,30 +298,18 @@ function MappingModal({
   onClose,
   onSubmit,
 }) {
-
   return (
     <div className="modal d-block">
-
       <div className="modal-dialog">
-
         <div className="modal-content">
-
           <div className="modal-header">
+            <h5 className="modal-title">{title}</h5>
 
-            <h5 className="modal-title">
-              {title}
-            </h5>
-
-            <button
-              className="btn-close"
-              onClick={onClose}
-            />
+            <button className="btn-close" onClick={onClose} />
           </div>
 
           <form onSubmit={onSubmit}>
-
             <div className="modal-body">
-
               <SelectField
                 label="Product"
                 name="product"
@@ -433,16 +321,13 @@ function MappingModal({
               <SelectField
                 label="Dynamic Pricing"
                 name="dynamic_pricing"
-                value={
-                  formData.dynamic_pricing
-                }
+                value={formData.dynamic_pricing}
                 handleChange={handleChange}
                 options={pricingList}
               />
             </div>
 
             <div className="modal-footer">
-
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -451,13 +336,9 @@ function MappingModal({
                 Cancel
               </button>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
+              <button type="submit" className="btn btn-primary">
                 Save
               </button>
-
             </div>
           </form>
         </div>
@@ -469,20 +350,10 @@ function MappingModal({
 // ======================================================
 // SELECT FIELD
 // ======================================================
-function SelectField({
-  label,
-  name,
-  value,
-  handleChange,
-  options,
-}) {
-
+function SelectField({ label, name, value, handleChange, options }) {
   return (
     <div className="mb-3">
-
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
 
       <select
         className="form-select"
@@ -491,16 +362,10 @@ function SelectField({
         onChange={handleChange}
         required
       >
-
-        <option value="">
-          Choose {label}
-        </option>
+        <option value="">Choose {label}</option>
 
         {options.map((item) => (
-          <option
-            key={item.id}
-            value={item.id}
-          >
+          <option key={item.id} value={item.id}>
             {item.name}
           </option>
         ))}

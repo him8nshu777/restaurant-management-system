@@ -286,7 +286,7 @@ export default function ActiveOrders() {
       {/* EDIT MODAL */}
       {showEditModal && (
         <ModalWrapper
-          title="Edit Order"
+          title="Order Details"
           onClose={() => setShowEditModal(false)}
            showFooter={false}
         >

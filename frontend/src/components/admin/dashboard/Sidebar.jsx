@@ -24,7 +24,8 @@ import { useNavigate } from "react-router-dom";
 // ==========================================
 // REUSABLE SIDEBAR
 // ==========================================
-export default function Sidebar({ activePage, setActivePage}) {
+export default function Sidebar({ activePage, setActivePage, mobileSidebarOpen,
+    setMobileSidebarOpen}) {
   const navigate = useNavigate();
 
   // ==========================================
@@ -269,6 +270,7 @@ export default function Sidebar({ activePage, setActivePage}) {
         d-flex
         flex-column
         ${collapsed ? "sidebar-collapsed" : "sidebar-expanded"}
+        ${mobileSidebarOpen ? "mobile-open" : ""}
       `}
     >
       {/* ======================================

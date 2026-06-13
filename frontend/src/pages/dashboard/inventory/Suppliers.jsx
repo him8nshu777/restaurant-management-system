@@ -32,17 +32,14 @@ export default function Suppliers() {
   // ==========================================
   // MODALS
   // ==========================================
-  const [showCreateModal, setShowCreateModal] =
-    useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const [showEditModal, setShowEditModal] =
-    useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // ==========================================
   // SELECTED SUPPLIER
   // ==========================================
-  const [selectedSupplier, setSelectedSupplier] =
-    useState(null);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
 
   // ==========================================
   // FORM DATA
@@ -61,18 +58,15 @@ export default function Suppliers() {
     (state) => state.restaurant.activeRestaurant,
   );
 
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
-
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ==========================================
   // FETCH SUPPLIERS
@@ -88,9 +82,7 @@ const restaurantId =
   // ==========================================
   const fetchSupplierList = async () => {
     try {
-      const data = await getSupplierList(
-        restaurantId
-      );
+      const data = await getSupplierList(restaurantId);
 
       setSupplierList(data);
     } catch (error) {
@@ -122,7 +114,7 @@ const restaurantId =
       await createSupplier({
         ...formData,
 
-        restaurant_id: restaurantId
+        restaurant_id: restaurantId,
       });
 
       fetchSupplierList();
@@ -171,10 +163,7 @@ const restaurantId =
     e.preventDefault();
 
     try {
-      await updateSupplier(
-        selectedSupplier.id,
-        formData,
-      );
+      await updateSupplier(selectedSupplier.id, formData);
 
       fetchSupplierList();
 
@@ -216,12 +205,8 @@ const restaurantId =
   // ==========================================
   // DELETE SUPPLIER
   // ==========================================
-  const handleDeleteSupplier = async (
-    supplierId,
-  ) => {
-    const confirmDelete = window.confirm(
-      "Delete this supplier?",
-    );
+  const handleDeleteSupplier = async (supplierId) => {
+    const confirmDelete = window.confirm("Delete this supplier?");
 
     if (!confirmDelete) {
       return;
@@ -248,16 +233,12 @@ const restaurantId =
     <div>
       {/* ALERT */}
       {alert && (
-        <div className={`alert alert-${alert.type}`}>
-          {alert.message}
-        </div>
+        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
       {/* PAGE HEADER */}
       <div className="d-flex justify-content-between mb-4">
-        <h2 className="fw-bold">
-          Supplier Management
-        </h2>
+        <h2 className="fw-bold">Supplier Management</h2>
 
         <button
           className="btn btn-primary"
@@ -270,105 +251,89 @@ const restaurantId =
       {/* TABLE */}
       <div className="card border-0 shadow-sm">
         <div className="card-body">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
 
-                <th>Phone</th>
+                  <th>Phone</th>
 
-                <th>Email</th>
+                  <th>Email</th>
 
-                <th>Address</th>
+                  <th>Address</th>
 
-                <th>Status</th>
+                  <th>Status</th>
 
-                <th>Actions</th>
-              </tr>
-            </thead>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {supplierList.map((supplier) => (
-                <tr key={supplier.id}>
-                  <td>{supplier.name}</td>
+              <tbody>
+                {supplierList.map((supplier) => (
+                  <tr key={supplier.id}>
+                    <td>{supplier.name}</td>
 
-                  <td>{supplier.phone}</td>
+                    <td>{supplier.phone}</td>
 
-                  <td>{supplier.email || "-"}</td>
+                    <td>{supplier.email || "-"}</td>
 
-                  <td>{supplier.address || "-"}</td>
+                    <td>{supplier.address || "-"}</td>
 
-                  <td>
-                    <span
-                      className={`badge ${
-                        supplier.is_active
-                          ? "bg-success"
-                          : "bg-danger"
-                      }`}
-                    >
-                      {supplier.is_active
-                        ? "Active"
-                        : "Inactive"}
-                    </span>
-                  </td>
+                    <td>
+                      <span
+                        className={`badge ${
+                          supplier.is_active ? "bg-success" : "bg-danger"
+                        }`}
+                      >
+                        {supplier.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
 
-                  <td>
-                    {/* EDIT */}
-                    <button
-                      className="
+                    <td>
+                      {/* EDIT */}
+                      <button
+                        className="
                         btn
                         btn-warning
                         btn-sm
                         me-2
                       "
-                      onClick={() =>
-                        openEditModal(supplier)
-                      }
-                    >
-                      Edit
-                    </button>
+                        onClick={() => openEditModal(supplier)}
+                      >
+                        Edit
+                      </button>
 
-                    {/* STATUS */}
-                    <button
-                      className={`
+                      {/* STATUS */}
+                      <button
+                        className={`
                         btn
                         btn-sm
                         me-2
-                        ${
-                          supplier.is_active
-                            ? "btn-secondary"
-                            : "btn-success"
-                        }
+                        ${supplier.is_active ? "btn-secondary" : "btn-success"}
                       `}
-                      onClick={() =>
-                        handleToggleStatus(supplier.id)
-                      }
-                    >
-                      {supplier.is_active
-                        ? "Deactivate"
-                        : "Activate"}
-                    </button>
+                        onClick={() => handleToggleStatus(supplier.id)}
+                      >
+                        {supplier.is_active ? "Deactivate" : "Activate"}
+                      </button>
 
-                    {/* DELETE */}
-                    <button
-                      className="
+                      {/* DELETE */}
+                      <button
+                        className="
                         btn
                         btn-danger
                         btn-sm
                       "
-                      onClick={() =>
-                        handleDeleteSupplier(
-                          supplier.id,
-                        )
-                      }
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        onClick={() => handleDeleteSupplier(supplier.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -378,9 +343,7 @@ const restaurantId =
       {showCreateModal && (
         <ModalWrapper
           title="Create Supplier"
-          onClose={() =>
-            setShowCreateModal(false)
-          }
+          onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreateSupplier}
         >
           <InputField
@@ -460,31 +423,19 @@ const restaurantId =
 // ==========================================
 // REUSABLE MODAL
 // ==========================================
-function ModalWrapper({
-  title,
-  children,
-  onClose,
-  onSubmit,
-}) {
+function ModalWrapper({ title, children, onClose, onSubmit }) {
   return (
     <div className="modal d-block">
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">
-              {title}
-            </h5>
+            <h5 className="modal-title">{title}</h5>
 
-            <button
-              className="btn-close"
-              onClick={onClose}
-            ></button>
+            <button className="btn-close" onClick={onClose}></button>
           </div>
 
           <form onSubmit={onSubmit}>
-            <div className="modal-body">
-              {children}
-            </div>
+            <div className="modal-body">{children}</div>
 
             <div className="modal-footer">
               <button
@@ -495,10 +446,7 @@ function ModalWrapper({
                 Cancel
               </button>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
+              <button type="submit" className="btn btn-primary">
                 Save
               </button>
             </div>
@@ -512,18 +460,10 @@ function ModalWrapper({
 // ==========================================
 // INPUT FIELD
 // ==========================================
-function InputField({
-  label,
-  name,
-  value,
-  handleChange,
-  type = "text",
-}) {
+function InputField({ label, name, value, handleChange, type = "text" }) {
   return (
     <div className="mb-3">
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
 
       <input
         type={type}
@@ -540,17 +480,10 @@ function InputField({
 // ==========================================
 // TEXTAREA FIELD
 // ==========================================
-function TextAreaField({
-  label,
-  name,
-  value,
-  handleChange,
-}) {
+function TextAreaField({ label, name, value, handleChange }) {
   return (
     <div className="mb-3">
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
 
       <textarea
         className="form-control"

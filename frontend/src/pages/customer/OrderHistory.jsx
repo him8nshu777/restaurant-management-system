@@ -269,7 +269,7 @@ const handlePrintBill = async (orderId) => {
       {/* EDIT MODAL */}
       {showEditModal && (
         <ModalWrapper
-          title="Edit Order"
+          title="Order Details"
           onClose={() => setShowEditModal(false)}
           showBillButton={
             selectedOrder?.payment_status === "paid"

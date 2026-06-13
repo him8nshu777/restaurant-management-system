@@ -56,17 +56,15 @@ export default function Categories() {
     (state) => state.restaurant.activeRestaurant,
   );
 
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
   // ==================================================
   // FETCH CATEGORIES
   // ==================================================
@@ -306,60 +304,61 @@ const restaurantId =
                 "
       >
         <div className="card-body">
-          <table className="table align-middle">
-            <thead>
-              <tr>
-                <th>Image</th>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Image</th>
 
-                <th>Name</th>
+                  <th>Name</th>
 
-                <th>Status</th>
+                  <th>Status</th>
 
-                <th>Created</th>
+                  <th>Created</th>
 
-                <th>Actions</th>
-              </tr>
-            </thead>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {categoryList.map((category) => (
-                <tr key={category.id}>
-                  {/* IMAGE */}
-                  <td>
-                    {category.image ? (
-                      <img
-                        src={category.image}
-                        alt={category.name}
-                        width="60"
-                        height="60"
-                        className="rounded object-fit-cover"
-                      />
-                    ) : (
-                      <div
-                        className="
+              <tbody>
+                {categoryList.map((category) => (
+                  <tr key={category.id}>
+                    {/* IMAGE */}
+                    <td>
+                      {category.image ? (
+                        <img
+                          src={category.image}
+                          alt={category.name}
+                          width="60"
+                          height="60"
+                          className="rounded object-fit-cover"
+                        />
+                      ) : (
+                        <div
+                          className="
                                                     bg-light
                                                     rounded
                                                     d-flex
                                                     align-items-center
                                                     justify-content-center
                                                 "
-                        style={{
-                          width: "60px",
-                          height: "60px",
-                        }}
-                      >
-                        No Image
-                      </div>
-                    )}
-                  </td>
+                          style={{
+                            width: "60px",
+                            height: "60px",
+                          }}
+                        >
+                          No Image
+                        </div>
+                      )}
+                    </td>
 
-                  {/* NAME */}
-                  <td>{category.name}</td>
+                    {/* NAME */}
+                    <td>{category.name}</td>
 
-                  {/* STATUS */}
-                  <td>
-                    <span
-                      className={`
+                    {/* STATUS */}
+                    <td>
+                      <span
+                        className={`
                                                 badge
                                                 ${
                                                   category.is_active
@@ -367,32 +366,34 @@ const restaurantId =
                                                     : "bg-danger"
                                                 }
                                             `}
-                    >
-                      {category.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
+                      >
+                        {category.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
 
-                  {/* CREATED */}
-                  <td>{new Date(category.created_at).toLocaleDateString()}</td>
+                    {/* CREATED */}
+                    <td>
+                      {new Date(category.created_at).toLocaleDateString()}
+                    </td>
 
-                  {/* ACTIONS */}
-                  <td>
-                    {/* EDIT */}
-                    <button
-                      className="
+                    {/* ACTIONS */}
+                    <td>
+                      {/* EDIT */}
+                      <button
+                        className="
                                                 btn
                                                 btn-warning
                                                 btn-sm
                                                 me-2
                                             "
-                      onClick={() => openEditModal(category)}
-                    >
-                      Edit
-                    </button>
+                        onClick={() => openEditModal(category)}
+                      >
+                        Edit
+                      </button>
 
-                    {/* TOGGLE */}
-                    <button
-                      className={`
+                      {/* TOGGLE */}
+                      <button
+                        className={`
                                                 btn
                                                 btn-sm
                                                 me-2
@@ -403,27 +404,28 @@ const restaurantId =
                                                     : "btn-success"
                                                 }
                                             `}
-                      onClick={() => handleToggleStatus(category.id)}
-                    >
-                      {category.is_active ? "Deactivate" : "Activate"}
-                    </button>
+                        onClick={() => handleToggleStatus(category.id)}
+                      >
+                        {category.is_active ? "Deactivate" : "Activate"}
+                      </button>
 
-                    {/* DELETE */}
-                    <button
-                      className="
+                      {/* DELETE */}
+                      <button
+                        className="
                                                 btn
                                                 btn-danger
                                                 btn-sm
                                             "
-                      onClick={() => handleDeleteCategory(category.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        onClick={() => handleDeleteCategory(category.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

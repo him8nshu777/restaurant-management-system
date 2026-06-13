@@ -58,17 +58,15 @@ export default function Area() {
     (state) => state.restaurant.activeRestaurant,
   );
 
-  const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ==========================================
   // FETCH DATA
@@ -274,67 +272,69 @@ const restaurantId =
       ========================================== */}
       <div className="card border-0 shadow-sm">
         <div className="card-body">
-          <table className="table align-middle">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Floor</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {areaList.map((area) => (
-                <tr key={area.id}>
-                  <td>{area.name}</td>
-
-                  <td className="text-capitalize">{area.area_type}</td>
-
-                  <td>{area.floor_name}</td>
-
-                  <td>
-                    <span
-                      className={`badge ${
-                        area.is_active ? "bg-success" : "bg-danger"
-                      }`}
-                    >
-                      {area.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-
-                  <td>
-                    {/* EDIT */}
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() => openEditModal(area)}
-                    >
-                      Edit
-                    </button>
-
-                    {/* ACTIVE/INACTIVE */}
-                    <button
-                      className={`btn btn-sm me-2 ${
-                        area.is_active ? "btn-secondary" : "btn-success"
-                      }`}
-                      onClick={() => handleToggleStatus(area.id)}
-                    >
-                      {area.is_active ? "Deactivate" : "Activate"}
-                    </button>
-
-                    {/* DELETE */}
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeleteArea(area.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Floor</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {areaList.map((area) => (
+                  <tr key={area.id}>
+                    <td>{area.name}</td>
+
+                    <td className="text-capitalize">{area.area_type}</td>
+
+                    <td>{area.floor_name}</td>
+
+                    <td>
+                      <span
+                        className={`badge ${
+                          area.is_active ? "bg-success" : "bg-danger"
+                        }`}
+                      >
+                        {area.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+
+                    <td>
+                      {/* EDIT */}
+                      <button
+                        className="btn btn-warning btn-sm me-2"
+                        onClick={() => openEditModal(area)}
+                      >
+                        Edit
+                      </button>
+
+                      {/* ACTIVE/INACTIVE */}
+                      <button
+                        className={`btn btn-sm me-2 ${
+                          area.is_active ? "btn-secondary" : "btn-success"
+                        }`}
+                        onClick={() => handleToggleStatus(area.id)}
+                      >
+                        {area.is_active ? "Deactivate" : "Activate"}
+                      </button>
+
+                      {/* DELETE */}
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteArea(area.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

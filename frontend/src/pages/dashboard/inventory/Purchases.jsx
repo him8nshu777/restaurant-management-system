@@ -11,23 +11,17 @@ import {
 } from "../../../services/inventoryService";
 
 export default function Purchases() {
+  const [purchaseList, setPurchaseList] = useState([]);
 
-  const [purchaseList, setPurchaseList] =
-    useState([]);
-
-  const [supplierList, setSupplierList] =
-    useState([]);
+  const [supplierList, setSupplierList] = useState([]);
 
   const [alert, setAlert] = useState(null);
 
-  const [showCreateModal, setShowCreateModal] =
-    useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const [showEditModal, setShowEditModal] =
-    useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  const [selectedPurchase, setSelectedPurchase] =
-    useState(null);
+  const [selectedPurchase, setSelectedPurchase] = useState(null);
 
   const [formData, setFormData] = useState({
     supplier: "",
@@ -39,42 +33,30 @@ export default function Purchases() {
   const activeRestaurant = useSelector(
     (state) => state.restaurant.activeRestaurant,
   );
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   useEffect(() => {
-
     if (restaurantId) {
-
       fetchPurchaseList();
 
       fetchSupplierList();
     }
-
   }, [restaurantId]);
 
   const fetchPurchaseList = async () => {
-
     try {
-
-      const data =
-        await getPurchaseList(
-          restaurantId
-        );
+      const data = await getPurchaseList(restaurantId);
 
       setPurchaseList(data);
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to fetch purchases.",
@@ -83,24 +65,16 @@ const restaurantId =
   };
 
   const fetchSupplierList = async () => {
-
     try {
-
-      const data =
-        await getSupplierList(
-          restaurantId
-        );
+      const data = await getSupplierList(restaurantId);
 
       setSupplierList(data);
-
     } catch (error) {
-
       console.log(error);
     }
   };
 
   const handleChange = (e) => {
-
     setFormData({
       ...formData,
 
@@ -109,15 +83,13 @@ const restaurantId =
   };
 
   const handleCreatePurchase = async (e) => {
-
     e.preventDefault();
 
     try {
-
       await createPurchase({
         ...formData,
 
-        restaurant_id: restaurantId
+        restaurant_id: restaurantId,
       });
 
       fetchPurchaseList();
@@ -135,9 +107,7 @@ const restaurantId =
         type: "success",
         message: "Purchase created successfully.",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to create purchase.",
@@ -146,7 +116,6 @@ const restaurantId =
   };
 
   const openEditModal = (purchase) => {
-
     setSelectedPurchase(purchase);
 
     setFormData({
@@ -160,15 +129,10 @@ const restaurantId =
   };
 
   const handleUpdatePurchase = async (e) => {
-
     e.preventDefault();
 
     try {
-
-      await updatePurchase(
-        selectedPurchase.id,
-        formData
-      );
+      await updatePurchase(selectedPurchase.id, formData);
 
       fetchPurchaseList();
 
@@ -178,9 +142,7 @@ const restaurantId =
         type: "success",
         message: "Purchase updated successfully.",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to update purchase.",
@@ -188,21 +150,14 @@ const restaurantId =
     }
   };
 
-  const handleDeletePurchase = async (
-    purchaseId
-  ) => {
-
-    const confirmDelete =
-      window.confirm(
-        "Delete this purchase?"
-      );
+  const handleDeletePurchase = async (purchaseId) => {
+    const confirmDelete = window.confirm("Delete this purchase?");
 
     if (!confirmDelete) {
       return;
     }
 
     try {
-
       await deletePurchase(purchaseId);
 
       fetchPurchaseList();
@@ -211,9 +166,7 @@ const restaurantId =
         type: "success",
         message: "Purchase deleted successfully.",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to delete purchase.",
@@ -223,18 +176,12 @@ const restaurantId =
 
   return (
     <div>
-
       {alert && (
-        <div className={`alert alert-${alert.type}`}>
-          {alert.message}
-        </div>
+        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
       <div className="d-flex justify-content-between mb-4">
-
-        <h2 className="fw-bold">
-          Purchase Management
-        </h2>
+        <h2 className="fw-bold">Purchase Management</h2>
 
         <button
           className="btn btn-primary"
@@ -242,124 +189,91 @@ const restaurantId =
         >
           Create Purchase
         </button>
-
       </div>
 
       <div className="card border-0 shadow-sm">
-
         <div className="card-body">
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Invoice</th>
+                  <th>Total</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-          <table className="table">
+              <tbody>
+                {purchaseList.map((purchase) => (
+                  <tr key={purchase.id}>
+                    <td>{purchase.supplier_name}</td>
 
-            <thead>
-              <tr>
-                <th>Supplier</th>
-                <th>Invoice</th>
-                <th>Total</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+                    <td>{purchase.invoice_number || "-"}</td>
 
-            <tbody>
+                    <td>₹{purchase.total_amount}</td>
 
-              {purchaseList.map((purchase) => (
+                    <td>{purchase.purchase_date}</td>
 
-                <tr key={purchase.id}>
-
-                  <td>
-                    {purchase.supplier_name}
-                  </td>
-
-                  <td>
-                    {purchase.invoice_number || "-"}
-                  </td>
-
-                  <td>
-                    ₹{purchase.total_amount}
-                  </td>
-
-                  <td>
-                    {purchase.purchase_date}
-                  </td>
-
-                  <td>
-
-                    <button
-                      className="
+                    <td>
+                      <button
+                        className="
                         btn
                         btn-warning
                         btn-sm
                         me-2
                       "
-                      onClick={() =>
-                        openEditModal(purchase)
-                      }
-                    >
-                      Edit
-                    </button>
+                        onClick={() => openEditModal(purchase)}
+                      >
+                        Edit
+                      </button>
 
-                    <button
-                      className="
+                      <button
+                        className="
                         btn
                         btn-danger
                         btn-sm
                       "
-                      onClick={() =>
-                        handleDeletePurchase(
-                          purchase.id
-                        )
-                      }
-                    >
-                      Delete
-                    </button>
-
-                  </td>
-
-                </tr>
-              ))}
-
-            </tbody>
-
-          </table>
-
+                        onClick={() => handleDeletePurchase(purchase.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-
       </div>
 
       {/* CREATE */}
       {showCreateModal && (
-
         <PurchaseModal
           title="Create Purchase"
           formData={formData}
           handleChange={handleChange}
           supplierList={supplierList}
-          onClose={() =>
-            setShowCreateModal(false)
-          }
+          onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreatePurchase}
         />
       )}
 
       {/* EDIT */}
       {showEditModal && (
-
         <PurchaseModal
           title="Edit Purchase"
           formData={formData}
           handleChange={handleChange}
           supplierList={supplierList}
-          onClose={() =>
-            setShowEditModal(false)
-          }
+          onClose={() => setShowEditModal(false)}
           onSubmit={handleUpdatePurchase}
         />
       )}
     </div>
   );
 }
-
 
 // ==========================================
 // PURCHASE MODAL
@@ -372,36 +286,20 @@ function PurchaseModal({
   onClose,
   onSubmit,
 }) {
-
   return (
     <div className="modal d-block">
-
       <div className="modal-dialog">
-
         <div className="modal-content">
-
           <div className="modal-header">
+            <h5 className="modal-title">{title}</h5>
 
-            <h5 className="modal-title">
-              {title}
-            </h5>
-
-            <button
-              className="btn-close"
-              onClick={onClose}
-            ></button>
-
+            <button className="btn-close" onClick={onClose}></button>
           </div>
 
           <form onSubmit={onSubmit}>
-
             <div className="modal-body">
-
               <div className="mb-3">
-
-                <label className="form-label">
-                  Supplier
-                </label>
+                <label className="form-label">Supplier</label>
 
                 <select
                   className="form-select"
@@ -410,23 +308,14 @@ function PurchaseModal({
                   onChange={handleChange}
                   required
                 >
-
-                  <option value="">
-                    Select Supplier
-                  </option>
+                  <option value="">Select Supplier</option>
 
                   {supplierList.map((supplier) => (
-
-                    <option
-                      key={supplier.id}
-                      value={supplier.id}
-                    >
+                    <option key={supplier.id} value={supplier.id}>
                       {supplier.name}
                     </option>
                   ))}
-
                 </select>
-
               </div>
 
               <InputField
@@ -451,11 +340,9 @@ function PurchaseModal({
                 handleChange={handleChange}
                 type="date"
               />
-
             </div>
 
             <div className="modal-footer">
-
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -464,43 +351,24 @@ function PurchaseModal({
                 Cancel
               </button>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
+              <button type="submit" className="btn btn-primary">
                 Save
               </button>
-
             </div>
-
           </form>
-
         </div>
-
       </div>
-
     </div>
   );
 }
 
-
 // ==========================================
 // INPUT FIELD
 // ==========================================
-function InputField({
-  label,
-  name,
-  value,
-  handleChange,
-  type = "text",
-}) {
-
+function InputField({ label, name, value, handleChange, type = "text" }) {
   return (
     <div className="mb-3">
-
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
 
       <input
         type={type}
@@ -510,7 +378,6 @@ function InputField({
         onChange={handleChange}
         required
       />
-
     </div>
   );
 }
