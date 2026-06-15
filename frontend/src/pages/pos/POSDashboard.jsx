@@ -14,9 +14,7 @@ import { getStaffList } from "../../services/adminService";
 // ==========================================
 // POS DASHBOARD
 // ==========================================
-export default function POSDashboard({
-  setActivePage
-}) {
+export default function POSDashboard({ setActivePage }) {
   const navigate = useNavigate();
   // ==========================================
   // ACTIVE RESTAURANT
@@ -276,6 +274,12 @@ export default function POSDashboard({
     }
   }, [orderType]);
 
+  const filteredTables = tableList.filter(
+  (table) =>
+    String(table.floor) === String(selectedFloor) &&
+    (!selectedArea ||
+      String(table.area) === String(selectedArea))
+);
   // ==========================================
   // GET PRODUCTS
   // ==========================================
@@ -538,74 +542,74 @@ export default function POSDashboard({
 
   const createPOSOrder = async () => {
     const payload = {
-        order_type: orderType,
+      order_type: orderType,
 
-        floor_id: selectedFloor,
+      floor_id: selectedFloor,
 
-        area_id: selectedArea,
+      area_id: selectedArea,
 
-        table_id: selectedTable || null,
+      table_id: selectedTable || null,
 
-        waiter_id: orderType === "dine_in" ? selectedWaiter : null,
+      waiter_id: orderType === "dine_in" ? selectedWaiter : null,
 
-        notes: orderNotes,
+      notes: orderNotes,
 
-        payment_method: paymentMethod,
+      payment_method: paymentMethod,
+
+      // ==========================================
+      // PAYMENT
+      // ==========================================
+      payment_status: "pending",
+
+      order_status: "pending",
+
+      // ==========================================
+      // ITEMS
+      // ==========================================
+      items: cartItems.map((item) => ({
+        item_type: item.type,
+
+        product_variant_id: item.type === "product" ? item.variant_id : null,
+
+        combo_id: item.type === "combo" ? item.combo_id : null,
+
+        item_name:
+          item.type === "product" ? item.product_name : item.combo_name,
+        original_price: item.original_price,
+
+        final_price: item.final_price,
+        dynamic_pricing_name: item.dynamic_pricing_name,
+
+        quantity: item.quantity,
+
+        notes: item.item_notes,
+        // ==========================================
+        // ITEM TOTAL
+        // ==========================================
+        total_price:
+          (Number(item.final_price) +
+            item.selected_addons.reduce(
+              (sum, addon) => sum + Number(addon.price),
+              0,
+            )) *
+          item.quantity,
 
         // ==========================================
-        // PAYMENT
+        // ITEM TAXES
         // ==========================================
-        payment_status: "pending",
+        taxes: item.taxes || [],
 
-        order_status: "pending",
-
-        // ==========================================
-        // ITEMS
-        // ==========================================
-        items: cartItems.map((item) => ({
-          item_type: item.type,
-
-          product_variant_id: item.type === "product" ? item.variant_id : null,
-
-          combo_id: item.type === "combo" ? item.combo_id : null,
-
-          item_name:
-            item.type === "product" ? item.product_name : item.combo_name,
-          original_price: item.original_price,
-
-          final_price: item.final_price,
-          dynamic_pricing_name: item.dynamic_pricing_name,
-
-          quantity: item.quantity,
-
-          notes: item.item_notes,
-          // ==========================================
-          // ITEM TOTAL
-          // ==========================================
-          total_price:
-            (Number(item.final_price) +
-              item.selected_addons.reduce(
-                (sum, addon) => sum + Number(addon.price),
-                0,
-              )) *
-            item.quantity,
-
-          // ==========================================
-          // ITEM TAXES
-          // ==========================================
-          taxes: item.taxes || [],
-
-          addons: item.selected_addons.map((addon) => ({
-            addon_id: addon.id,
-            addon_name: addon.name,
-            addon_price: addon.price,
-            quantity: addon.quantity,
-          })),
+        addons: item.selected_addons.map((addon) => ({
+          addon_id: addon.id,
+          addon_name: addon.name,
+          addon_price: addon.price,
+          quantity: addon.quantity,
         })),
-      };
+      })),
+    };
 
-  return await createOrder(restaurantId, payload);
-};
+    return await createOrder(restaurantId, payload);
+  };
 
   // ==========================================
   // SAVE ORDER
@@ -639,7 +643,7 @@ export default function POSDashboard({
       }
 
       const data = await createPOSOrder();
-      
+
       setAlert({
         type: "success",
         message: `Order ${data.order_number} saved successfully`,
@@ -679,15 +683,14 @@ export default function POSDashboard({
         return;
       }
 
-      
       const data = await createPOSOrder();
       console.log("ORDER RESPONSE:", data);
 
       setActivePage({
-    type: "payment",
-    orderId: data.order_id,
-    order: data,
-});
+        type: "payment",
+        orderId: data.order_id,
+        order: data,
+      });
     } catch (error) {
       console.log("FULL ERROR:", error.response?.data);
 
@@ -839,7 +842,9 @@ export default function POSDashboard({
           ALERT
       ========================================== */}
       {alert && (
-        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
+        <div className={`alert alert-${alert.type} d-none d-md-block`}>
+          {alert.message}
+        </div>
       )}
 
       {/* ==========================================
@@ -1187,22 +1192,7 @@ export default function POSDashboard({
     CART MODAL
 ========================================== */}
       {showCart && (
-        <div
-          className="
-      position-fixed
-      top-0
-      end-0
-      bg-white
-      shadow-lg
-      h-100
-      p-4
-    "
-          style={{
-            width: "550px",
-            zIndex: 9999,
-            overflowY: "auto",
-          }}
-        >
+        <div className="pos-cart">
           {/* HEADER */}
           <div
             className="
@@ -1219,7 +1209,11 @@ export default function POSDashboard({
               onClick={() => setShowCart(false)}
             ></button>
           </div>
-
+          {alert && (
+            <div className={`alert alert-${alert.type} mb-3 d-block d-md-none`}>
+              {alert.message}
+            </div>
+          )}
           {/* EMPTY CART */}
           {cartItems.length === 0 && (
             <div className="text-center text-muted">Cart is empty</div>
@@ -1462,7 +1456,6 @@ export default function POSDashboard({
               <option value="dine_in">Dine In</option>
 
               <option value="takeaway">Takeaway</option>
-
             </select>
           </div>
 
@@ -1730,22 +1723,23 @@ export default function POSDashboard({
           <div className="d-grid gap-2">
             {" "}
             {orderType === "dine_in" && (
-            <button
-              className=" btn btn-outline-dark rounded-pill fw-semibold "
-              onClick={handleSaveOrder}
-              > 
-              {" "}
-              Save Order{" "}
-                </button>
-              )}
+              <button
+                className=" btn btn-outline-dark rounded-pill fw-semibold "
+                onClick={handleSaveOrder}
+              >
                 {" "}
-            {orderType === "takeaway" && (
-            <button className=" btn btn-primary rounded-pill fw-semibold " onClick={handleCheckout}>
-              {" "}
-              Checkout{" "}
-            </button>
+                Save Order{" "}
+              </button>
             )}{" "}
-            
+            {orderType === "takeaway" && (
+              <button
+                className=" btn btn-primary rounded-pill fw-semibold "
+                onClick={handleCheckout}
+              >
+                {" "}
+                Checkout{" "}
+              </button>
+            )}{" "}
           </div>
         </div>
       )}
@@ -1802,7 +1796,7 @@ export default function POSDashboard({
             FLOOR SIDEBAR
         ========================================== */}
               <div
-                className="col-2 border-end p-3"
+                className="col-12 col-md-2 border-end p-3"
                 style={{
                   overflowY: "auto",
                 }}
@@ -1843,7 +1837,7 @@ export default function POSDashboard({
             AREA SIDEBAR
         ========================================== */}
               <div
-                className="col-2 border-end p-3"
+                className="col-12 col-md-2 border-end p-3"
                 style={{
                   overflowY: "auto",
                 }}
@@ -1874,81 +1868,125 @@ export default function POSDashboard({
                   ))}
               </div>
 
-              {/* ==========================================
-            TABLE GRID
-        ========================================== */}
-              <div
-                className="col-8 p-4"
-                style={{
-                  overflowY: "auto",
-                }}
-              >
-                <div className="row g-3">
-                  {tableList
-                    .filter(
-                      (table) =>
-                        String(table.floor) === String(selectedFloor) &&
-                        (!selectedArea ||
-                          String(table.area) === String(selectedArea)),
-                    )
-                    .map((table) => {
-                      const isAvailable = table.status === "available";
+                  {/* ==========================================
+    TABLE GRID
+========================================== */}
+<div
+  className="col-12 col-md-8 p-3 p-md-4"
+  style={{
+    overflowY: "auto",
+  }}
+>
+  <div className="row g-3">
+    {filteredTables.length > 0 ? (
+      filteredTables.map((table) => {
+        const isAvailable =
+          table.status === "available";
 
-                      return (
-                        <div key={table.id} className="col-md-3">
-                          <button
-                            type="button"
-                            disabled={!isAvailable}
-                            onClick={() => {
-                              setSelectedTable(table.id);
+        const isSelected =
+          String(selectedTable) ===
+          String(table.id);
 
-                              setShowTableModal(false);
-                            }}
-                            className={`
-            btn
-            w-100
-            p-4
-            rounded-4
-            border
-            ${
-              table.status === "available"
-                ? "btn-outline-success"
-                : table.status === "occupied"
-                  ? "btn-outline-danger"
-                  : table.status === "reserved"
+        return (
+          <div
+            key={table.id}
+            className="
+              col-6
+              col-sm-4
+              col-md-3
+            "
+          >
+            <button
+              type="button"
+              disabled={!isAvailable}
+              onClick={() => {
+                setSelectedTable(table.id);
+                setShowTableModal(false);
+              }}
+              className={`
+                btn
+                w-100
+                p-4
+                rounded-4
+                border
+                ${
+                  isSelected
+                    ? "btn-success"
+                    : table.status === "available"
+                    ? "btn-outline-success"
+                    : table.status === "occupied"
+                    ? "btn-outline-danger"
+                    : table.status === "reserved"
                     ? "btn-outline-warning"
                     : "btn-outline-secondary"
-            }
-          `}
-                          >
-                            <h5 className="fw-bold">{table.table_number}</h5>
-
-                            <small>Capacity: {table.capacity}</small>
-
-                            <div className="mt-2">
-                              <span
-                                className={`
-                badge
-                ${
-                  table.status === "available"
-                    ? "bg-success"
-                    : table.status === "occupied"
-                      ? "bg-danger"
-                      : table.status === "reserved"
-                        ? "bg-warning"
-                        : "bg-secondary"
                 }
               `}
-                              >
-                                {table.status}
-                              </span>
-                            </div>
-                          </button>
-                        </div>
-                      );
-                    })}
-                </div>
+            >
+              <h5 className="fw-bold">
+                {table.table_number}
+              </h5>
+
+              <small>
+                Capacity: {table.capacity}
+              </small>
+
+              <div className="mt-2">
+                <span
+                  className={`
+                    badge
+                    ${
+                      table.status === "available"
+                        ? "bg-success"
+                        : table.status === "occupied"
+                        ? "bg-danger"
+                        : table.status === "reserved"
+                        ? "bg-warning"
+                        : "bg-secondary"
+                    }
+                  `}
+                >
+                  {table.status}
+                </span>
               </div>
+            </button>
+          </div>
+        );
+      })
+    ) : (
+      <div className="col-12">
+        <div
+          className="
+            border
+            rounded-4
+            bg-light
+            text-center
+            py-5
+            px-3
+          "
+        >
+          <div
+            style={{
+              fontSize: "3rem",
+            }}
+          >
+            🪑
+          </div>
+
+          <h5 className="mt-3 mb-2">
+            No Tables Available
+          </h5>
+
+          <p className="text-muted mb-0">
+            No tables have been created
+            for the selected floor and area.
+          </p>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+              
+
             </div>
           </div>
         </div>

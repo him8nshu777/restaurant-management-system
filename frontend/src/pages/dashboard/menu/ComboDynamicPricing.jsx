@@ -17,130 +17,91 @@ import {
 // COMBO DYNAMIC PRICING
 // ======================================================
 export default function ComboDynamicPricing() {
+  const [mappingList, setMappingList] = useState([]);
 
-  const [mappingList, setMappingList] =
-    useState([]);
+  const [comboList, setComboList] = useState([]);
 
-  const [comboList, setComboList] =
-    useState([]);
+  const [pricingList, setPricingList] = useState([]);
 
-  const [pricingList, setPricingList] =
-    useState([]);
+  const [alert, setAlert] = useState(null);
 
-  const [alert, setAlert] =
-    useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const [showCreateModal, setShowCreateModal] =
-    useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  const [showEditModal, setShowEditModal] =
-    useState(false);
+  const [selectedMapping, setSelectedMapping] = useState(null);
 
-  const [selectedMapping, setSelectedMapping] =
-    useState(null);
-
-  const [formData, setFormData] =
-    useState({
-      combo: "",
-      dynamic_pricing: "",
-    });
+  const [formData, setFormData] = useState({
+    combo: "",
+    dynamic_pricing: "",
+  });
 
   const activeRestaurant = useSelector(
-    (state) =>
-      state.restaurant.activeRestaurant,
+    (state) => state.restaurant.activeRestaurant,
   );
 
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ====================================================
   // FETCH DATA
   // ====================================================
   useEffect(() => {
-
     if (restaurantId) {
-
       fetchInitialData();
-
     }
-
   }, [restaurantId]);
 
   // ====================================================
   // FETCH INITIAL DATA
   // ====================================================
   const fetchInitialData = async () => {
-
     try {
+      const combos = await getComboList(restaurantId);
 
-      const combos =
-        await getComboList(
-          restaurantId
-        );
+      const pricings = await getDynamicPricingList(restaurantId);
 
-      const pricings =
-        await getDynamicPricingList(
-          restaurantId
-        );
-
-      const mappings =
-        await getComboDynamicPricingList(
-          restaurantId
-        );
+      const mappings = await getComboDynamicPricingList(restaurantId);
 
       setComboList(combos);
 
       setPricingList(pricings);
 
-    //   setMappingList(mappings);
-    setMappingList(mappings.data || []);
-
+      //   setMappingList(mappings);
+      setMappingList(mappings.data || []);
     } catch (error) {
-
       setAlert({
         type: "danger",
-        message:
-          "Failed to load data",
+        message: "Failed to load data",
       });
-
     }
-
   };
 
   // ====================================================
   // HANDLE CHANGE
   // ====================================================
   const handleChange = (e) => {
-
     setFormData({
       ...formData,
-      [e.target.name]:
-        e.target.value,
+      [e.target.name]: e.target.value,
     });
-
   };
 
   // ====================================================
   // CREATE
   // ====================================================
   const handleCreate = async (e) => {
-
     e.preventDefault();
 
     try {
-
-      await createComboDynamicPricing(
-        formData,
-      );
+      await createComboDynamicPricing(formData);
 
       fetchInitialData();
 
@@ -153,54 +114,38 @@ const restaurantId =
 
       setAlert({
         type: "success",
-        message:
-          "Mapping created successfully",
+        message: "Mapping created successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
-        message:
-          error.response?.data
-            ?.message ||
-          "Mapping already exists",
+        message: error.response?.data?.message || "Mapping already exists",
       });
-
     }
-
   };
 
   // ====================================================
   // OPEN EDIT
   // ====================================================
   const openEditModal = (mapping) => {
-
     setSelectedMapping(mapping);
 
     setFormData({
       combo: mapping.combo,
-      dynamic_pricing:
-        mapping.dynamic_pricing,
+      dynamic_pricing: mapping.dynamic_pricing,
     });
 
     setShowEditModal(true);
-
   };
 
   // ====================================================
   // UPDATE
   // ====================================================
   const handleUpdate = async (e) => {
-
     e.preventDefault();
 
     try {
-
-      await updateComboDynamicPricing(
-        selectedMapping.id,
-        formData,
-      );
+      await updateComboDynamicPricing(selectedMapping.id, formData);
 
       fetchInitialData();
 
@@ -208,176 +153,115 @@ const restaurantId =
 
       setAlert({
         type: "success",
-        message:
-          "Mapping updated successfully",
+        message: "Mapping updated successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
-        message:
-          error.response?.data
-            ?.message ||
-          "Failed to update mapping",
+        message: error.response?.data?.message || "Failed to update mapping",
       });
-
     }
-
   };
 
   // ====================================================
   // DELETE
   // ====================================================
-  const handleDelete = async (
-    mappingId,
-  ) => {
-
-    const confirmDelete =
-      window.confirm(
-        "Delete this mapping?",
-      );
+  const handleDelete = async (mappingId) => {
+    const confirmDelete = window.confirm("Delete this mapping?");
 
     if (!confirmDelete) {
       return;
     }
 
     try {
-
-      await deleteComboDynamicPricing(
-        mappingId,
-      );
+      await deleteComboDynamicPricing(mappingId);
 
       fetchInitialData();
 
       setAlert({
         type: "success",
-        message:
-          "Mapping deleted successfully",
+        message: "Mapping deleted successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
-        message:
-          "Failed to delete mapping",
+        message: "Failed to delete mapping",
       });
-
     }
-
   };
 
   return (
-
     <div>
-
       {/* ALERT */}
       {alert && (
-        <div className={`alert alert-${alert.type}`}>
-          {alert.message}
-        </div>
+        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
       {/* HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-
-        <h2 className="fw-bold">
-          Combo Dynamic Pricing
-        </h2>
+        <h2 className="fw-bold">Combo Dynamic Pricing</h2>
 
         <button
           className="btn btn-primary"
-          onClick={() =>
-            setShowCreateModal(true)
-          }
+          onClick={() => setShowCreateModal(true)}
         >
           Create Mapping
         </button>
-
       </div>
 
       {/* TABLE */}
       <div className="card border-0 shadow-sm">
-
         <div className="card-body">
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Combo</th>
 
-          <table className="table align-middle">
+                  <th>Pricing Rule</th>
 
-            <thead>
+                  <th>Type</th>
 
-              <tr>
+                  <th>Value</th>
 
-                <th>Combo</th>
-
-                <th>Pricing Rule</th>
-
-                <th>Type</th>
-
-                <th>Value</th>
-
-                <th>Actions</th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {mappingList.map((mapping) => (
-
-                <tr key={mapping.id}>
-
-                  <td>
-                    {mapping.combo_name}
-                  </td>
-
-                  <td>
-                    {mapping.dynamic_pricing_name}
-                  </td>
-
-                  <td>
-                    {mapping.pricing_type}
-                  </td>
-
-                  <td>
-                    {mapping.pricing_value}
-                  </td>
-
-                  <td>
-
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() =>
-                        openEditModal(mapping)
-                      }
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() =>
-                        handleDelete(
-                          mapping.id,
-                        )
-                      }
-                    >
-                      Remove
-                    </button>
-
-                  </td>
-
+                  <th>Actions</th>
                 </tr>
+              </thead>
 
-              ))}
+              <tbody>
+                {mappingList.map((mapping) => (
+                  <tr key={mapping.id}>
+                    <td>{mapping.combo_name}</td>
 
-            </tbody>
+                    <td>{mapping.dynamic_pricing_name}</td>
 
-          </table>
+                    <td>{mapping.pricing_type}</td>
 
+                    <td>{mapping.pricing_value}</td>
+
+                    <td>
+                      <div className="action-buttons">
+                      <button
+                        className="btn btn-warning btn-sm me-2"
+                        onClick={() => openEditModal(mapping)}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDelete(mapping.id)}
+                      >
+                        Remove
+                      </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-
       </div>
 
       {/* CREATE */}
@@ -388,9 +272,7 @@ const restaurantId =
           handleChange={handleChange}
           comboList={comboList}
           pricingList={pricingList}
-          onClose={() =>
-            setShowCreateModal(false)
-          }
+          onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreate}
         />
       )}
@@ -403,17 +285,12 @@ const restaurantId =
           handleChange={handleChange}
           comboList={comboList}
           pricingList={pricingList}
-          onClose={() =>
-            setShowEditModal(false)
-          }
+          onClose={() => setShowEditModal(false)}
           onSubmit={handleUpdate}
         />
       )}
-
     </div>
-
   );
-
 }
 
 // ======================================================
@@ -428,32 +305,18 @@ function MappingModal({
   onClose,
   onSubmit,
 }) {
-
   return (
-
     <div className="modal d-block">
-
       <div className="modal-dialog">
-
         <div className="modal-content">
-
           <div className="modal-header">
+            <h5 className="modal-title">{title}</h5>
 
-            <h5 className="modal-title">
-              {title}
-            </h5>
-
-            <button
-              className="btn-close"
-              onClick={onClose}
-            />
-
+            <button className="btn-close" onClick={onClose} />
           </div>
 
           <form onSubmit={onSubmit}>
-
             <div className="modal-body">
-
               <SelectField
                 label="Combo"
                 name="combo"
@@ -465,17 +328,13 @@ function MappingModal({
               <SelectField
                 label="Dynamic Pricing"
                 name="dynamic_pricing"
-                value={
-                  formData.dynamic_pricing
-                }
+                value={formData.dynamic_pricing}
                 handleChange={handleChange}
                 options={pricingList}
               />
-
             </div>
 
             <div className="modal-footer">
-
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -484,45 +343,24 @@ function MappingModal({
                 Cancel
               </button>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
+              <button type="submit" className="btn btn-primary">
                 Save
               </button>
-
             </div>
-
           </form>
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }
 
 // ======================================================
 // SELECT FIELD
 // ======================================================
-function SelectField({
-  label,
-  name,
-  value,
-  handleChange,
-  options,
-}) {
-
+function SelectField({ label, name, value, handleChange, options }) {
   return (
-
     <div className="mb-3">
-
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
 
       <select
         className="form-select"
@@ -531,26 +369,14 @@ function SelectField({
         onChange={handleChange}
         required
       >
-
-        <option value="">
-          Choose {label}
-        </option>
+        <option value="">Choose {label}</option>
 
         {options.map((item) => (
-
-          <option
-            key={item.id}
-            value={item.id}
-          >
+          <option key={item.id} value={item.id}>
             {item.name}
           </option>
-
         ))}
-
       </select>
-
     </div>
-
   );
-
 }

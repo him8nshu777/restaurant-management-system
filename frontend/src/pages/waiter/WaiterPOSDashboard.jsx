@@ -236,6 +236,12 @@ export default function WaiterPOSDashboard() {
     }
   }, [orderType]);
 
+  const filteredTables = tableList.filter(
+  (table) =>
+    String(table.floor) === String(selectedFloor) &&
+    (!selectedArea ||
+      String(table.area) === String(selectedArea))
+);
   // ==========================================
   // GET PRODUCTS
   // ==========================================
@@ -791,7 +797,9 @@ export default function WaiterPOSDashboard() {
           ALERT
       ========================================== */}
       {alert && (
-        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
+        <div className={`alert alert-${alert.type} d-none d-md-block`}>
+          {alert.message}
+        </div>
       )}
 
       {/* ==========================================
@@ -1139,22 +1147,7 @@ export default function WaiterPOSDashboard() {
     CART MODAL
 ========================================== */}
       {showCart && (
-        <div
-          className="
-      position-fixed
-      top-0
-      end-0
-      bg-white
-      shadow-lg
-      h-100
-      p-4
-    "
-          style={{
-            width: "550px",
-            zIndex: 9999,
-            overflowY: "auto",
-          }}
-        >
+        <div className="pos-cart">
           {/* HEADER */}
           <div
             className="
@@ -1171,7 +1164,11 @@ export default function WaiterPOSDashboard() {
               onClick={() => setShowCart(false)}
             ></button>
           </div>
-
+          {alert && (
+            <div className={`alert alert-${alert.type} mb-3 d-block d-md-none`}>
+              {alert.message}
+            </div>
+          )}
           {/* EMPTY CART */}
           {cartItems.length === 0 && (
             <div className="text-center text-muted">Cart is empty</div>
@@ -1718,7 +1715,7 @@ export default function WaiterPOSDashboard() {
             FLOOR SIDEBAR
         ========================================== */}
               <div
-                className="col-2 border-end p-3"
+                className="col-12 col-md-2 border-end p-3"
                 style={{
                   overflowY: "auto",
                 }}
@@ -1759,7 +1756,7 @@ export default function WaiterPOSDashboard() {
             AREA SIDEBAR
         ========================================== */}
               <div
-                className="col-2 border-end p-3"
+                className="col-12 col-md-2 border-end p-3"
                 style={{
                   overflowY: "auto",
                 }}
@@ -1791,51 +1788,56 @@ export default function WaiterPOSDashboard() {
               </div>
 
               {/* ==========================================
-            TABLE GRID
-        ========================================== */}
+    TABLE GRID
+========================================== */}
               <div
-                className="col-8 p-4"
+                className="col-12 col-md-8 p-3 p-md-4"
                 style={{
                   overflowY: "auto",
                 }}
               >
                 <div className="row g-3">
-                  {tableList
-                    .filter(
-                      (table) =>
-                        String(table.floor) === String(selectedFloor) &&
-                        (!selectedArea ||
-                          String(table.area) === String(selectedArea)),
-                    )
-                    .map((table) => {
+                  {filteredTables.length > 0 ? (
+                    filteredTables.map((table) => {
                       const isAvailable = table.status === "available";
 
+                      const isSelected =
+                        String(selectedTable) === String(table.id);
+
                       return (
-                        <div key={table.id} className="col-md-3">
+                        <div
+                          key={table.id}
+                          className="
+              col-6
+              col-sm-4
+              col-md-3
+            "
+                        >
                           <button
                             type="button"
                             disabled={!isAvailable}
                             onClick={() => {
                               setSelectedTable(table.id);
-
                               setShowTableModal(false);
                             }}
                             className={`
-            btn
-            w-100
-            p-4
-            rounded-4
-            border
-            ${
-              table.status === "available"
-                ? "btn-outline-success"
-                : table.status === "occupied"
-                  ? "btn-outline-danger"
-                  : table.status === "reserved"
-                    ? "btn-outline-warning"
-                    : "btn-outline-secondary"
-            }
-          `}
+                btn
+                w-100
+                p-4
+                rounded-4
+                border
+                ${
+                  isSelected
+                    ? "btn-success"
+                    : table.status === "available"
+                      ? "btn-outline-success"
+                      : table.status === "occupied"
+                        ? "btn-outline-danger"
+                        : table.status === "reserved"
+                          ? "btn-outline-warning"
+                          : "btn-outline-secondary"
+                }
+              `}
                           >
                             <h5 className="fw-bold">{table.table_number}</h5>
 
@@ -1844,17 +1846,17 @@ export default function WaiterPOSDashboard() {
                             <div className="mt-2">
                               <span
                                 className={`
-                badge
-                ${
-                  table.status === "available"
-                    ? "bg-success"
-                    : table.status === "occupied"
-                      ? "bg-danger"
-                      : table.status === "reserved"
-                        ? "bg-warning"
-                        : "bg-secondary"
-                }
-              `}
+                    badge
+                    ${
+                      table.status === "available"
+                        ? "bg-success"
+                        : table.status === "occupied"
+                          ? "bg-danger"
+                          : table.status === "reserved"
+                            ? "bg-warning"
+                            : "bg-secondary"
+                    }
+                  `}
                               >
                                 {table.status}
                               </span>
@@ -1862,7 +1864,36 @@ export default function WaiterPOSDashboard() {
                           </button>
                         </div>
                       );
-                    })}
+                    })
+                  ) : (
+                    <div className="col-12">
+                      <div
+                        className="
+            border
+            rounded-4
+            bg-light
+            text-center
+            py-5
+            px-3
+          "
+                      >
+                        <div
+                          style={{
+                            fontSize: "3rem",
+                          }}
+                        >
+                          🪑
+                        </div>
+
+                        <h5 className="mt-3 mb-2">No Tables Available</h5>
+
+                        <p className="text-muted mb-0">
+                          No tables have been created for the selected floor and
+                          area.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -33,7 +33,7 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -211,7 +211,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
 
 # email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

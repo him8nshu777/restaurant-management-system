@@ -15,6 +15,7 @@ import { loginSuccess, logout } from "../auth/authSlice";
 
 // Common loader component (optional UI improvement)
 import ButtonLoader from "../components/common/ButtonLoader";
+import ForceLogoutListener from "../hooks/ForceLogoutListener";
 
 
 // ==========================================
@@ -131,5 +132,14 @@ export default function ProtectedRoute({ children }) {
   // ==========================================
   // ALLOW ACCESS TO PROTECTED PAGE
   // ==========================================
-  return children;
+  // ==========================================
+  // STAFF
+  // ==========================================
+  return (
+    <>
+      <ForceLogoutListener />
+
+      {children}
+    </>
+  );
 }

@@ -257,6 +257,7 @@ const restaurantId =
                         </td>
 
                         <td>
+                          <div className="action-buttons">
                           <button
                             className="btn btn-danger btn-sm"
                             onClick={() =>
@@ -268,6 +269,7 @@ const restaurantId =
                           >
                             Remove
                           </button>
+                          </div>
                         </td>
                       </tr>
                     ))

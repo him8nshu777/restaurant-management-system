@@ -207,7 +207,7 @@ export default function ActiveOrders() {
           mb-4
         "
       >
-        <h2 className="fw-bold">Orders</h2>
+        <h2 className="fw-bold">Active Orders</h2>
       </div>
 
       {/* TABLE */}
@@ -260,6 +260,7 @@ export default function ActiveOrders() {
                       </span>
                     </td>
                     <td>
+                      <div className="action-buttons">
                       {order.payment_status !== "paid" && (
                         <button
                           className="btn btn-success btn-sm me-2"
@@ -274,6 +275,7 @@ export default function ActiveOrders() {
                       >
                         View
                       </button>
+                        </div>
                     </td>
                   </tr>
                 ))}
@@ -286,7 +288,7 @@ export default function ActiveOrders() {
       {/* EDIT MODAL */}
       {showEditModal && (
         <ModalWrapper
-          title="Edit Order"
+          title="Order Details"
           onClose={() => setShowEditModal(false)}
            showFooter={false}
         >

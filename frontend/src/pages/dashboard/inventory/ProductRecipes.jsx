@@ -7,37 +7,31 @@ import {
   deleteProductRecipe,
   getProductRecipeList,
   updateProductRecipe,
-
   getIngredientList,
 } from "../../../services/inventoryService";
 
-import {
-  getVariantList,
-} from "../../../services/menuService";
+import { getVariantList } from "../../../services/menuService";
 
 // ==========================================
 // PRODUCT RECIPES PAGE
 // ==========================================
 export default function ProductRecipes() {
-
   // ==========================================
   // ACTIVE RESTAURANT
   // ==========================================
   const activeRestaurant = useSelector(
-    (state) => state.restaurant.activeRestaurant
+    (state) => state.restaurant.activeRestaurant,
   );
 
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ==========================================
   // STATES
@@ -50,14 +44,11 @@ const restaurantId =
 
   const [alert, setAlert] = useState(null);
 
-  const [showCreateModal, setShowCreateModal] =
-    useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const [showEditModal, setShowEditModal] =
-    useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  const [selectedRecipe, setSelectedRecipe] =
-    useState(null);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
 
   // ==========================================
   // FORM
@@ -72,34 +63,24 @@ const restaurantId =
   // FETCH DATA
   // ==========================================
   useEffect(() => {
-
     if (restaurantId) {
-
       fetchRecipes();
 
       fetchIngredients();
 
       fetchVariants();
     }
-
   }, [restaurantId]);
 
   // ==========================================
   // FETCH RECIPES
   // ==========================================
   const fetchRecipes = async () => {
-
     try {
-
-      const data =
-        await getProductRecipeList(
-          restaurantId
-        );
+      const data = await getProductRecipeList(restaurantId);
 
       setRecipeList(data);
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to fetch recipes.",
@@ -111,18 +92,11 @@ const restaurantId =
   // FETCH INGREDIENTS
   // ==========================================
   const fetchIngredients = async () => {
-
     try {
-
-      const data =
-        await getIngredientList(
-          restaurantId
-        );
+      const data = await getIngredientList(restaurantId);
 
       setIngredientList(data);
-
     } catch (error) {
-
       console.log(error);
     }
   };
@@ -131,18 +105,11 @@ const restaurantId =
   // FETCH VARIANTS
   // ==========================================
   const fetchVariants = async () => {
-
     try {
-
-      const data =
-        await getVariantList(
-          restaurantId
-        );
+      const data = await getVariantList(restaurantId);
 
       setVariantList(data);
-
     } catch (error) {
-
       console.log(error);
     }
   };
@@ -151,7 +118,6 @@ const restaurantId =
   // HANDLE CHANGE
   // ==========================================
   const handleChange = (e) => {
-
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -162,14 +128,12 @@ const restaurantId =
   // CREATE RECIPE
   // ==========================================
   const handleCreateRecipe = async (e) => {
-
     e.preventDefault();
 
     try {
-
       await createProductRecipe({
         ...formData,
-        restaurant_id: restaurantId
+        restaurant_id: restaurantId,
       });
 
       fetchRecipes();
@@ -186,9 +150,7 @@ const restaurantId =
         type: "success",
         message: "Recipe created successfully.",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to create recipe.",
@@ -200,7 +162,6 @@ const restaurantId =
   // OPEN EDIT
   // ==========================================
   const openEditModal = (recipe) => {
-
     setSelectedRecipe(recipe);
 
     setFormData({
@@ -215,15 +176,10 @@ const restaurantId =
   // UPDATE
   // ==========================================
   const handleUpdateRecipe = async (e) => {
-
     e.preventDefault();
 
     try {
-
-      await updateProductRecipe(
-        selectedRecipe.id,
-        formData
-      );
+      await updateProductRecipe(selectedRecipe.id, formData);
 
       fetchRecipes();
 
@@ -233,9 +189,7 @@ const restaurantId =
         type: "success",
         message: "Recipe updated successfully.",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to update recipe.",
@@ -247,14 +201,11 @@ const restaurantId =
   // DELETE
   // ==========================================
   const handleDeleteRecipe = async (recipeId) => {
-
-    const confirmDelete =
-      window.confirm("Delete recipe?");
+    const confirmDelete = window.confirm("Delete recipe?");
 
     if (!confirmDelete) return;
 
     try {
-
       await deleteProductRecipe(recipeId);
 
       fetchRecipes();
@@ -263,9 +214,7 @@ const restaurantId =
         type: "success",
         message: "Recipe deleted successfully.",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to delete recipe.",
@@ -275,12 +224,9 @@ const restaurantId =
 
   return (
     <div>
-
       {/* ALERT */}
       {alert && (
-        <div className={`alert alert-${alert.type}`}>
-          {alert.message}
-        </div>
+        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
       {/* HEADER */}
@@ -292,15 +238,11 @@ const restaurantId =
           mb-4
         "
       >
-        <h2 className="fw-bold">
-          Product Recipes
-        </h2>
+        <h2 className="fw-bold">Product Recipes</h2>
 
         <button
           className="btn btn-primary"
-          onClick={() =>
-            setShowCreateModal(true)
-          }
+          onClick={() => setShowCreateModal(true)}
         >
           Add Recipe
         </button>
@@ -308,94 +250,70 @@ const restaurantId =
 
       {/* TABLE */}
       <div className="card border-0 shadow-sm">
-
         <div className="card-body">
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Variant</th>
+                  <th>Ingredient</th>
+                  <th>Quantity</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-          <table className="table">
+              <tbody>
+                {recipeList.map((recipe) => (
+                  <tr key={recipe.id}>
+                    <td>{recipe.variant_name}</td>
 
-            <thead>
-              <tr>
-                <th>Variant</th>
-                <th>Ingredient</th>
-                <th>Quantity</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+                    <td>{recipe.ingredient_name}</td>
 
-            <tbody>
+                    <td>
+                      {recipe.quantity} {recipe.unit_code}
+                    </td>
 
-              {recipeList.map((recipe) => (
-
-                <tr key={recipe.id}>
-
-                  <td>
-                    {recipe.variant_name}
-                  </td>
-
-                  <td>
-                    {recipe.ingredient_name}
-                  </td>
-
-                  <td>
-                    {recipe.quantity}
-                    {" "}
-                    {recipe.unit_code}
-                  </td>
-
-                  <td>
-
-                    <button
-                      className="
+                    <td>
+                      <div className="action-buttons">
+                      <button
+                        className="
                         btn
                         btn-warning
                         btn-sm
                         me-2
                       "
-                      onClick={() =>
-                        openEditModal(recipe)
-                      }
-                    >
-                      Edit
-                    </button>
+                        onClick={() => openEditModal(recipe)}
+                      >
+                        Edit
+                      </button>
 
-                    <button
-                      className="
+                      <button
+                        className="
                         btn
                         btn-danger
                         btn-sm
                       "
-                      onClick={() =>
-                        handleDeleteRecipe(recipe.id)
-                      }
-                    >
-                      Delete
-                    </button>
-
-                  </td>
-
-                </tr>
-
-              ))}
-
-            </tbody>
-
-          </table>
-
+                        onClick={() => handleDeleteRecipe(recipe.id)}
+                      >
+                        Delete
+                      </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-
       </div>
 
       {/* CREATE MODAL */}
       {showCreateModal && (
-
         <ModalWrapper
           title="Create Recipe"
-          onClose={() =>
-            setShowCreateModal(false)
-          }
+          onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreateRecipe}
         >
-
           <SelectField
             label="Product Variant"
             name="product_variant"
@@ -419,21 +337,16 @@ const restaurantId =
             handleChange={handleChange}
             type="number"
           />
-
         </ModalWrapper>
       )}
 
       {/* EDIT MODAL */}
       {showEditModal && (
-
         <ModalWrapper
           title="Edit Recipe"
-          onClose={() =>
-            setShowEditModal(false)
-          }
+          onClose={() => setShowEditModal(false)}
           onSubmit={handleUpdateRecipe}
         >
-
           <SelectField
             label="Ingredient"
             name="ingredient"
@@ -449,10 +362,8 @@ const restaurantId =
             handleChange={handleChange}
             type="number"
           />
-
         </ModalWrapper>
       )}
-
     </div>
   );
 }
@@ -460,41 +371,21 @@ const restaurantId =
 // ==========================================
 // MODAL
 // ==========================================
-function ModalWrapper({
-  title,
-  children,
-  onClose,
-  onSubmit,
-}) {
-
+function ModalWrapper({ title, children, onClose, onSubmit }) {
   return (
     <div className="modal d-block">
-
       <div className="modal-dialog">
-
         <div className="modal-content">
-
           <div className="modal-header">
+            <h5 className="modal-title">{title}</h5>
 
-            <h5 className="modal-title">
-              {title}
-            </h5>
-
-            <button
-              className="btn-close"
-              onClick={onClose}
-            ></button>
-
+            <button className="btn-close" onClick={onClose}></button>
           </div>
 
           <form onSubmit={onSubmit}>
-
-            <div className="modal-body">
-              {children}
-            </div>
+            <div className="modal-body">{children}</div>
 
             <div className="modal-footer">
-
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -503,21 +394,13 @@ function ModalWrapper({
                 Cancel
               </button>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
+              <button type="submit" className="btn btn-primary">
                 Save
               </button>
-
             </div>
-
           </form>
-
         </div>
-
       </div>
-
     </div>
   );
 }
@@ -525,20 +408,10 @@ function ModalWrapper({
 // ==========================================
 // INPUT FIELD
 // ==========================================
-function InputField({
-  label,
-  name,
-  value,
-  handleChange,
-  type = "text",
-}) {
-
+function InputField({ label, name, value, handleChange, type = "text" }) {
   return (
     <div className="mb-3">
-
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
 
       <input
         type={type}
@@ -548,7 +421,6 @@ function InputField({
         onChange={handleChange}
         required
       />
-
     </div>
   );
 }
@@ -556,20 +428,10 @@ function InputField({
 // ==========================================
 // SELECT FIELD
 // ==========================================
-function SelectField({
-  label,
-  name,
-  value,
-  handleChange,
-  options,
-}) {
-
+function SelectField({ label, name, value, handleChange, options }) {
   return (
     <div className="mb-3">
-
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
 
       <select
         className="form-select"
@@ -578,24 +440,14 @@ function SelectField({
         onChange={handleChange}
         required
       >
-
-        <option value="">
-          Select {label}
-        </option>
+        <option value="">Select {label}</option>
 
         {options.map((item) => (
-
-          <option
-            key={item.id}
-            value={item.id}
-          >
+          <option key={item.id} value={item.id}>
             {item.product_name} - {item.name}
           </option>
-
         ))}
-
       </select>
-
     </div>
   );
 }

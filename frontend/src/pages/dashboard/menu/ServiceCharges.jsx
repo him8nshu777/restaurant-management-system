@@ -16,131 +16,96 @@ import {
 // SERVICE CHARGES PAGE
 // ======================================================
 export default function ServiceCharges() {
-
   // ====================================================
   // STATES
   // ====================================================
-  const [chargeList, setChargeList] =
-    useState([]);
+  const [chargeList, setChargeList] = useState([]);
 
-  const [alert, setAlert] =
-    useState(null);
+  const [alert, setAlert] = useState(null);
 
-  const [showCreateModal, setShowCreateModal] =
-    useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const [showEditModal, setShowEditModal] =
-    useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  const [selectedCharge, setSelectedCharge] =
-    useState(null);
+  const [selectedCharge, setSelectedCharge] = useState(null);
 
-  const [formData, setFormData] =
-    useState({
-      name: "",
-      description: "",
-      charge_type: "percentage",
-      value: "",
-      applicable_order_types: [],
-    });
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    charge_type: "percentage",
+    value: "",
+    applicable_order_types: [],
+  });
 
   // ====================================================
   // ACTIVE RESTAURANT
   // ====================================================
   const activeRestaurant = useSelector(
-    (state) =>
-      state.restaurant.activeRestaurant,
+    (state) => state.restaurant.activeRestaurant,
   );
 
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ====================================================
   // FETCH DATA
   // ====================================================
   useEffect(() => {
-
     if (restaurantId) {
-
       fetchCharges();
     }
-
   }, [restaurantId]);
 
   // ====================================================
   // FETCH CHARGES
   // ====================================================
   const fetchCharges = async () => {
-
     try {
-
-      const data =
-        await getServiceChargeList(
-          restaurantId
-        );
+      const data = await getServiceChargeList(restaurantId);
 
       setChargeList(data);
-
     } catch (error) {
-
       setAlert({
         type: "danger",
-        message:
-          "Failed to load service charges",
+        message: "Failed to load service charges",
       });
     }
   };
 
   // ====================================================
-// HANDLE CHANGE
-// ====================================================
-const handleChange = (e) => {
+  // HANDLE CHANGE
+  // ====================================================
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
 
-  const {
-    name,
-    value,
-    type,
-    checked,
-  } = e.target;
+    // CUSTOM MULTI SELECT
+    if (type === "custom-multiselect") {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
 
-  // CUSTOM MULTI SELECT
-  if (
-    type ===
-    "custom-multiselect"
-  ) {
+      return;
+    }
 
+    // NORMAL INPUTS
     setFormData({
       ...formData,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     });
-
-    return;
-  }
-
-  // NORMAL INPUTS
-  setFormData({
-    ...formData,
-    [name]:
-      type === "checkbox"
-        ? checked
-        : value,
-  });
-};
+  };
 
   // ====================================================
   // RESET FORM
   // ====================================================
   const resetForm = () => {
-
     setFormData({
       name: "",
       description: "",
@@ -154,15 +119,12 @@ const handleChange = (e) => {
   // CREATE SERVICE CHARGE
   // ====================================================
   const handleCreate = async (e) => {
-
     e.preventDefault();
 
     try {
-
       await createServiceCharge({
         ...formData,
-        restaurant:
-          restaurantId
+        restaurant: restaurantId,
       });
 
       fetchCharges();
@@ -173,17 +135,13 @@ const handleChange = (e) => {
 
       setAlert({
         type: "success",
-        message:
-          "Service charge created successfully",
+        message: "Service charge created successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message:
-          error.response?.data?.message ||
-          "Failed to create service charge",
+          error.response?.data?.message || "Failed to create service charge",
       });
     }
   };
@@ -192,17 +150,14 @@ const handleChange = (e) => {
   // OPEN EDIT MODAL
   // ====================================================
   const openEditModal = (charge) => {
-
     setSelectedCharge(charge);
 
     setFormData({
       name: charge.name,
-      description:
-        charge.description || "",
-      charge_type:
-        charge.charge_type,
+      description: charge.description || "",
+      charge_type: charge.charge_type,
       value: charge.value,
-        applicable_order_types: charge.applicable_order_types || [],
+      applicable_order_types: charge.applicable_order_types || [],
     });
 
     setShowEditModal(true);
@@ -212,19 +167,13 @@ const handleChange = (e) => {
   // UPDATE SERVICE CHARGE
   // ====================================================
   const handleUpdate = async (e) => {
-
     e.preventDefault();
 
     try {
-
-      await updateServiceCharge(
-        selectedCharge.id,
-        {
-          ...formData,
-          restaurant:
-            restaurantId
-        },
-      );
+      await updateServiceCharge(selectedCharge.id, {
+        ...formData,
+        restaurant: restaurantId,
+      });
 
       fetchCharges();
 
@@ -234,17 +183,13 @@ const handleChange = (e) => {
 
       setAlert({
         type: "success",
-        message:
-          "Service charge updated successfully",
+        message: "Service charge updated successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message:
-          error.response?.data?.message ||
-          "Failed to update service charge",
+          error.response?.data?.message || "Failed to update service charge",
       });
     }
   };
@@ -252,39 +197,26 @@ const handleChange = (e) => {
   // ====================================================
   // DELETE SERVICE CHARGE
   // ====================================================
-  const handleDelete = async (
-    chargeId,
-  ) => {
-
-    const confirmDelete =
-      window.confirm(
-        "Delete this service charge?",
-      );
+  const handleDelete = async (chargeId) => {
+    const confirmDelete = window.confirm("Delete this service charge?");
 
     if (!confirmDelete) {
       return;
     }
 
     try {
-
-      await deleteServiceCharge(
-        chargeId,
-      );
+      await deleteServiceCharge(chargeId);
 
       fetchCharges();
 
       setAlert({
         type: "success",
-        message:
-          "Service charge deleted successfully",
+        message: "Service charge deleted successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
-        message:
-          "Failed to delete service charge",
+        message: "Failed to delete service charge",
       });
     }
   };
@@ -292,38 +224,24 @@ const handleChange = (e) => {
   // ====================================================
   // TOGGLE STATUS
   // ====================================================
-  const handleToggleStatus = async (
-    chargeId,
-  ) => {
-
+  const handleToggleStatus = async (chargeId) => {
     try {
-
-      await toggleServiceChargeStatus(
-        chargeId,
-      );
+      await toggleServiceChargeStatus(chargeId);
 
       fetchCharges();
-
     } catch (error) {
-
       setAlert({
         type: "danger",
-        message:
-          "Failed to update status",
+        message: "Failed to update status",
       });
     }
   };
 
   return (
     <div>
-
       {/* ALERT */}
       {alert && (
-        <div
-          className={`alert alert-${alert.type}`}
-        >
-          {alert.message}
-        </div>
+        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
       {/* HEADER */}
@@ -335,16 +253,11 @@ const handleChange = (e) => {
           mb-4
         "
       >
-
-        <h2 className="fw-bold">
-          Service Charges
-        </h2>
+        <h2 className="fw-bold">Service Charges</h2>
 
         <button
           className="btn btn-primary"
-          onClick={() =>
-            setShowCreateModal(true)
-          }
+          onClick={() => setShowCreateModal(true)}
         >
           Create Service Charge
         </button>
@@ -352,137 +265,104 @@ const handleChange = (e) => {
 
       {/* TABLE */}
       <div className="card border-0 shadow-sm">
-
         <div className="card-body">
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Value</th>
+                  <th>Order Type</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-          <table className="table align-middle">
+              <tbody>
+                {chargeList.length > 0 ? (
+                  chargeList.map((charge) => (
+                    <tr key={charge.id}>
+                      <td>
+                        <div className="fw-semibold">{charge.name}</div>
 
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Order Type</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+                        <div className="small text-muted">
+                          {charge.description}
+                        </div>
+                      </td>
 
-            <tbody>
-
-              {chargeList.length > 0 ? (
-
-                chargeList.map((charge) => (
-
-                  <tr key={charge.id}>
-
-                    <td>
-                      <div className="fw-semibold">
-                        {charge.name}
-                      </div>
-
-                      <div className="small text-muted">
-                        {
-                          charge.description
-                        }
-                      </div>
-                    </td>
-
-                    <td>
-  {charge.applicable_order_types
-    ?.map((type) =>
-      type === "dine_in"
-        ? "Dine In"
-        : type === "takeaway"
-        ? "Takeaway"
-        : "Delivery"
-    )
-    .join(", ")}
-</td>
-
-                    <td>
-                      {charge.charge_type ===
-                      "percentage"
-                        ? `${charge.value}%`
-                        : `₹${charge.value}`}
-                    </td>
-                    <td>
-
-                      <button
-                        className={`btn btn-sm ${
-                          charge.is_active
-                            ? "btn-success"
-                            : "btn-secondary"
-                        }`}
-                        onClick={() =>
-                          handleToggleStatus(
-                            charge.id,
+                      <td>
+                        {charge.applicable_order_types
+                          ?.map((type) =>
+                            type === "dine_in"
+                              ? "Dine In"
+                              : type === "takeaway"
+                                ? "Takeaway"
+                                : "Delivery",
                           )
-                        }
-                      >
-                        {charge.is_active
-                          ? "Active"
-                          : "Inactive"}
-                      </button>
+                          .join(", ")}
+                      </td>
 
-                    </td>
+                      <td>
+                        {charge.charge_type === "percentage"
+                          ? `${charge.value}%`
+                          : `₹${charge.value}`}
+                      </td>
+                      <td>
+                        <button
+                          className={`btn btn-sm ${
+                            charge.is_active ? "btn-success" : "btn-secondary"
+                          }`}
+                          onClick={() => handleToggleStatus(charge.id)}
+                        >
+                          {charge.is_active ? "Active" : "Inactive"}
+                        </button>
+                      </td>
 
-                    <td>
-
-                      <button
-                        className="
+                      <td>
+                        <div className="action-buttons">
+                        <button
+                          className="
                           btn
                           btn-warning
                           btn-sm
                           me-2
                         "
-                        onClick={() =>
-                          openEditModal(
-                            charge,
-                          )
-                        }
-                      >
-                        Edit
-                      </button>
+                          onClick={() => openEditModal(charge)}
+                        >
+                          Edit
+                        </button>
 
-                      <button
-                        className="
+                        <button
+                          className="
                           btn
                           btn-danger
                           btn-sm
                         "
-                        onClick={() =>
-                          handleDelete(
-                            charge.id,
-                          )
-                        }
-                      >
-                        Delete
-                      </button>
-
-                    </td>
-                  </tr>
-                ))
-
-              ) : (
-
-                <tr>
-
-                  <td
-                    colSpan="6"
-                    className="
+                          onClick={() => handleDelete(charge.id)}
+                        >
+                          Delete
+                        </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      className="
                       text-center
                       text-muted
                     "
-                  >
-                    No service charges found
-                  </td>
-
-                </tr>
-              )}
-            </tbody>
-
-          </table>
+                    >
+                      No service charges found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -498,12 +378,7 @@ const handleChange = (e) => {
           }}
           onSubmit={handleCreate}
         >
-
-          <FormFields
-            formData={formData}
-            handleChange={handleChange}
-          />
-
+          <FormFields formData={formData} handleChange={handleChange} />
         </ModalWrapper>
       )}
 
@@ -519,12 +394,7 @@ const handleChange = (e) => {
           }}
           onSubmit={handleUpdate}
         >
-
-          <FormFields
-            formData={formData}
-            handleChange={handleChange}
-          />
-
+          <FormFields formData={formData} handleChange={handleChange} />
         </ModalWrapper>
       )}
     </div>
@@ -537,48 +407,29 @@ const handleChange = (e) => {
 // ======================================================
 // FORM FIELDS
 // ======================================================
-function FormFields({
-  formData,
-  handleChange,
-}) {
-
+function FormFields({ formData, handleChange }) {
   // ====================================================
   // TOGGLE ORDER TYPE
   // ====================================================
-  const toggleOrderType = (
-    orderType
-  ) => {
-
-    const alreadySelected =
-      formData.applicable_order_types.includes(
-        orderType
-      );
+  const toggleOrderType = (orderType) => {
+    const alreadySelected = formData.applicable_order_types.includes(orderType);
 
     let updatedTypes = [];
 
     // REMOVE
     if (alreadySelected) {
-
-      updatedTypes =
-        formData.applicable_order_types.filter(
-          (item) =>
-            item !== orderType
-        );
-
+      updatedTypes = formData.applicable_order_types.filter(
+        (item) => item !== orderType,
+      );
     } else {
-
       // ADD
-      updatedTypes = [
-        ...formData.applicable_order_types,
-        orderType,
-      ];
+      updatedTypes = [...formData.applicable_order_types, orderType];
     }
 
     // FAKE EVENT
     handleChange({
       target: {
-        name:
-          "applicable_order_types",
+        name: "applicable_order_types",
         value: updatedTypes,
         type: "custom-multiselect",
       },
@@ -605,10 +456,7 @@ function FormFields({
 
       {/* TYPE */}
       <div className="mb-3">
-
-        <label className="form-label">
-          Charge Type
-        </label>
+        <label className="form-label">Charge Type</label>
 
         <select
           className="form-select"
@@ -616,13 +464,9 @@ function FormFields({
           value={formData.charge_type}
           onChange={handleChange}
         >
-          <option value="percentage">
-            Percentage
-          </option>
+          <option value="percentage">Percentage</option>
 
-          <option value="fixed">
-            Fixed
-          </option>
+          <option value="fixed">Fixed</option>
         </select>
       </div>
 
@@ -637,28 +481,18 @@ function FormFields({
 
       {/* ORDER TYPES */}
       <div className="mb-3">
-
-        <label className="form-label">
-          Applicable Order Types
-        </label>
+        <label className="form-label">Applicable Order Types</label>
 
         <div className="d-flex gap-2 flex-wrap">
-
           {/* DINE IN */}
           <button
             type="button"
             className={`btn ${
-              formData.applicable_order_types.includes(
-                "dine_in"
-              )
+              formData.applicable_order_types.includes("dine_in")
                 ? "btn-primary"
                 : "btn-outline-primary"
             }`}
-            onClick={() =>
-              toggleOrderType(
-                "dine_in"
-              )
-            }
+            onClick={() => toggleOrderType("dine_in")}
           >
             Dine In
           </button>
@@ -667,17 +501,11 @@ function FormFields({
           <button
             type="button"
             className={`btn ${
-              formData.applicable_order_types.includes(
-                "takeaway"
-              )
+              formData.applicable_order_types.includes("takeaway")
                 ? "btn-primary"
                 : "btn-outline-primary"
             }`}
-            onClick={() =>
-              toggleOrderType(
-                "takeaway"
-              )
-            }
+            onClick={() => toggleOrderType("takeaway")}
           >
             Takeaway
           </button>
@@ -686,28 +514,17 @@ function FormFields({
           <button
             type="button"
             className={`btn ${
-              formData.applicable_order_types.includes(
-                "delivery"
-              )
+              formData.applicable_order_types.includes("delivery")
                 ? "btn-primary"
                 : "btn-outline-primary"
             }`}
-            onClick={() =>
-              toggleOrderType(
-                "delivery"
-              )
-            }
+            onClick={() => toggleOrderType("delivery")}
           >
             Delivery
           </button>
-
         </div>
 
-        <small className="text-muted">
-          Select one or multiple order
-          types
-        </small>
-
+        <small className="text-muted">Select one or multiple order types</small>
       </div>
     </>
   );
@@ -716,42 +533,23 @@ function FormFields({
 // ======================================================
 // MODAL
 // ======================================================
-function ModalWrapper({
-  title,
-  children,
-  onClose,
-  onSubmit,
-}) {
-
+function ModalWrapper({ title, children, onClose, onSubmit }) {
   return (
     <div className="modal d-block">
-
       <div className="modal-dialog">
-
         <div className="modal-content">
-
           {/* HEADER */}
           <div className="modal-header">
+            <h5 className="modal-title">{title}</h5>
 
-            <h5 className="modal-title">
-              {title}
-            </h5>
-
-            <button
-              className="btn-close"
-              onClick={onClose}
-            ></button>
+            <button className="btn-close" onClick={onClose}></button>
           </div>
 
           {/* FORM */}
           <form onSubmit={onSubmit}>
-
-            <div className="modal-body">
-              {children}
-            </div>
+            <div className="modal-body">{children}</div>
 
             <div className="modal-footer">
-
               <button
                 type="button"
                 className="
@@ -772,7 +570,6 @@ function ModalWrapper({
               >
                 Save
               </button>
-
             </div>
           </form>
         </div>
@@ -784,20 +581,10 @@ function ModalWrapper({
 // ======================================================
 // INPUT FIELD
 // ======================================================
-function InputField({
-  label,
-  name,
-  value,
-  handleChange,
-  type = "text",
-}) {
-
+function InputField({ label, name, value, handleChange, type = "text" }) {
   return (
     <div className="mb-3">
-
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
 
       <input
         type={type}
@@ -814,19 +601,10 @@ function InputField({
 // ======================================================
 // TEXTAREA FIELD
 // ======================================================
-function TextAreaField({
-  label,
-  name,
-  value,
-  handleChange,
-}) {
-
+function TextAreaField({ label, name, value, handleChange }) {
   return (
     <div className="mb-3">
-
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
 
       <textarea
         className="form-control"

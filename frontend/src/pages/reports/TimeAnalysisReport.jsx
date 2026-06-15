@@ -110,80 +110,117 @@ export default function TimeAnalysisReport() {
 
     <div className="container-fluid">
 
-      <div className="d-flex justify-content-between mb-4">
+      <div
+  className="
+    d-flex
+    flex-column
+    flex-md-row
+    justify-content-between
+    align-items-start
+    align-items-md-center
+    gap-3
+    mb-4
+  "
+>
+  <h2 className="mb-0">
+    Time Analysis
+  </h2>
 
-        <h2>
-          Time Analysis
-        </h2>
+  <div
+    className="
+      d-flex
+      flex-column
+      flex-md-row
+      gap-2
+      align-items-stretch
+    align-items-md-center"
+  >
+    <select
+      className="form-select w-auto"
+      value={period}
+      onChange={(e) =>
+        setPeriod(e.target.value)
+      }
+    >
+      <option value="week">Week</option>
+      <option value="month">Month</option>
+      <option value="year">Year</option>
+      <option value="custom">Custom</option>
+    </select>
 
-        <div className="d-flex gap-2">
-
-          <select
-            className="form-select"
-            value={period}
+    {period === "custom" && (
+      <>
+        {/* Desktop */}
+        <div className="d-none d-md-flex gap-2">
+          <input
+            type="date"
+            className="form-control"
+            value={startDate}
             onChange={(e) =>
-              setPeriod(
-                e.target.value
-              )
+              setStartDate(e.target.value)
+            }
+          />
+
+          <input
+            type="date"
+            className="form-control"
+            value={endDate}
+            onChange={(e) =>
+              setEndDate(e.target.value)
+            }
+          />
+
+          <button
+            className="btn btn-primary"
+            onClick={() =>
+              fetchReport("custom")
             }
           >
-            <option value="week">
-              Week
-            </option>
+            Apply
+          </button>
+        </div>
 
-            <option value="month">
-              Month
-            </option>
-
-            <option value="year">
-              Year
-            </option>
-
-            <option value="custom">
-              Custom
-            </option>
-          </select>
-
-          {period === "custom" && (
-            <>
+        {/* Mobile */}
+        <div className="d-md-none w-100">
+          <div className="row g-2">
+            <div className="col-6">
               <input
                 type="date"
                 className="form-control"
                 value={startDate}
                 onChange={(e) =>
-                  setStartDate(
-                    e.target.value
-                  )
+                  setStartDate(e.target.value)
                 }
               />
+            </div>
 
+            <div className="col-6">
               <input
                 type="date"
                 className="form-control"
                 value={endDate}
                 onChange={(e) =>
-                  setEndDate(
-                    e.target.value
-                  )
+                  setEndDate(e.target.value)
                 }
               />
+            </div>
 
+            <div className="col-12">
               <button
-                className="btn btn-primary"
+                className="btn btn-primary w-100"
                 onClick={() =>
-                  fetchReport(
-                    "custom"
-                  )
+                  fetchReport("custom")
                 }
               >
                 Apply
               </button>
-            </>
-          )}
-
+            </div>
+          </div>
         </div>
-
-      </div>
+      </>
+    )}
+  </div>
+</div>
 
       {report && (
         <>

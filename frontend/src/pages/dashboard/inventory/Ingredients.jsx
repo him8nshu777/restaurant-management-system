@@ -35,10 +35,8 @@ export default function Ingredients() {
   ).length;
 
   const outOfStockCount = ingredientList.filter(
-    (ingredient) =>
-      Number(ingredient.current_stock) <= 0,
+    (ingredient) => Number(ingredient.current_stock) <= 0,
   ).length;
-
 
   const [formData, setFormData] = useState({
     name: "",
@@ -51,18 +49,15 @@ export default function Ingredients() {
   const activeRestaurant = useSelector(
     (state) => state.restaurant.activeRestaurant,
   );
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
-
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   useEffect(() => {
     if (restaurantId) {
@@ -154,10 +149,7 @@ const restaurantId =
     e.preventDefault();
 
     try {
-      await updateIngredient(
-        selectedIngredient.id,
-        formData,
-      );
+      await updateIngredient(selectedIngredient.id, formData);
 
       fetchIngredientList();
 
@@ -194,9 +186,7 @@ const restaurantId =
   };
 
   const handleDeleteIngredient = async (ingredientId) => {
-    const confirmDelete = window.confirm(
-      "Delete this ingredient?",
-    );
+    const confirmDelete = window.confirm("Delete this ingredient?");
 
     if (!confirmDelete) {
       return;
@@ -222,9 +212,7 @@ const restaurantId =
   return (
     <div>
       {alert && (
-        <div className={`alert alert-${alert.type}`}>
-          {alert.message}
-        </div>
+        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
       <div className="d-flex justify-content-between mb-4">
@@ -242,13 +230,9 @@ const restaurantId =
         <div className="col-md-6">
           <div className="card border-0 shadow-sm">
             <div className="card-body">
-              <h6 className="text-muted mb-1">
-                Low Stock Ingredients
-              </h6>
+              <h6 className="text-muted mb-1">Low Stock Ingredients</h6>
 
-              <h3 className="mb-0 text-warning">
-                {lowStockCount}
-              </h3>
+              <h3 className="mb-0 text-warning">{lowStockCount}</h3>
             </div>
           </div>
         </div>
@@ -256,13 +240,9 @@ const restaurantId =
         <div className="col-md-6">
           <div className="card border-0 shadow-sm">
             <div className="card-body">
-              <h6 className="text-muted mb-1">
-                Out Of Stock Ingredients
-              </h6>
+              <h6 className="text-muted mb-1">Out Of Stock Ingredients</h6>
 
-              <h3 className="mb-0 text-danger">
-                {outOfStockCount}
-              </h3>
+              <h3 className="mb-0 text-danger">{outOfStockCount}</h3>
             </div>
           </div>
         </div>
@@ -270,131 +250,109 @@ const restaurantId =
 
       <div className="card border-0 shadow-sm">
         <div className="card-body">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Unit</th>
-                <th>Stock</th>
-                <th>Low Alert</th>
-                <th>Inventory Status</th>
-                <th>Cost</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {ingredientList.map((ingredient) => (
-                <tr
-  key={ingredient.id}
-  className={
-    Number(ingredient.current_stock) <= 0
-      ? "table-danger"
-      : Number(ingredient.current_stock) <=
-          Number(
-            ingredient.low_stock_threshold,
-          )
-        ? "table-warning"
-        : ""
-  }
->
-                  <td>{ingredient.name}</td>
-
-                  <td>{ingredient.unit_code}</td>
-
-                  <td>
-  <strong
-    className={
-      Number(ingredient.current_stock) <= 0
-        ? "text-danger"
-        : Number(
-              ingredient.current_stock,
-            ) <=
-            Number(
-              ingredient.low_stock_threshold,
-            )
-          ? "text-warning"
-          : "text-success"
-    }
-  >
-    {ingredient.current_stock}
-  </strong>
-</td>
-
-                  <td>{ingredient.low_stock_threshold}</td>
-
-                  <td>
-  {Number(ingredient.current_stock) <= 0 ? (
-    <span className="badge bg-danger">
-      Out Of Stock
-    </span>
-  ) : Number(
-      ingredient.current_stock,
-    ) <=
-    Number(
-      ingredient.low_stock_threshold,
-    ) ? (
-    <span className="badge bg-warning text-dark">
-      Low Stock
-    </span>
-  ) : (
-    <span className="badge bg-success">
-      Healthy
-    </span>
-  )}
-</td>
-
-                  <td>{ingredient.cost_per_unit}</td>
-
-                  <td>
-                    <span
-                      className={`badge ${ingredient.is_active ? "bg-success" : "bg-danger"}`}
-                    >
-                      {ingredient.is_active
-                        ? "Active"
-                        : "Inactive"}
-                    </span>
-                  </td>
-
-                  <td>
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() =>
-                        openEditModal(ingredient)
-                      }
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      className={`btn btn-sm me-2 ${
-                        ingredient.is_active
-                          ? "btn-secondary"
-                          : "btn-success"
-                      }`}
-                      onClick={() =>
-                        handleToggleStatus(ingredient.id)
-                      }
-                    >
-                      {ingredient.is_active
-                        ? "Deactivate"
-                        : "Activate"}
-                    </button>
-
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() =>
-                        handleDeleteIngredient(ingredient.id)
-                      }
-                    >
-                      Delete
-                    </button>
-                  </td>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Unit</th>
+                  <th>Stock</th>
+                  <th>Low Alert</th>
+                  <th>Inventory Status</th>
+                  <th>Cost</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {ingredientList.map((ingredient) => (
+                  <tr
+                    key={ingredient.id}
+                    className={
+                      Number(ingredient.current_stock) <= 0
+                        ? "table-danger"
+                        : Number(ingredient.current_stock) <=
+                            Number(ingredient.low_stock_threshold)
+                          ? "table-warning"
+                          : ""
+                    }
+                  >
+                    <td>{ingredient.name}</td>
+
+                    <td>{ingredient.unit_code}</td>
+
+                    <td>
+                      <strong
+                        className={
+                          Number(ingredient.current_stock) <= 0
+                            ? "text-danger"
+                            : Number(ingredient.current_stock) <=
+                                Number(ingredient.low_stock_threshold)
+                              ? "text-warning"
+                              : "text-success"
+                        }
+                      >
+                        {ingredient.current_stock}
+                      </strong>
+                    </td>
+
+                    <td>{ingredient.low_stock_threshold}</td>
+
+                    <td>
+                      {Number(ingredient.current_stock) <= 0 ? (
+                        <span className="badge bg-danger">Out Of Stock</span>
+                      ) : Number(ingredient.current_stock) <=
+                        Number(ingredient.low_stock_threshold) ? (
+                        <span className="badge bg-warning text-dark">
+                          Low Stock
+                        </span>
+                      ) : (
+                        <span className="badge bg-success">Healthy</span>
+                      )}
+                    </td>
+
+                    <td>{ingredient.cost_per_unit}</td>
+
+                    <td>
+                      <span
+                        className={`badge ${ingredient.is_active ? "bg-success" : "bg-danger"}`}
+                      >
+                        {ingredient.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+
+                    <td>
+                      <div className="action-buttons">
+                      <button
+                        className="btn btn-warning btn-sm me-2"
+                        onClick={() => openEditModal(ingredient)}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className={`btn btn-sm me-2 ${
+                          ingredient.is_active ? "btn-secondary" : "btn-success"
+                        }`}
+                        onClick={() => handleToggleStatus(ingredient.id)}
+                      >
+                        {ingredient.is_active ? "Deactivate" : "Activate"}
+                      </button>
+
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteIngredient(ingredient.id)}
+                      >
+                        Delete
+                      </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -499,12 +457,7 @@ const restaurantId =
   );
 }
 
-function ModalWrapper({
-  title,
-  children,
-  onClose,
-  onSubmit,
-}) {
+function ModalWrapper({ title, children, onClose, onSubmit }) {
   return (
     <div className="modal d-block">
       <div className="modal-dialog">
@@ -512,10 +465,7 @@ function ModalWrapper({
           <div className="modal-header">
             <h5 className="modal-title">{title}</h5>
 
-            <button
-              className="btn-close"
-              onClick={onClose}
-            ></button>
+            <button className="btn-close" onClick={onClose}></button>
           </div>
 
           <form onSubmit={onSubmit}>
@@ -530,10 +480,7 @@ function ModalWrapper({
                 Cancel
               </button>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
+              <button type="submit" className="btn btn-primary">
                 Save
               </button>
             </div>
@@ -569,13 +516,7 @@ function InputField({
   );
 }
 
-function SelectField({
-  label,
-  name,
-  value,
-  handleChange,
-  options,
-}) {
+function SelectField({ label, name, value, handleChange, options }) {
   return (
     <div className="mb-3">
       <label className="form-label">{label}</label>

@@ -65,17 +65,15 @@ export default function Table() {
     (state) => state.restaurant.activeRestaurant,
   );
 
-  const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ==========================================
   // FETCH DATA
@@ -133,28 +131,28 @@ const restaurantId =
       console.log(error);
     }
   };
-  
+
   // ==========================================
   // HANDLE INPUT CHANGE
   // ==========================================
   const handleChange = (e) => {
-  const { name, value } = e.target;
+    const { name, value } = e.target;
 
-  if (name === "floor") {
+    if (name === "floor") {
+      setFormData((prev) => ({
+        ...prev,
+        floor: value,
+        area: "",
+      }));
+
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      floor: value,
-      area: "",
+      [name]: value,
     }));
-
-    return;
-  }
-
-  setFormData((prev) => ({
-    ...prev,
-    [name]: value,
-  }));
-};
+  };
 
   // ==========================================
   // CREATE TABLE
@@ -314,86 +312,89 @@ const restaurantId =
       ========================================== */}
       <div className="card border-0 shadow-sm">
         <div className="card-body">
-          <table className="table align-middle">
-            <thead>
-              <tr>
-                <th>Table No.</th>
-                <th>Capacity</th>
-                <th>Floor</th>
-                <th>Area</th>
-                <th>Assigned Waiter</th>
-                <th>Status</th>
-                <th>Active</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {tableList.map((table) => (
-                <tr key={table.id}>
-                  <td>{table.table_number}</td>
-
-                  <td>{table.capacity}</td>
-
-                  <td>{table.floor_name}</td>
-                  <td>{table.area_name}</td>
-                  <td>{table.waiter_name || "None"}</td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        table.status === "available"
-                          ? "bg-success"
-                          : table.status === "occupied"
-                            ? "bg-danger"
-                            : "bg-warning"
-                      }`}
-                    >
-                      {table.status}
-                    </span>
-                  </td>
-
-                  <td>
-                    <span
-                      className={`badge ${
-                        table.is_active ? "bg-success" : "bg-danger"
-                      }`}
-                    >
-                      {table.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-
-                  <td>
-                    {/* EDIT */}
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() => openEditModal(table)}
-                    >
-                      Edit
-                    </button>
-
-                    {/* ACTIVE / INACTIVE */}
-                    <button
-                      className={`btn btn-sm me-2 ${
-                        table.is_active ? "btn-secondary" : "btn-success"
-                      }`}
-                      onClick={() => handleToggleStatus(table.id)}
-                    >
-                      {table.is_active ? "Deactivate" : "Activate"}
-                    </button>
-
-                    {/* DELETE */}
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeleteTable(table.id)}
-                    >
-                      Delete
-                    </button>
-
-                  </td>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Table No.</th>
+                  <th>Capacity</th>
+                  <th>Floor</th>
+                  <th>Area</th>
+                  <th>Assigned Waiter</th>
+                  <th>Status</th>
+                  <th>Active</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {tableList.map((table) => (
+                  <tr key={table.id}>
+                    <td>{table.table_number}</td>
+
+                    <td>{table.capacity}</td>
+
+                    <td>{table.floor_name}</td>
+                    <td>{table.area_name}</td>
+                    <td>{table.waiter_name || "None"}</td>
+                    <td>
+                      <span
+                        className={`badge ${
+                          table.status === "available"
+                            ? "bg-success"
+                            : table.status === "occupied"
+                              ? "bg-danger"
+                              : "bg-warning"
+                        }`}
+                      >
+                        {table.status}
+                      </span>
+                    </td>
+
+                    <td>
+                      <span
+                        className={`badge ${
+                          table.is_active ? "bg-success" : "bg-danger"
+                        }`}
+                      >
+                        {table.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+
+                    <td>
+                      <div className="action-buttons">
+                      {/* EDIT */}
+                      <button
+                        className="btn btn-warning btn-sm me-2"
+                        onClick={() => openEditModal(table)}
+                      >
+                        Edit
+                      </button>
+
+                      {/* ACTIVE / INACTIVE */}
+                      <button
+                        className={`btn btn-sm me-2 ${
+                          table.is_active ? "btn-secondary" : "btn-success"
+                        }`}
+                        onClick={() => handleToggleStatus(table.id)}
+                      >
+                        {table.is_active ? "Deactivate" : "Activate"}
+                      </button>
+
+                      {/* DELETE */}
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteTable(table.id)}
+                      >
+                        Delete
+                      </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -436,8 +437,6 @@ const restaurantId =
           />
         </ModalWrapper>
       )}
-
-    
     </div>
   );
 }
@@ -454,9 +453,7 @@ function TableForm({
   showWaiter,
 }) {
   const filteredAreas = areaList.filter(
-    (area) =>
-      String(area.floor) ===
-      String(formData.floor)
+    (area) => String(area.floor) === String(formData.floor),
   );
   return (
     <>

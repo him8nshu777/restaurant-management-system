@@ -10,12 +10,10 @@ import {
   toggleAddonStatus,
 } from "../../../services/menuService";
 
-
 // ======================================================
 // ADDON MANAGEMENT
 // ======================================================
 export default function Addons() {
-
   // ====================================================
   // STATES
   // ====================================================
@@ -38,47 +36,36 @@ export default function Addons() {
   // ACTIVE RESTAURANT
   // ====================================================
   const activeRestaurant = useSelector(
-    (state) => state.restaurant.activeRestaurant
+    (state) => state.restaurant.activeRestaurant,
   );
 
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
   // ====================================================
   // FETCH ADDONS
   // ====================================================
   useEffect(() => {
-
     if (restaurantId) {
-
       fetchAddonList();
     }
-
   }, [restaurantId]);
 
   // ====================================================
   // GET ADDON LIST
   // ====================================================
   const fetchAddonList = async () => {
-
     try {
-
-      const data = await getAddonList(
-        restaurantId
-      );
+      const data = await getAddonList(restaurantId);
 
       setAddonList(data);
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to fetch addons",
@@ -90,7 +77,6 @@ const restaurantId =
   // HANDLE CHANGE
   // ====================================================
   const handleChange = (e) => {
-
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -101,11 +87,9 @@ const restaurantId =
   // CREATE ADDON
   // ====================================================
   const handleCreateAddon = async (e) => {
-
     e.preventDefault();
 
     try {
-
       await createAddon({
         restaurant: restaurantId,
         name: formData.name,
@@ -125,9 +109,7 @@ const restaurantId =
         type: "success",
         message: "Addon created successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to create addon",
@@ -139,7 +121,6 @@ const restaurantId =
   // OPEN EDIT MODAL
   // ====================================================
   const openEditModal = (addon) => {
-
     setSelectedAddon(addon);
 
     setFormData({
@@ -154,15 +135,10 @@ const restaurantId =
   // UPDATE ADDON
   // ====================================================
   const handleUpdateAddon = async (e) => {
-
     e.preventDefault();
 
     try {
-
-      await updateAddon(
-        selectedAddon.id,
-        formData
-      );
+      await updateAddon(selectedAddon.id, formData);
 
       fetchAddonList();
 
@@ -172,9 +148,7 @@ const restaurantId =
         type: "success",
         message: "Addon updated successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to update addon",
@@ -186,17 +160,13 @@ const restaurantId =
   // DELETE ADDON
   // ====================================================
   const handleDeleteAddon = async (addonId) => {
-
-    const confirmDelete = window.confirm(
-      "Delete this addon?"
-    );
+    const confirmDelete = window.confirm("Delete this addon?");
 
     if (!confirmDelete) {
       return;
     }
 
     try {
-
       await deleteAddon(addonId);
 
       fetchAddonList();
@@ -205,9 +175,7 @@ const restaurantId =
         type: "success",
         message: "Addon deleted successfully",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to delete addon",
@@ -219,9 +187,7 @@ const restaurantId =
   // TOGGLE STATUS
   // ====================================================
   const handleToggleStatus = async (addonId) => {
-
     try {
-
       await toggleAddonStatus(addonId);
 
       fetchAddonList();
@@ -230,9 +196,7 @@ const restaurantId =
         type: "success",
         message: "Addon status updated",
       });
-
     } catch (error) {
-
       setAlert({
         type: "danger",
         message: "Failed to update status",
@@ -242,20 +206,14 @@ const restaurantId =
 
   return (
     <div>
-
       {/* ALERT */}
       {alert && (
-        <div className={`alert alert-${alert.type}`}>
-          {alert.message}
-        </div>
+        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
       {/* HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-
-        <h2 className="fw-bold">
-          Addon Management
-        </h2>
+        <h2 className="fw-bold">Addon Management</h2>
 
         <button
           className="btn btn-primary"
@@ -267,86 +225,69 @@ const restaurantId =
 
       {/* TABLE */}
       <div className="card border-0 shadow-sm">
-
         <div className="card-body">
-
-          <table className="table align-middle">
-
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-
-              {addonList.map((addon) => (
-
-                <tr key={addon.id}>
-
-                  <td>{addon.name}</td>
-
-                  <td>₹{addon.price}</td>
-
-                  <td>
-                    <span
-                      className={`badge ${
-                        addon.is_active
-                          ? "bg-success"
-                          : "bg-danger"
-                      }`}
-                    >
-                      {addon.is_active
-                        ? "Active"
-                        : "Inactive"}
-                    </span>
-                  </td>
-
-                  <td>
-                    {new Date(
-                      addon.created_at
-                    ).toLocaleDateString()}
-                  </td>
-
-                  <td>
-
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() => openEditModal(addon)}
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      className="btn btn-danger btn-sm me-2"
-                      onClick={() => handleDeleteAddon(addon.id)}
-                    >
-                      Delete
-                    </button>
-
-                    <button
-                      className={`btn btn-sm ${
-                        addon.is_active
-                          ? "btn-secondary"
-                          : "btn-success"
-                      }`}
-                      onClick={() => handleToggleStatus(addon.id)}
-                    >
-                      {addon.is_active
-                        ? "Deactivate"
-                        : "Activate"}
-                    </button>
-
-                  </td>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
+              </thead>
 
-          </table>
+              <tbody>
+                {addonList.map((addon) => (
+                  <tr key={addon.id}>
+                    <td>{addon.name}</td>
+
+                    <td>₹{addon.price}</td>
+
+                    <td>
+                      <span
+                        className={`badge ${
+                          addon.is_active ? "bg-success" : "bg-danger"
+                        }`}
+                      >
+                        {addon.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+
+                    <td>{new Date(addon.created_at).toLocaleDateString()}</td>
+
+                    <td>
+                      <div className="action-buttons">
+                      <button
+                        className="btn btn-warning btn-sm me-2"
+                        onClick={() => openEditModal(addon)}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className="btn btn-danger btn-sm me-2"
+                        onClick={() => handleDeleteAddon(addon.id)}
+                      >
+                        Delete
+                      </button>
+
+                      <button
+                        className={`btn btn-sm ${
+                          addon.is_active ? "btn-secondary" : "btn-success"
+                        }`}
+                        onClick={() => handleToggleStatus(addon.id)}
+                      >
+                        {addon.is_active ? "Deactivate" : "Activate"}
+                      </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -403,44 +344,24 @@ const restaurantId =
   );
 }
 
-
 // ======================================================
 // MODAL
 // ======================================================
-function ModalWrapper({
-  title,
-  children,
-  onClose,
-  onSubmit,
-}) {
-
+function ModalWrapper({ title, children, onClose, onSubmit }) {
   return (
     <div className="modal d-block">
-
       <div className="modal-dialog">
-
         <div className="modal-content">
-
           <div className="modal-header">
+            <h5 className="modal-title">{title}</h5>
 
-            <h5 className="modal-title">
-              {title}
-            </h5>
-
-            <button
-              className="btn-close"
-              onClick={onClose}
-            ></button>
+            <button className="btn-close" onClick={onClose}></button>
           </div>
 
           <form onSubmit={onSubmit}>
-
-            <div className="modal-body">
-              {children}
-            </div>
+            <div className="modal-body">{children}</div>
 
             <div className="modal-footer">
-
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -449,13 +370,9 @@ function ModalWrapper({
                 Cancel
               </button>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
+              <button type="submit" className="btn btn-primary">
                 Save
               </button>
-
             </div>
           </form>
         </div>
@@ -463,7 +380,6 @@ function ModalWrapper({
     </div>
   );
 }
-
 
 // ======================================================
 // INPUT FIELD
@@ -476,13 +392,9 @@ function InputField({
   type = "text",
   placeholder = "",
 }) {
-
   return (
     <div className="mb-3">
-
-      <label className="form-label">
-        {label}
-      </label>
+      <label className="form-label">{label}</label>
 
       <input
         type={type}

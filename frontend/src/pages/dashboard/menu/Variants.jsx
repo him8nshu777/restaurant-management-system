@@ -61,17 +61,15 @@ export default function Variants() {
     (state) => state.restaurant.activeRestaurant,
   );
 
-    const user = useSelector(
-  (state) => state.auth.user
-);
+  const user = useSelector((state) => state.auth.user);
 
-// ==========================================
-// RESTAURANT ID
-// ==========================================
-const restaurantId =
-  user?.role === "restaurant_admin"
-    ? activeRestaurant?.id
-    : user?.restaurant_id;
+  // ==========================================
+  // RESTAURANT ID
+  // ==========================================
+  const restaurantId =
+    user?.role === "restaurant_admin"
+      ? activeRestaurant?.id
+      : user?.restaurant_id;
 
   // ==================================================
   // FETCH DATA
@@ -274,9 +272,7 @@ const restaurantId =
     <div>
       {/* ALERT */}
       {alert && (
-        <div className={`alert alert-${alert.type}`}>
-          {alert.message}
-        </div>
+        <div className={`alert alert-${alert.type}`}>{alert.message}</div>
       )}
 
       {/* PAGE HEADER */}
@@ -294,79 +290,71 @@ const restaurantId =
       {/* TABLE */}
       <div className="card border-0 shadow-sm">
         <div className="card-body">
-          <table className="table align-middle">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Variant</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {variantList.map((variant) => (
-                <tr key={variant.id}>
-                  <td>{variant.product_name}</td>
-
-                  <td>{variant.name}</td>
-
-                  <td>₹{variant.price}</td>
-
-                  <td>{variant.stock}</td>
-
-                  <td>
-                    <span
-                      className={`badge ${
-                        variant.is_available
-                          ? "bg-success"
-                          : "bg-danger"
-                      }`}
-                    >
-                      {variant.is_available
-                        ? "Available"
-                        : "Unavailable"}
-                    </span>
-                  </td>
-
-                  <td>
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() => openEditModal(variant)}
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      className="btn btn-danger btn-sm me-2"
-                      onClick={() =>
-                        handleDeleteVariant(variant.id)
-                      }
-                    >
-                      Delete
-                    </button>
-
-                    <button
-                      className={`btn btn-sm ${
-                        variant.is_available
-                          ? "btn-secondary"
-                          : "btn-success"
-                      }`}
-                      onClick={() =>
-                        handleToggleStatus(variant.id)
-                      }
-                    >
-                      {variant.is_available
-                        ? "Disable"
-                        : "Enable"}
-                    </button>
-                  </td>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Variant</th>
+                  <th>Price</th>
+                  <th>Stock</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {variantList.map((variant) => (
+                  <tr key={variant.id}>
+                    <td>{variant.product_name}</td>
+
+                    <td>{variant.name}</td>
+
+                    <td>₹{variant.price}</td>
+
+                    <td>{variant.stock}</td>
+
+                    <td>
+                      <span
+                        className={`badge ${
+                          variant.is_available ? "bg-success" : "bg-danger"
+                        }`}
+                      >
+                        {variant.is_available ? "Available" : "Unavailable"}
+                      </span>
+                    </td>
+
+                    <td>
+                      <div className="action-buttons">
+                      <button
+                        className="btn btn-warning btn-sm me-2"
+                        onClick={() => openEditModal(variant)}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className="btn btn-danger btn-sm me-2"
+                        onClick={() => handleDeleteVariant(variant.id)}
+                      >
+                        Delete
+                      </button>
+
+                      <button
+                        className={`btn btn-sm ${
+                          variant.is_available ? "btn-secondary" : "btn-success"
+                        }`}
+                        onClick={() => handleToggleStatus(variant.id)}
+                      >
+                        {variant.is_available ? "Disable" : "Enable"}
+                      </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -464,10 +452,7 @@ function ModalWrapper({ title, children, onClose, onSubmit }) {
           <div className="modal-header">
             <h5 className="modal-title">{title}</h5>
 
-            <button
-              className="btn-close"
-              onClick={onClose}
-            ></button>
+            <button className="btn-close" onClick={onClose}></button>
           </div>
 
           <form onSubmit={onSubmit}>
@@ -482,10 +467,7 @@ function ModalWrapper({ title, children, onClose, onSubmit }) {
                 Cancel
               </button>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
+              <button type="submit" className="btn btn-primary">
                 Save
               </button>
             </div>
@@ -499,13 +481,7 @@ function ModalWrapper({ title, children, onClose, onSubmit }) {
 // ======================================================
 // INPUT FIELD
 // ======================================================
-function InputField({
-  label,
-  name,
-  value,
-  handleChange,
-  type = "text",
-}) {
+function InputField({ label, name, value, handleChange, type = "text" }) {
   return (
     <div className="mb-3">
       <label className="form-label">{label}</label>
@@ -525,13 +501,7 @@ function InputField({
 // ======================================================
 // SELECT FIELD
 // ======================================================
-function SelectField({
-  label,
-  name,
-  value,
-  handleChange,
-  options,
-}) {
+function SelectField({ label, name, value, handleChange, options }) {
   return (
     <div className="mb-3">
       <label className="form-label">{label}</label>
@@ -543,15 +513,10 @@ function SelectField({
         onChange={handleChange}
         required
       >
-        <option value="">
-          Select Product
-        </option>
+        <option value="">Select Product</option>
 
         {options.map((option) => (
-          <option
-            key={option.id}
-            value={option.id}
-          >
+          <option key={option.id} value={option.id}>
             {option.name}
           </option>
         ))}

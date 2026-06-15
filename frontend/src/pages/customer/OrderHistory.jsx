@@ -195,7 +195,7 @@ const handlePrintBill = async (orderId) => {
           mb-4
         "
       >
-        <h2 className="fw-bold">Orders</h2>
+        <h2 className="fw-bold">Order History</h2>
       </div>
 
       {/* TABLE */}
@@ -269,7 +269,7 @@ const handlePrintBill = async (orderId) => {
       {/* EDIT MODAL */}
       {showEditModal && (
         <ModalWrapper
-          title="Edit Order"
+          title="Order Details"
           onClose={() => setShowEditModal(false)}
           showBillButton={
             selectedOrder?.payment_status === "paid"

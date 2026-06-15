@@ -1,30 +1,17 @@
 /* ==========================================
    DASHBOARD LAYOUT
 ========================================== */
-
-.dashboard-container {
-    min-height: 100vh;
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
 }
 
-
-/* ==========================================
-   SIDEBAR
-========================================== */
-
-.sidebar {
-    background-color: #212529;
-    min-height: 100vh;
-    color: white;
-
-    position: fixed;
-    left: 0;
-    top: 0;
-
-    width: 260px;
-
-    overflow-y: auto;
-
-    z-index: 1000;
+.dashboard-shell {
+  display: flex;
+  min-height: 100dvh;
+  background: #f8f9fa;
 }
 
 
@@ -33,39 +20,69 @@
 ========================================== */
 
 .dashboard-content {
-    margin-left: 260px;
-    min-height: 100vh;
-    background-color: #f8f9fa;
+  flex: 1;
+  min-width: 0;
+  min-height: 100dvh;
+  padding: 1.5rem;
+  background: #f8f9fa;
 }
 
-
-/* ==========================================
-   SIDEBAR BUTTONS
-========================================== */
-
-.sidebar-button {
-    width: 100%;
-    text-align: left;
+.mobile-header{
+    display:none;
 }
-
-
-/* ==========================================
-   MOBILE RESPONSIVE
-========================================== */
 
 @media (max-width: 768px) {
+  .dashboard-shell {
+    min-height: 100dvh;
+  }
 
-    .sidebar {
+  .dashboard-content {
+    min-height: 100dvh;
+    padding: 1rem;
+  }
 
-        position: relative;
-        width: 100%;
-        min-height: auto;
+  .mobile-header {
+    display: block;
+  }
+}
 
-    }
+/* action button for table open */
+.action-buttons {
+    display: flex;
+    gap: 4px;
+    flex-wrap: nowrap;
+}
+/* action button for table close */
 
-    .dashboard-content {
+/* Cart Drawer open*/
+.pos-cart {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100dvh;
+    width: 550px;
+    background: #fff;
+    z-index: 9999;
+    overflow-y: auto;
+    padding: 1.5rem;
+    box-shadow: -10px 0 25px rgba(0, 0, 0, 0.15);
+    overscroll-behavior: contain;
+}
 
-        margin-left: 0;
-
+/* Tablet */
+@media (max-width: 992px) {
+    .pos-cart {
+        width: 420px;
     }
 }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .pos-cart {
+    width: 100%;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+}
+}
+/* Cart Drawer close*/

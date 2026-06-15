@@ -59,8 +59,18 @@ class SessionConsumer(AsyncJsonWebsocketConsumer):
 
         user = self.scope.get("user")
         print("WS CONNECT USER:", user)
+        if not user:
+            print("NO USER REJECTED")
+            await self.close()
+            return
+        
         if user.is_anonymous:
             print("ANONYMOUS USER REJECTED")
+            await self.close()
+            return
+        
+        if user.role == "customer":
+            print("CUSTOMER REJECTED")
             await self.close()
             return
 

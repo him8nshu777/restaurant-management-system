@@ -15,7 +15,6 @@ import {
 } from "recharts/umd/Recharts";
 
 export default function SalesReport() {
-
   const [period, setPeriod] = useState("week");
 
   const [startDate, setStartDate] = useState("");
@@ -25,7 +24,7 @@ export default function SalesReport() {
   const [loading, setLoading] = useState(false);
 
   const activeRestaurant = useSelector(
-    (state) => state.restaurant.activeRestaurant
+    (state) => state.restaurant.activeRestaurant,
   );
 
   const user = useSelector((state) => state.auth.user);
@@ -46,24 +45,15 @@ export default function SalesReport() {
 
       // ✅ CASE 1: CUSTOM DATE RANGE
       if (selectedPeriod === "custom") {
-        data = await getSalesReport(
-          restaurantId,
-          "custom",
-          startDate,
-          endDate
-        );
+        data = await getSalesReport(restaurantId, "custom", startDate, endDate);
       }
 
       // ✅ CASE 2: NORMAL PERIOD
       else {
-        data = await getSalesReport(
-          restaurantId,
-          selectedPeriod
-        );
+        data = await getSalesReport(restaurantId, selectedPeriod);
       }
 
       setReport(data);
-
     } catch (error) {
       console.log(error);
     } finally {
@@ -89,39 +79,52 @@ export default function SalesReport() {
       sales: report.chart.sales[index],
     })) || [];
 
-    const handleCustomApply = () => {
-  if (!startDate || !endDate) {
-    alert("Please select both dates");
-    return;
-  }
+  const handleCustomApply = () => {
+    if (!startDate || !endDate) {
+      alert("Please select both dates");
+      return;
+    }
 
-  fetchReport("custom");
-};
+    fetchReport("custom");
+  };
 
   return (
     <div className="container-fluid">
-
       {/* HEADER */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-
+      <div
+        className="d-flex
+    flex-column
+    flex-md-row
+    justify-content-between
+    align-items-start
+    align-items-md-center
+    gap-3
+    mb-4"
+      >
         <h2 className="fw-bold">Sales Reports</h2>
 
         {/* DROPDOWN + CUSTOM DATE */}
-        <div className="d-flex gap-2 align-items-center">
-
+        <div
+          className="d-flex
+    flex-column
+    flex-md-row
+    gap-2
+    align-items-stretch
+    align-items-md-center"
+        >
           <select
             className="form-select w-auto"
             value={period}
             onChange={(e) => {
-                const value = e.target.value;
-                setPeriod(value);
+              const value = e.target.value;
+              setPeriod(value);
 
-                // reset dates when switching away from custom
-                if (value !== "custom") {
-                    setStartDate("");
-                    setEndDate("");
-                    fetchReport(value); // safe auto fetch only for week/month/year
-                }
+              // reset dates when switching away from custom
+              if (value !== "custom") {
+                setStartDate("");
+                setEndDate("");
+                fetchReport(value); // safe auto fetch only for week/month/year
+              }
             }}
           >
             <option value="week">This Week</option>
@@ -133,31 +136,61 @@ export default function SalesReport() {
           {/* ONLY SHOW WHEN CUSTOM */}
           {period === "custom" && (
             <>
-              <input
-                type="date"
-                className="form-control"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+              {/* Desktop & Tablet */}
+              <div className="d-none d-md-flex gap-2">
+                <input
+                  type="date"
+                  className="form-control"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
 
-              <input
-                type="date"
-                className="form-control"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+                <input
+                  type="date"
+                  className="form-control"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
 
-              <button
-                className="btn btn-primary"
-                onClick={handleCustomApply}
-              >
-                Apply
-              </button>
+                <button className="btn btn-primary" onClick={handleCustomApply}>
+                  Apply
+                </button>
+              </div>
+
+              {/* Mobile */}
+              <div className="d-md-none w-100">
+                <div className="row g-2">
+                  <div className="col-6">
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="col-6">
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="col-12">
+                    <button
+                      className="btn btn-primary w-100"
+                      onClick={handleCustomApply}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
             </>
           )}
-
         </div>
-
       </div>
 
       {loading && <div>Loading...</div>}
@@ -166,7 +199,6 @@ export default function SalesReport() {
         <>
           {/* KPI CARDS */}
           <div className="row mb-4">
-
             <div className="col-md-4">
               <div className="card shadow-sm">
                 <div className="card-body">
@@ -193,13 +225,11 @@ export default function SalesReport() {
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* CHART */}
           <div className="card shadow-sm">
             <div className="card-body">
-
               <h5 className="mb-4">Revenue Trend</h5>
 
               <ResponsiveContainer width="100%" height={400}>
@@ -211,10 +241,8 @@ export default function SalesReport() {
                   <Bar dataKey="sales" />
                 </BarChart>
               </ResponsiveContainer>
-
             </div>
           </div>
-
         </>
       )}
     </div>
