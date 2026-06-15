@@ -166,6 +166,7 @@ export default function SalesReport() {
                       className="form-control"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
+                placeholder="Start Date"
                     />
                   </div>
 
@@ -175,6 +176,8 @@ export default function SalesReport() {
                       className="form-control"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
+                placeholder="End Date"
+
                     />
                   </div>
 

@@ -183,6 +183,7 @@ export default function KitchenReport() {
                 onChange={(e) =>
                   setStartDate(e.target.value)
                 }
+                placeholder="Start Date"
               />
             </div>
 
@@ -194,6 +195,7 @@ export default function KitchenReport() {
                 onChange={(e) =>
                   setEndDate(e.target.value)
                 }
+                placeholder="End Date"
               />
             </div>
 

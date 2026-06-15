@@ -187,6 +187,8 @@ export default function FinancialReport() {
                 onChange={(e) =>
                   setStartDate(e.target.value)
                 }
+                placeholder="Start Date"
+
               />
             </div>
 
@@ -198,6 +200,8 @@ export default function FinancialReport() {
                 onChange={(e) =>
                   setEndDate(e.target.value)
                 }
+                placeholder="End Date"
+
               />
             </div>
 
