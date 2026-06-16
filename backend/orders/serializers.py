@@ -409,8 +409,20 @@ class OrderListSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    table_name = serializers.CharField(
-        source="table.table_number",
+    table_name = serializers.SerializerMethodField()
+
+    table_id = serializers.IntegerField(
+        source="table.id",
+        read_only=True,
+    )
+
+    floor_id = serializers.IntegerField(
+        source="floor.id",
+        read_only=True,
+    )
+
+    area_id = serializers.IntegerField(
+        source="area.id",
         read_only=True,
     )
 
@@ -463,7 +475,9 @@ class OrderListSerializer(serializers.ModelSerializer):
             "floor_name",
             "area_name",
             "table_name",
-
+            "table_id",
+            "floor_id",
+            "area_id",
             "created_at",
             "completed_at",
             # nested
@@ -480,6 +494,22 @@ class OrderListSerializer(serializers.ModelSerializer):
             "delivery_address",
         ]
 
+    def get_table_name(self, obj):
+
+        if not obj.table:
+            return None
+
+        table_numbers = [str(obj.table.table_number)]
+
+        table_numbers.extend(
+            obj.table.merged_tables.values_list(
+                "table_number",
+                flat=True,
+            )
+        )
+
+        return " + ".join(table_numbers)
+    
     def get_waiter_name(self, obj):
 
         if obj.waiter:

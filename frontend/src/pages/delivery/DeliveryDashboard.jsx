@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "../../components/admin/dashboard/DashboardLayout";
-// import POSDashboard from "./POSDashboard";
-// import OrderList from "../dashboard/orders/OrderList";
 import DeliveryOrders from "./DeliveryOrders";
 import ActiveOrders from "./ActiveOrders";
 import DeliveryHistory from "./DeliveryHistory";

@@ -113,6 +113,23 @@ export const updateOrderStatus = async (
 };
 
 // ==========================================
+// TRANSFER TABLE
+// ==========================================
+export const transferTable = async (
+  orderId,
+  tableId,
+) => {
+  const response = await axiosInstance.patch(
+    `/order/${orderId}/transfer-table/`,
+    {
+      table_id: tableId,
+    },
+  );
+
+  return response.data;
+};
+
+// ==========================================
 // UPDATE PAYMENT STATUS
 // ==========================================
 export const updatePaymentStatus =

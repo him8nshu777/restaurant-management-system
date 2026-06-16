@@ -10,7 +10,8 @@ from .views import (
     UpdateDeliveryStatusView,
     UpdatePaymentStatusView,
 
-    PrintInvoiceView
+    PrintInvoiceView,
+    TransferTableView
 )
 
 urlpatterns = [
@@ -24,4 +25,6 @@ urlpatterns = [
     path("<int:order_id>/payment/", UpdatePaymentStatusView.as_view(), name="update-payment-status"),
 
     path("<int:order_id>/invoice/", PrintInvoiceView.as_view(), name="print-bill"),
+
+    path("<int:order_id>/transfer-table/", TransferTableView.as_view(), name="transfer-table"),
 ]

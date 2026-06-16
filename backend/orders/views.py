@@ -45,6 +45,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 
 from accounts.models import UserAddress
+from restaurants.models import RestaurantTable
 User = get_user_model()
 
 
@@ -610,6 +611,7 @@ class OrderListView(APIView):
                 "delivery_staff",
             )
             .prefetch_related(
+                "table__merged_tables",
                 "items",
                 "items__taxes",
                 "items__addons",
@@ -626,7 +628,7 @@ class OrderListView(APIView):
             orders,
             many=True,
         )
-
+        print("-->", serializer.data)
         return Response(serializer.data)
 
 
@@ -1301,6 +1303,115 @@ class DeleteOrderView(APIView):
             status=status.HTTP_200_OK,
         )
 
+# =========================================================
+# TRANSFER TABLE
+# =========================================================
+class TransferTableView(APIView):
+
+    @transaction.atomic
+    def patch(self, request, order_id):
+
+        try:
+            order = Order.objects.select_related(
+                "table",
+                "waiter",
+                "restaurant",
+            ).get(id=order_id)
+
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "Order not found"},
+                status=404,
+            )
+
+        try:
+            new_table = RestaurantTable.objects.select_related(
+                "floor",
+                "area",
+            ).get(
+                id=request.data["table_id"]
+            )
+
+        except RestaurantTable.DoesNotExist:
+            return Response(
+                {"error": "Table not found"},
+                status=404,
+            )
+
+        if new_table.restaurant_id != order.restaurant_id:
+            return Response(
+                {"error": "Invalid table"},
+                status=400,
+            )
+
+        if new_table.status != "available":
+            return Response(
+                {"error": "Table not available"},
+                status=400,
+            )
+
+        old_table = order.table
+
+        # ======================================
+        # UPDATE ORDER
+        # ======================================
+        order.table = new_table
+        order.floor = new_table.floor
+        order.area = new_table.area
+        order.save(
+            update_fields=[
+                "table",
+                "floor",
+                "area",
+            ]
+        )
+
+        # ======================================
+        # FREE OLD TABLE
+        # ======================================
+        if old_table:
+
+            old_table.status = "available"
+            old_table.assigned_waiter = None
+
+            old_table.save(
+                update_fields=[
+                    "status",
+                    "assigned_waiter",
+                ]
+            )
+
+        # ======================================
+        # OCCUPY NEW TABLE
+        # ======================================
+        new_table.status = "occupied"
+        new_table.assigned_waiter = order.waiter
+
+        new_table.save(
+            update_fields=[
+                "status",
+                "assigned_waiter",
+            ]
+        )
+
+        # ======================================
+        # ACTIVITY LOG
+        # ======================================
+        create_activity_log(
+            restaurant=order.restaurant,
+            user=request.user,
+            order=order,
+            action="table_transferred",
+            message=(
+                f"Order {order.order_number} "
+                f"transferred to table "
+                f"{new_table.table_number}"
+            ),
+        )
+
+        return Response({
+            "message": "Table transferred successfully"
+        })
 
 class UpdateOrderStatusView(APIView):
 

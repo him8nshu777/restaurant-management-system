@@ -237,11 +237,10 @@ export default function WaiterPOSDashboard() {
   }, [orderType]);
 
   const filteredTables = tableList.filter(
-  (table) =>
-    String(table.floor) === String(selectedFloor) &&
-    (!selectedArea ||
-      String(table.area) === String(selectedArea))
-);
+    (table) =>
+      String(table.floor) === String(selectedFloor) &&
+      (!selectedArea || String(table.area) === String(selectedArea)),
+  );
   // ==========================================
   // GET PRODUCTS
   // ==========================================
@@ -1839,9 +1838,24 @@ export default function WaiterPOSDashboard() {
                 }
               `}
                           >
-                            <h5 className="fw-bold">{table.table_number}</h5>
+                            <h5 className="fw-bold">
+                              {[
+                                table.table_number,
+                                ...(table.merged_tables || []).map(
+                                  (t) => t.table_number,
+                                ),
+                              ].join(" + ")}
+                            </h5>
 
-                            <small>Capacity: {table.capacity}</small>
+                            <small>
+                              Capacity:{" "}
+                              {[
+                                table.capacity,
+                                ...(table.merged_tables || []).map(
+                                  (t) => t.capacity,
+                                ),
+                              ].join(" + ")}
+                            </small>
 
                             <div className="mt-2">
                               <span

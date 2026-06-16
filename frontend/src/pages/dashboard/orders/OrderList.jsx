@@ -7,9 +7,15 @@ import {
   updateOrder,
   deleteOrder,
   updatePaymentStatus,
-
   printOrderBill,
+  transferTable,
 } from "../../../services/orderService";
+
+import {
+  getTableList,
+  getFloorList,
+  getAreaList,
+} from "../../../services/dashboardService";
 
 // ==========================================
 // ORDER MANAGEMENT
@@ -54,6 +60,22 @@ export default function OrderList() {
   // ==========================================
   const [showEditModal, setShowEditModal] = useState(false);
 
+  const [showTransferModal, setShowTransferModal] = useState(false);
+
+  const [transferOrder, setTransferOrder] = useState(null);
+
+  const [tableList, setTableList] = useState([]);
+
+  const [floorList, setFloorList] = useState([]);
+
+  const [areaList, setAreaList] = useState([]);
+
+  const [selectedFloor, setSelectedFloor] = useState(null);
+
+  const [selectedArea, setSelectedArea] = useState(null);
+
+  const [selectedTable, setSelectedTable] = useState(null);
+
   // ==========================================
   // SELECTED ORDER
   // ==========================================
@@ -90,6 +112,36 @@ export default function OrderList() {
       });
     }
   };
+
+  const fetchTransferData = async () => {
+    try {
+      const [tablesData, floorsData, areasData] = await Promise.all([
+        getTableList(restaurantId),
+        getFloorList(restaurantId),
+        getAreaList(restaurantId),
+      ]);
+
+      setTableList(Array.isArray(tablesData?.tables) ? tablesData.tables : []);
+
+      setFloorList(
+        Array.isArray(floorsData) ? floorsData : floorsData?.results || [],
+      );
+
+      setAreaList(
+        Array.isArray(areasData) ? areasData : areasData?.results || [],
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    if (restaurantId) {
+      fetchOrders();
+
+      fetchTransferData();
+    }
+  }, [restaurantId]);
 
   // ==========================================
   // LOAD DATA
@@ -188,6 +240,21 @@ export default function OrderList() {
     setShowEditModal(true);
   };
 
+  const openTransferModal = async (order) => {
+    console.log("OPEN MODAL ORDER:", order);
+    await fetchTransferData();
+
+    setTransferOrder(order);
+
+    setSelectedFloor(order.floor_id);
+
+    setSelectedArea(order.area_id);
+
+    setSelectedTable(order.table_id);
+
+    setShowTransferModal(true);
+  };
+
   // ==========================================
   // OPEN PAYMENT MODAL
   // ==========================================
@@ -199,6 +266,30 @@ export default function OrderList() {
     setShowPaymentModal(true);
   };
 
+  const handleTransferTable = async () => {
+    console.log("TRANSFER ORDER:", transferOrder);
+    console.log("ORDER ID SENT:", transferOrder?.id);
+    console.log("NEW TABLE:", selectedTable);
+    try {
+      await transferTable(transferOrder.id, selectedTable);
+
+      await fetchOrders();
+
+      setShowTransferModal(false);
+
+      setAlert({
+        type: "success",
+        message: "Table transferred successfully",
+      });
+    } catch (error) {
+      console.log(error);
+
+      setAlert({
+        type: "danger",
+        message: error?.response?.data?.error || "Failed to transfer table",
+      });
+    }
+  };
 
   const handlePayment = async () => {
     try {
@@ -223,24 +314,24 @@ export default function OrderList() {
   };
 
   // ==========================================
-// PRINT BILL
-// ==========================================
-const handlePrintBill = async (orderId) => {
-  try {
-    const pdfBlob = await printOrderBill(orderId);
+  // PRINT BILL
+  // ==========================================
+  const handlePrintBill = async (orderId) => {
+    try {
+      const pdfBlob = await printOrderBill(orderId);
 
-    const fileURL = window.URL.createObjectURL(pdfBlob);
+      const fileURL = window.URL.createObjectURL(pdfBlob);
 
-    window.open(fileURL, "_blank");
-  } catch (error) {
-    console.log(error);
+      window.open(fileURL, "_blank");
+    } catch (error) {
+      console.log(error);
 
-    setAlert({
-      type: "danger",
-      message: "Failed to generate bill.",
-    });
-  }
-};
+      setAlert({
+        type: "danger",
+        message: "Failed to generate bill.",
+      });
+    }
+  };
 
   // ==========================================
   // HANDLE INPUT CHANGE
@@ -638,6 +729,15 @@ const handlePrintBill = async (orderId) => {
   };
 
   const liveTotals = calculateLiveTotals();
+
+  const filteredTables = tableList
+    .filter((table) => !table.is_merged)
+    .filter(
+      (table) =>
+        String(table.floor) === String(selectedFloor) &&
+        (!selectedArea || String(table.area) === String(selectedArea)),
+    );
+
   return (
     <div className="container-fluid">
       {/* ALERT */}
@@ -747,36 +847,45 @@ const handlePrintBill = async (orderId) => {
 
                     <td>
                       <div className="action-buttons">
-                      {order.payment_status !== "paid" && (
+                        {order.payment_status !== "paid" &&
+                          order.order_type === "dine_in" && (
+                            <button
+                              className="btn btn-info btn-sm me-2"
+                              onClick={() => openTransferModal(order)}
+                            >
+                              Transfer
+                            </button>
+                          )}
+                        {order.payment_status !== "paid" && (
+                          <button
+                            className="btn btn-success btn-sm me-2"
+                            onClick={() => openPaymentModal(order)}
+                          >
+                            Payment
+                          </button>
+                        )}
                         <button
-                          className="btn btn-success btn-sm me-2"
-                          onClick={() => openPaymentModal(order)}
-                        >
-                          Payment
-                        </button>
-                      )}
-                      <button
-                        className="
+                          className="
                           btn
                           btn-warning
                           btn-sm
                           me-2
                         "
-                        onClick={() => openEditModal(order)}
-                      >
-                        Edit
-                      </button>
+                          onClick={() => openEditModal(order)}
+                        >
+                          Edit
+                        </button>
 
-                      <button
-                        className="
+                        <button
+                          className="
                           btn
                           btn-danger
                           btn-sm
                         "
-                        onClick={() => handleDeleteOrder(order.id)}
-                      >
-                        Delete
-                      </button>
+                          onClick={() => handleDeleteOrder(order.id)}
+                        >
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -793,16 +902,16 @@ const handlePrintBill = async (orderId) => {
           title="Edit Order"
           onClose={() => setShowEditModal(false)}
           footerActions={
-    selectedOrder?.payment_status === "paid" && (
-      <button
-        type="button"
-        className="btn btn-success"
-        onClick={() => handlePrintBill(selectedOrder.id)}
-      >
-        Print Bill
-      </button>
-    )
-  }
+            selectedOrder?.payment_status === "paid" && (
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={() => handlePrintBill(selectedOrder.id)}
+              >
+                Print Bill
+              </button>
+            )
+          }
           onSubmit={handleUpdateOrder}
         >
           {/* STATUS */}
@@ -1238,6 +1347,292 @@ const handlePrintBill = async (orderId) => {
         </ModalWrapper>
       )}
 
+      {/* ==========================================
+    TABLE MODAL
+========================================== */}
+
+      {showTransferModal && (
+        <div
+          className="
+      position-fixed
+      top-0
+      start-0
+      w-100
+      h-100
+      bg-dark
+      bg-opacity-50
+      d-flex
+      justify-content-center
+      align-items-center
+    "
+          style={{
+            zIndex: 10000,
+          }}
+        >
+          <div
+            className="bg-white rounded-4 shadow-lg"
+            style={{
+              width: "95%",
+              height: "90%",
+              overflow: "auto",
+            }}
+          >
+            {/* HEADER */}
+            <div
+              className="
+          d-flex
+          justify-content-between
+          align-items-center
+          p-3
+          border-bottom
+        "
+            >
+              <h4 className="fw-bold mb-0">Select Table</h4>
+
+              <button
+                className="btn-close"
+                onClick={() => {
+                  setShowTransferModal(false);
+                  setTransferOrder(null);
+                }}
+              />
+            </div>
+
+            <div className="row g-0">
+              {/* ==========================================
+            FLOOR SIDEBAR
+        ========================================== */}
+              <div
+                className="col-12 col-md-2 border-end p-3"
+                style={{
+                  overflowY: "auto",
+                }}
+              >
+                <h6 className="fw-bold mb-3">Floors</h6>
+
+                {[
+                  ...new Map(
+                    tableList.map((table) => [
+                      table.floor,
+                      {
+                        id: table.floor,
+                        name: table.floor_name,
+                      },
+                    ]),
+                  ).values(),
+                ].map((floor) => (
+                  <button
+                    key={floor.id}
+                    className={`
+                btn
+                w-100
+                mb-2
+                ${selectedFloor === floor.id ? "btn-dark" : "btn-outline-dark"}
+              `}
+                    onClick={() => {
+                      setSelectedFloor(floor.id);
+
+                      setSelectedArea(null);
+                    }}
+                  >
+                    {floor.name}
+                  </button>
+                ))}
+              </div>
+
+              {/* ==========================================
+            AREA SIDEBAR
+        ========================================== */}
+              <div
+                className="col-12 col-md-2 border-end p-3"
+                style={{
+                  overflowY: "auto",
+                }}
+              >
+                <h6 className="fw-bold mb-3">Areas</h6>
+
+                {areaList
+                  .filter(
+                    (area) => String(area.floor) === String(selectedFloor),
+                  )
+                  .map((area) => (
+                    <button
+                      key={area.id}
+                      className={`
+                btn
+                w-100
+                mb-2
+                ${
+                  selectedArea === area.id
+                    ? "btn-primary"
+                    : "btn-outline-primary"
+                }
+              `}
+                      onClick={() => setSelectedArea(area.id)}
+                    >
+                      {area.name}
+                    </button>
+                  ))}
+              </div>
+
+              {/* ==========================================
+    TABLE GRID
+========================================== */}
+              <div
+                className="col-12 col-md-8 p-3 p-md-4"
+                style={{
+                  overflowY: "auto",
+                }}
+              >
+                <div className="row g-3">
+                  {filteredTables.length > 0 ? (
+                    filteredTables.map((table) => {
+                      const isAvailable = table.status === "available";
+
+                      const isSelected =
+                        String(selectedTable) === String(table.id);
+
+                      return (
+                        <div
+                          key={table.id}
+                          className="
+              col-6
+              col-sm-4
+              col-md-3
+            "
+                        >
+                          <button
+                            type="button"
+                            disabled={!isAvailable}
+                            onClick={() => {
+                              setSelectedTable(table.id);
+                            }}
+                            className={`
+                btn
+                w-100
+                p-4
+                rounded-4
+                border
+                ${
+                  isSelected
+                    ? "btn-success"
+                    : table.status === "available"
+                      ? "btn-outline-success"
+                      : table.status === "occupied"
+                        ? "btn-outline-danger"
+                        : table.status === "reserved"
+                          ? "btn-outline-warning"
+                          : "btn-outline-secondary"
+                }
+              `}
+                          >
+                            <h5 className="fw-bold">
+                              {[
+                                table.table_number,
+                                ...(table.merged_tables || []).map(
+                                  (t) => t.table_number,
+                                ),
+                              ].join(" + ")}
+                            </h5>
+
+                            <small>
+                              Capacity:{" "}
+                              {[
+                                table.capacity,
+                                ...(table.merged_tables || []).map(
+                                  (t) => t.capacity,
+                                ),
+                              ].join(" + ")}
+                            </small>
+
+                            <div className="mt-2">
+                              <span
+                                className={`
+                    badge
+                    ${
+                      table.status === "available"
+                        ? "bg-success"
+                        : table.status === "occupied"
+                          ? "bg-danger"
+                          : table.status === "reserved"
+                            ? "bg-warning"
+                            : "bg-secondary"
+                    }
+                  `}
+                              >
+                                {table.status}
+                              </span>
+                            </div>
+                          </button>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="col-12">
+                      <div
+                        className="
+            border
+            rounded-4
+            bg-light
+            text-center
+            py-5
+            px-3
+          "
+                      >
+                        <div
+                          style={{
+                            fontSize: "3rem",
+                          }}
+                        >
+                          🪑
+                        </div>
+
+                        <h5 className="mt-3 mb-2">No Tables Available</h5>
+
+                        <p className="text-muted mb-0">
+                          No tables have been created for the selected floor and
+                          area.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            {/* FOOTER */}
+            <div
+              className="
+    border-top
+    p-3
+    d-flex
+    justify-content-end
+    gap-2
+  "
+            >
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowTransferModal(false);
+                  setTransferOrder(null);
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="btn btn-success"
+                disabled={
+                  !selectedTable || selectedTable === transferOrder?.table_id
+                }
+                onClick={handleTransferTable}
+              >
+                Transfer Table
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PAYMENT MODAL */}
       {showPaymentModal && (
         <ModalWrapper
@@ -1287,8 +1682,15 @@ const handlePrintBill = async (orderId) => {
 // ==========================================
 // REUSABLE MODAL
 // ==========================================
-function ModalWrapper({ title, children, onClose, onSubmit, showFooter = true,
-  submitText = "Save Changes", footerActions, }) {
+function ModalWrapper({
+  title,
+  children,
+  onClose,
+  onSubmit,
+  showFooter = true,
+  submitText = "Save Changes",
+  footerActions,
+}) {
   return (
     <div
       className="

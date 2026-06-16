@@ -1,4 +1,5 @@
 from rest_framework import status
+from django.db import transaction
 from rest_framework.generics import (
     CreateAPIView,
     ListAPIView,
@@ -11,7 +12,12 @@ from rest_framework.response import Response
 
 from accounts.models import User
 from .utils import get_lat_long_from_address
-from .permissions import IsRestaurantAdmin, IsRestaurantAdminOrManager, CanGetStaff, CanManageStaff
+from .permissions import (
+    IsRestaurantAdmin,
+    IsRestaurantAdminOrManager,
+    CanGetStaff,
+    CanManageStaff,
+)
 from .serializers import (
     StaffCreateSerializer,
     StaffListSerializer,
@@ -41,7 +47,10 @@ from .serializers import (
     TableCreateSerializer,
     TableListSerializer,
     TableUpdateSerializer,
+    MergeTableSerializer,
+    UnmergeTableSerializer,
 )
+from audits.services import create_activity_log
 
 
 # ==========================================
@@ -83,10 +92,7 @@ class RestaurantDetailView(RetrieveUpdateDestroyAPIView):
     # ==========================================
     # UPDATE RESTAURANT
     # ==========================================
-    def perform_update(
-        self,
-        serializer
-    ):
+    def perform_update(self, serializer):
 
         restaurant = serializer.save()
 
@@ -94,11 +100,7 @@ class RestaurantDetailView(RetrieveUpdateDestroyAPIView):
 
         if address:
 
-            latitude, longitude = (
-                get_lat_long_from_address(
-                    address
-                )
-            )
+            latitude, longitude = get_lat_long_from_address(address)
 
             restaurant.latitude = latitude
 
@@ -110,6 +112,7 @@ class RestaurantDetailView(RetrieveUpdateDestroyAPIView):
                     "longitude",
                 ]
             )
+
     # ==========================================
     # PREVENT PRIMARY RESTAURANT DELETE
     # ==========================================
@@ -159,7 +162,7 @@ class StaffListView(ListAPIView):
     def get_queryset(self):
 
         restaurant_id = self.request.GET.get("restaurant_id")
-    
+
         if self.request.user.role == "restaurant_admin":
 
             return (
@@ -171,12 +174,13 @@ class StaffListView(ListAPIView):
             )
         return (
             User.objects.filter(
-                restaurant_id=restaurant_id, restaurant=self.request.user.restaurant,
+                restaurant_id=restaurant_id,
+                restaurant=self.request.user.restaurant,
             )
             .exclude(role="restaurant_admin")
             .order_by("-id")
         )
-        
+
 
 class StaffDetailView(RetrieveUpdateDestroyAPIView):
     """
@@ -192,16 +196,13 @@ class StaffDetailView(RetrieveUpdateDestroyAPIView):
         # ======================================
         if self.request.user.role == "restaurant_admin":
 
-            return User.objects.filter(
-                restaurant__owner=self.request.user
-            )
+            return User.objects.filter(restaurant__owner=self.request.user)
 
         # ======================================
         # MANAGER
         # ======================================
-        return User.objects.filter(
-            restaurant=self.request.user.restaurant
-        )
+        return User.objects.filter(restaurant=self.request.user.restaurant)
+
     def get_serializer_class(self):
 
         # Use update serializer for PUT/PATCH
@@ -265,6 +266,7 @@ class FloorListView(ListAPIView):
             restaurant=self.request.user.restaurant,
         )
 
+
 # ==========================================
 # FLOOR DETAIL VIEW
 # ==========================================
@@ -282,9 +284,8 @@ class FloorDetailView(RetrieveUpdateAPIView):
         # ======================================
         # MANAGER
         # ======================================
-        return Floor.objects.filter(
-            restaurant=self.request.user.restaurant
-        )
+        return Floor.objects.filter(restaurant=self.request.user.restaurant)
+
     def get_serializer_class(self):
 
         if self.request.method in [
@@ -488,17 +489,23 @@ class TableListView(ListAPIView):
 
         restaurant_id = self.request.GET.get("restaurant_id")
 
+        queryset = RestaurantTable.objects.select_related(
+            "floor",
+            "area",
+            "assigned_waiter",
+            "merged_into",
+        ).prefetch_related("merged_tables")
         if self.request.user.role == "restaurant_admin":
 
-            return RestaurantTable.objects.filter(
+            return queryset.filter(
                 restaurant_id=restaurant_id,
                 restaurant__owner=self.request.user,
-            ).order_by("table_number")
+            )
 
-        return RestaurantTable.objects.filter(
+        return queryset.filter(
             restaurant_id=restaurant_id,
             restaurant=self.request.user.restaurant,
-        ).order_by("table_number")
+        )
 
     # ==========================================
     # OVERRIDE LIST RESPONSE
@@ -564,7 +571,9 @@ class ToggleTableStatusView(APIView):
 
             table = RestaurantTable.objects.get(pk=pk, restaurant__owner=request.user)
         elif self.request.user.role == "manager":
-            table = RestaurantTable.objects.get(pk=pk, restaurant=request.user.restaurant)
+            table = RestaurantTable.objects.get(
+                pk=pk, restaurant=request.user.restaurant
+            )
 
         table.is_active = not table.is_active
 
@@ -577,3 +586,180 @@ class ToggleTableStatusView(APIView):
         )
 
         return Response({"message": message}, status=status.HTTP_200_OK)
+
+
+# ==========================================
+# MERGE TABLES
+# ==========================================
+class MergeTableView(APIView):
+
+    @transaction.atomic
+    def patch(self, request):
+
+        serializer = MergeTableSerializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        table_ids = serializer.validated_data["table_ids"]
+
+        tables = RestaurantTable.objects.filter(id__in=table_ids)
+
+        if tables.count() != len(table_ids):
+
+            return Response(
+                {"message": "Invalid table selection."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # -------------------------
+        # SAME FLOOR CHECK
+        # -------------------------
+        floor_ids = set(tables.values_list("floor_id", flat=True))
+
+        if len(floor_ids) > 1:
+
+            return Response(
+                {"message": "Cannot merge tables from different floors."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # -------------------------
+        # SAME AREA CHECK
+        # -------------------------
+        area_ids = set(tables.values_list("area_id", flat=True))
+
+        if len(area_ids) > 1:
+
+            return Response(
+                {"message": "Cannot merge tables from different areas."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if tables.filter(status="occupied").exists():
+
+            return Response({"message": "Cannot merge occupied tables."}, status=400)
+        
+        # -------------------------
+        # ALREADY PART OF A GROUP
+        # -------------------------
+        if tables.filter(is_merged=True).exists():
+
+            return Response(
+                {
+                    "message":
+                    "Selected table(s) are already in a merged group. Unmerge them and try again."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # -------------------------
+        # MASTER TABLE CHECK
+        # -------------------------
+        if tables.filter(
+            merged_tables__isnull=False
+        ).exists():
+
+            return Response(
+                {
+                    "message":
+                    "One or more selected tables are already master tables of a merged group. Please unmerge them first."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # -------------------------
+        # MASTER TABLE
+        # -------------------------
+        master_table = tables.order_by("id").first()
+
+        merged_table_numbers = [
+            table.table_number
+            for table in tables
+        ]
+        # -------------------------
+        # MERGE
+        # -------------------------
+        for table in tables.exclude(id=master_table.id):
+
+            table.is_merged = True
+
+            table.merged_into = master_table
+
+            table.save(
+                update_fields=[
+                    "is_merged",
+                    "merged_into",
+                ]
+            )
+        # -------------------------
+        # ACTIVITY LOG
+        # -------------------------
+        create_activity_log(
+            restaurant=master_table.restaurant,
+            user=request.user,
+            action="table_merged",
+            message=(
+                f"Merged tables: "
+                f"{', '.join(merged_table_numbers)} "
+                f"into master table "
+                f"{master_table.table_number}"
+            ),
+        )
+        return Response({"message": "Tables merged successfully."})
+
+
+# ==========================================
+# UNMERGE TABLES
+# ==========================================
+class UnmergeTableView(APIView):
+
+    @transaction.atomic
+    def patch(self, request):
+
+        serializer = UnmergeTableSerializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        master_id = serializer.validated_data["master_table_id"]
+
+        table_ids = serializer.validated_data["table_ids"]
+
+        tables = RestaurantTable.objects.filter(
+            id__in=table_ids,
+            merged_into_id=master_id,
+        )
+        master_table = RestaurantTable.objects.get(
+            id=master_id
+        )
+
+        unmerged_table_numbers = []
+        for table in tables:
+            
+            unmerged_table_numbers.append(
+                table.table_number
+            )
+            table.is_merged = False
+
+            table.merged_into = None
+
+            table.save(
+                update_fields=[
+                    "is_merged",
+                    "merged_into",
+                ]
+            )
+
+        # -------------------------
+        # ACTIVITY LOG
+        # -------------------------
+        create_activity_log(
+            restaurant=master_table.restaurant,
+            user=request.user,
+            action="table_unmerged",
+            message=(
+                f"Unmerged tables: "
+                f"{', '.join(unmerged_table_numbers)} "
+                f"from master table "
+                f"{master_table.table_number}"
+            ),
+        )
+        return Response({"message": "Tables unmerged successfully."})
