@@ -236,11 +236,13 @@ export default function WaiterPOSDashboard() {
     }
   }, [orderType]);
 
-  const filteredTables = tableList.filter(
-    (table) =>
-      String(table.floor) === String(selectedFloor) &&
-      (!selectedArea || String(table.area) === String(selectedArea)),
-  );
+  const filteredTables = tableList
+    .filter((table) => !table.is_merged)
+    .filter(
+      (table) =>
+        String(table.floor) === String(selectedFloor) &&
+        (!selectedArea || String(table.area) === String(selectedArea)),
+    );
   // ==========================================
   // GET PRODUCTS
   // ==========================================
