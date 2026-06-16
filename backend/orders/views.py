@@ -611,6 +611,7 @@ class OrderListView(APIView):
                 "delivery_staff",
             )
             .prefetch_related(
+                "table__merged_tables",
                 "items",
                 "items__taxes",
                 "items__addons",

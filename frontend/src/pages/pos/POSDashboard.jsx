@@ -274,12 +274,16 @@ export default function POSDashboard({ setActivePage }) {
     }
   }, [orderType]);
 
-  const filteredTables = tableList.filter(
-  (table) =>
-    String(table.floor) === String(selectedFloor) &&
-    (!selectedArea ||
-      String(table.area) === String(selectedArea))
-);
+  const filteredTables = tableList
+  .filter((table) => !table.is_merged)
+  .filter(
+    (table) =>
+      String(table.floor) === String(selectedFloor) &&
+      (
+        !selectedArea ||
+        String(table.area) === String(selectedArea)
+      )
+  );
   // ==========================================
   // GET PRODUCTS
   // ==========================================
@@ -1770,7 +1774,7 @@ export default function POSDashboard({ setActivePage }) {
             style={{
               width: "95%",
               height: "90%",
-              overflow: "hidden",
+              overflow: "auto",
             }}
           >
             {/* HEADER */}
@@ -1923,12 +1927,23 @@ export default function POSDashboard({ setActivePage }) {
               `}
             >
               <h5 className="fw-bold">
-                {table.table_number}
-              </h5>
+                              {[
+                                table.table_number,
+                                ...(table.merged_tables || []).map(
+                                  (t) => t.table_number,
+                                ),
+                              ].join(" + ")}
+                            </h5>
 
-              <small>
-                Capacity: {table.capacity}
-              </small>
+                            <small>
+                              Capacity:{" "}
+                              {[
+                                table.capacity,
+                                ...(table.merged_tables || []).map(
+                                  (t) => t.capacity,
+                                ),
+                              ].join(" + ")}
+                            </small>
 
               <div className="mt-2">
                 <span
