@@ -413,6 +413,20 @@ class OrderListSerializer(serializers.ModelSerializer):
         source="table.table_number",
         read_only=True,
     )
+    table_id = serializers.IntegerField(
+        source="table.id",
+        read_only=True,
+    )
+
+    floor_id = serializers.IntegerField(
+        source="floor.id",
+        read_only=True,
+    )
+
+    area_id = serializers.IntegerField(
+        source="area.id",
+        read_only=True,
+    )
 
     items = OrderItemReadSerializer(
         many=True,
@@ -463,7 +477,9 @@ class OrderListSerializer(serializers.ModelSerializer):
             "floor_name",
             "area_name",
             "table_name",
-
+            "table_id",
+            "floor_id",
+            "area_id",
             "created_at",
             "completed_at",
             # nested
