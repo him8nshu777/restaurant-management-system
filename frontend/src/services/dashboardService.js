@@ -260,3 +260,40 @@ export const toggleTableStatus = async (
     return response.data;
 };
 
+
+// ==========================================
+// MERGE TABLES
+// ==========================================
+export const mergeTables =
+  async (tableIds) => {
+
+    const response =
+      await axiosInstance.patch(
+
+        "/restaurants/tables/merge/",
+
+        {
+          table_ids: tableIds,
+        }
+      );
+
+    return response.data;
+  };
+
+// ==========================================
+// UNMERGE TABLES
+// ==========================================
+export const unmergeTablesApi =
+  async (data) => {
+
+    const response =
+      await axiosInstance.patch(
+
+        "/restaurants/tables/unmerge/",
+
+        data
+      );
+
+    return response.data;
+  };
+

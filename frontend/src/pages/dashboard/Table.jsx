@@ -10,6 +10,8 @@ import {
   getFloorList,
   getAreaList,
   toggleTableStatus,
+  mergeTables,
+  unmergeTablesApi,
 } from "../../services/dashboardService";
 
 // ==========================================
@@ -39,6 +41,7 @@ export default function Table() {
   //waiter assignment
   const [waiterList, setWaiterList] = useState([]);
 
+  const [selectedTables, setSelectedTables] = useState([]);
   // ==========================================
   // MODALS
   // ==========================================
@@ -46,6 +49,12 @@ export default function Table() {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState(null);
+
+  const [showUnmergeModal, setShowUnmergeModal] = useState(false);
+
+  const [selectedMergeGroup, setSelectedMergeGroup] = useState(null);
+
+  const [unmergeTables, setUnmergeTables] = useState([]);
   // ==========================================
   // FORM STATE
   // ==========================================
@@ -284,6 +293,78 @@ export default function Table() {
     }
   };
 
+  const handleTableSelection = (tableId) => {
+    setSelectedTables((prev) => {
+      if (prev.includes(tableId)) {
+        return prev.filter((id) => id !== tableId);
+      }
+
+      return [...prev, tableId];
+    });
+  };
+
+  const handleMergeTables = async () => {
+    try {
+      const response = await mergeTables(selectedTables);
+
+      setAlert({
+        type: "success",
+        message: response.message,
+      });
+
+      setSelectedTables([]);
+
+      fetchTableList();
+    } catch (error) {
+      setAlert({
+        type: "danger",
+        message: error.response?.data?.message || "Failed to merge tables.",
+      });
+    }
+  };
+
+  const openUnmergeModal = (table) => {
+    setSelectedMergeGroup(table);
+
+    setUnmergeTables([]);
+
+    setShowUnmergeModal(true);
+  };
+
+  const handleUnmergeSelection = (tableId) => {
+    setUnmergeTables((prev) => {
+      if (prev.includes(tableId)) {
+        return prev.filter((id) => id !== tableId);
+      }
+
+      return [...prev, tableId];
+    });
+  };
+
+  const handleUnmergeTables = async () => {
+    try {
+      const response = await unmergeTablesApi({
+        master_table_id: selectedMergeGroup.id,
+
+        table_ids: unmergeTables,
+      });
+
+      setAlert({
+        type: "success",
+        message: response.message,
+      });
+
+      setShowUnmergeModal(false);
+
+      fetchTableList();
+    } catch (error) {
+      setAlert({
+        type: "danger",
+        message: JSON.stringify(error.response?.data) || "Failed to unmerge.",
+      });
+    }
+  };
+
   return (
     <div>
       {/* ==========================================
@@ -307,6 +388,14 @@ export default function Table() {
         </button>
       </div>
 
+      <div className="d-flex gap-2">
+        {selectedTables.length >= 2 && (
+          <button className="btn btn-success" onClick={handleMergeTables}>
+            Merge Selected
+          </button>
+        )}
+      </div>
+
       {/* ==========================================
           TABLE LIST
       ========================================== */}
@@ -316,6 +405,7 @@ export default function Table() {
             <table className="table align-middle">
               <thead>
                 <tr>
+                  <th width="50">Select</th>
                   <th>Table No.</th>
                   <th>Capacity</th>
                   <th>Floor</th>
@@ -328,70 +418,103 @@ export default function Table() {
               </thead>
 
               <tbody>
-                {tableList.map((table) => (
-                  <tr key={table.id}>
-                    <td>{table.table_number}</td>
+                {tableList
+                  .filter((table) => !table.is_merged)
+                  .map((table) => (
+                    <tr key={table.id}>
+                      <td>
+                        {!table.is_merged && (
+                          <input
+                            type="checkbox"
+                            checked={selectedTables.includes(table.id)}
+                            onChange={() => handleTableSelection(table.id)}
+                          />
+                        )}
+                      </td>
+                      {/* <td>{table.table_number}</td> */}
+                      <td>
+                        {[
+                          table.table_number,
+                          ...(table.merged_tables || []).map(
+                            (t) => t.table_number,
+                          ),
+                        ].join(" + ")}
+                      </td>
 
-                    <td>{table.capacity}</td>
+                      {/* <td>{table.capacity}</td> */}
+                      <td>
+                        {[
+                          table.capacity,
+                          ...(table.merged_tables || []).map((t) => t.capacity),
+                        ].join(" + ")}
+                      </td>
 
-                    <td>{table.floor_name}</td>
-                    <td>{table.area_name}</td>
-                    <td>{table.waiter_name || "None"}</td>
-                    <td>
-                      <span
-                        className={`badge ${
-                          table.status === "available"
-                            ? "bg-success"
-                            : table.status === "occupied"
-                              ? "bg-danger"
-                              : "bg-warning"
-                        }`}
-                      >
-                        {table.status}
-                      </span>
-                    </td>
+                      <td>{table.floor_name}</td>
+                      <td>{table.area_name}</td>
+                      <td>{table.waiter_name || "None"}</td>
+                      <td>
+                        <span
+                          className={`badge ${
+                            table.status === "available"
+                              ? "bg-success"
+                              : table.status === "occupied"
+                                ? "bg-danger"
+                                : "bg-warning"
+                          }`}
+                        >
+                          {table.status}
+                        </span>
+                      </td>
 
-                    <td>
-                      <span
-                        className={`badge ${
-                          table.is_active ? "bg-success" : "bg-danger"
-                        }`}
-                      >
-                        {table.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
+                      <td>
+                        <span
+                          className={`badge ${
+                            table.is_active ? "bg-success" : "bg-danger"
+                          }`}
+                        >
+                          {table.is_active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
 
-                    <td>
-                      <div className="action-buttons">
-                      {/* EDIT */}
-                      <button
-                        className="btn btn-warning btn-sm me-2"
-                        onClick={() => openEditModal(table)}
-                      >
-                        Edit
-                      </button>
+                      <td>
+                        <div className="action-buttons">
+                          {table.merged_tables?.length > 0 && (
+                            <button
+                              className="btn btn-info btn-sm me-2"
+                              onClick={() => openUnmergeModal(table)}
+                            >
+                              Unmerge
+                            </button>
+                          )}
+                          {/* EDIT */}
+                          <button
+                            className="btn btn-warning btn-sm me-2"
+                            onClick={() => openEditModal(table)}
+                          >
+                            Edit
+                          </button>
 
-                      {/* ACTIVE / INACTIVE */}
-                      <button
-                        className={`btn btn-sm me-2 ${
-                          table.is_active ? "btn-secondary" : "btn-success"
-                        }`}
-                        onClick={() => handleToggleStatus(table.id)}
-                      >
-                        {table.is_active ? "Deactivate" : "Activate"}
-                      </button>
+                          {/* ACTIVE / INACTIVE */}
+                          <button
+                            className={`btn btn-sm me-2 ${
+                              table.is_active ? "btn-secondary" : "btn-success"
+                            }`}
+                            onClick={() => handleToggleStatus(table.id)}
+                          >
+                            {table.is_active ? "Deactivate" : "Activate"}
+                          </button>
 
-                      {/* DELETE */}
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDeleteTable(table.id)}
-                      >
-                        Delete
-                      </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {/* DELETE */}
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDeleteTable(table.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
@@ -436,6 +559,53 @@ export default function Table() {
             showWaiter={true}
           />
         </ModalWrapper>
+      )}
+
+      {showUnmergeModal && (
+        <div className="modal d-block">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5>Unmerge Tables</h5>
+
+                <button
+                  className="btn-close"
+                  onClick={() => setShowUnmergeModal(false)}
+                />
+              </div>
+
+              <div className="modal-body">
+                {selectedMergeGroup?.merged_tables?.map((table) => (
+                  <div key={table.id} className="form-check">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      onChange={() => handleUnmergeSelection(table.id)}
+                    />
+
+                    <label>{table.table_number}</label>
+                  </div>
+                ))}
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowUnmergeModal(false)}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="btn btn-danger"
+                  onClick={handleUnmergeTables}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

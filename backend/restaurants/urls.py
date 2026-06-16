@@ -21,6 +21,9 @@ from .views import (
     TableCreateView,
     TableDetailView,
     ToggleTableStatusView,
+
+    MergeTableView,
+    UnmergeTableView
 )
 
 urlpatterns = [
@@ -72,5 +75,15 @@ urlpatterns = [
         ToggleTableStatusView.as_view(),
         name="table-toggle-status",
     ),
+
+path(
+    "tables/merge/",
+    MergeTableView.as_view(),
+    name="table-merge",
+),
+path(
+    "tables/unmerge/",
+    UnmergeTableView.as_view(),name="table-unmerge"
+),
 
 ]

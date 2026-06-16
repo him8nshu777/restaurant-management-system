@@ -358,6 +358,27 @@ class AreaUpdateSerializer(serializers.ModelSerializer):
             "floor",
         )
 
+class MergeTableSerializer(
+    serializers.Serializer
+):
+
+    table_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=2,
+    )
+
+class MergedTableDisplaySerializer(
+    serializers.ModelSerializer
+):
+
+    class Meta:
+        model = RestaurantTable
+        fields = (
+            "id",
+            "table_number",
+            "capacity",
+            "status",
+        )
 
 # ==========================================
 # TABLE LIST SERIALIZER
@@ -370,6 +391,10 @@ class TableListSerializer(serializers.ModelSerializer):
 
     waiter_name = serializers.CharField(
         source="assigned_waiter.username", read_only=True
+    )
+    merged_tables = MergedTableDisplaySerializer(
+        many=True,
+        read_only=True,
     )
 
     class Meta:
@@ -388,6 +413,11 @@ class TableListSerializer(serializers.ModelSerializer):
             "assigned_waiter",
             "waiter_name",
             "is_active",
+
+            # NEW
+            "is_merged",
+            "merged_into",
+            "merged_tables",
         )
 
 
@@ -457,3 +487,15 @@ class TableUpdateSerializer(serializers.ModelSerializer):
             "area",
             "assigned_waiter",
         )
+
+
+class UnmergeTableSerializer(
+    serializers.Serializer
+):
+
+    master_table_id = serializers.IntegerField()
+
+    table_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=1,
+    )
