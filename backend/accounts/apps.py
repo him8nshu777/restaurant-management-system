@@ -26,10 +26,10 @@ class AccountsConfig(AppConfig):
 #             )
 
 #             User = get_user_model()
-#             username=""
-#             email = ""
+#             username="himanshu"
+#             email = "himanshuraut@gmail.com"
 
-#             password = ""
+#             password = "him12421"
 
 #             if not User.objects.filter(
 #                 email=email
