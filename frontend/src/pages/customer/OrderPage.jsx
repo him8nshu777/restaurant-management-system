@@ -614,7 +614,7 @@ export default function OrderPage({ setActivePage, restaurant }) {
       name: charge.name,
       charge_type: charge.charge_type,
       value: charge.value,
-      amount,
+      amount: Number(amount.toFixed(2)),
     });
   });
 
